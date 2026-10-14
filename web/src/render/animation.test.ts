@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TEST_STATS } from '../engine/testStats';
 import { makeUnit } from '../engine/units';
-import { loopFrame, stripFrame, unitFrame } from './animation';
+import { loopFrame, prisonerFrame, stripFrame, unitFrame } from './animation';
 
 const bro = (patch: Partial<ReturnType<typeof makeUnit>>) =>
   Object.assign(makeUnit(1, 'bro', 'player', 0, 8, TEST_STATS.units.bro), { onGround: true }, patch);
@@ -37,6 +37,12 @@ describe('frame helpers', () => {
   it('stripFrame walks an effect strip once and stops on the last frame', () => {
     expect(stripFrame(0.25, 0.5, 16)).toBe(8);
     expect(stripFrame(0.6, 0.5, 16)).toBe(15);
+  });
+
+  it('caged prisoners only use the standing frames 0-3 of the Hobro sheet (4-5 are death poses)', () => {
+    const frames = new Set<number>();
+    for (let t = 0; t < 3; t += 0.01) frames.add(prisonerFrame(t));
+    expect([...frames].sort()).toEqual([0, 1, 2, 3]);
   });
 
   it('loopFrame cycles', () => {

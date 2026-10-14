@@ -2,7 +2,7 @@ import { EXTRACTION_TIME, SHAKE_AMOUNT, SHAKE_TIME, TILE } from '../engine/const
 import { getColumn, getRow } from '../engine/map';
 import type { BlockKind, Projectile, Unit, UnitKind } from '../engine/types';
 import type { Effect, World } from '../engine/world';
-import { loopFrame, stripFrame, unitFrame } from './animation';
+import { loopFrame, prisonerFrame, stripFrame, unitFrame } from './animation';
 import type { Assets, SheetKey } from './assets';
 import { VIEW_H, VIEW_W, followCamera, type Camera } from './camera';
 
@@ -103,7 +103,7 @@ export class Renderer {
   private drawPrisoners(w: World): void {
     for (const p of w.prisoners) {
       if (p.freed) continue;
-      this.sprite('prisoner', loopFrame(w.time, 0.1, 8), 0, p.x, p.y + this.assets.sheets.prisoner.offsetY);
+      this.sprite('prisoner', prisonerFrame(w.time), 0, p.x, p.y + this.assets.sheets.prisoner.offsetY);
       this.sprite('cage', 0, 0, p.x, p.y + 16);
     }
   }

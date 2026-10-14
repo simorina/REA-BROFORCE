@@ -1,0 +1,29 @@
+:root {
+  color-scheme: dark;
+  --bg: #14110f;
+  --fg: #f4ead5;
+  --accent: #e8b23a;
+  --danger: #c8341f;
+  --navy: #1f2a4a;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; }
+#root { min-height: 100vh; display: grid; place-items: center; }
+.screen { max-width: 720px; padding: 24px 16px; text-align: center; }
+.menu h1 { font-size: clamp(32px, 7vw, 64px); letter-spacing: 0.08em; margin: 0 0 24px; color: var(--accent); text-shadow: 4px 4px 0 var(--danger); }
+.menu h1 span { display: block; font-size: 0.55em; color: var(--fg); text-shadow: 3px 3px 0 var(--navy); }
+.controls { margin: 0 auto 20px; border-collapse: collapse; text-align: left; }
+.controls td { padding: 4px 12px; border-bottom: 1px solid #2c2622; }
+.controls td:first-child { color: var(--accent); white-space: nowrap; }
+button { font: inherit; font-weight: 700; padding: 10px 22px; margin: 6px; background: var(--accent); color: var(--bg); border: 0; cursor: pointer; box-shadow: 4px 4px 0 var(--danger); }
+button:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
+.toggle { display: block; margin: 12px 0 18px; }
+.note { opacity: 0.6; font-size: 12px; margin-top: 18px; }
+pre { text-align: left; background: #221d19; padding: 12px; white-space: pre-wrap; word-break: break-all; }
+.game { position: relative; width: min(100vw, 1200px); }
+.game canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+.hud { position: absolute; top: 8px; left: 8px; display: flex; align-items: center; gap: 10px; text-shadow: 2px 2px 0 #000; }
+.portrait { width: 64px; height: 64px; background-size: 2048px 1024px; background-position: 0 0; image-rendering: pixelated; border: 2px solid var(--fg); background-color: var(--navy); }
+.lives { font-weight: 700; }
+.pip { display: inline-block; width: 10px; height: 14px; margin-right: 4px; background: var(--danger); border: 2px solid var(--fg); }
+.end h1 { color: var(--accent); }

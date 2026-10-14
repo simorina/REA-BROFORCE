@@ -30,3 +30,8 @@ export function stripFrame(age: number, duration: number, cols: number): number 
 export function loopFrame(time: number, frameRate: number, cols: number): number {
   return Math.floor(time / frameRate) % cols;
 }
+
+/** Hobro_anim: columns 0-3 are the standing idle; 4-5 are death poses, so the cage loop stays on 0-3. */
+export function prisonerFrame(time: number): number {
+  return loopFrame(time, 0.15, 4);
+}
