@@ -129,6 +129,11 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
       break;
     }
     case 'football': {
+      if (w.map.blockAt(p.x, p.y)) {
+        // kicked point-blank into a wall: blow up against it rather than bouncing out behind the bro
+        explodeAt(p, FOOTBALL_BLAST, false, events);
+        break;
+      }
       bounce(p, w.map, t, FOOTBALL.bounceM, FOOTBALL.frictionM);
       if (unitAt(w.units, p.x, p.y, p.team) || p.bounces > FOOTBALL.maxBounces || p.life <= 0) {
         explodeAt(p, FOOTBALL_BLAST, false, events);

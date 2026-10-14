@@ -83,6 +83,15 @@ describe('football (design weapon)', () => {
     expect(events[0].type === 'explode' && events[0].blast.team).toBe('player');
   });
 
+  it('kicked point-blank into a wall, it explodes against the wall instead of bouncing behind', () => {
+    const map = floorMap();
+    for (let r = 1; r <= 5; r++) map.set(8, r, makeBlock('dirt', TEST_STATS)); // wall face at x = 120
+    const ball = kickFootball(1, bro(113.9, 8)); // spawns at x = 121.9, inside the wall
+    const events = stepProjectile(ball, world(map), FIXED_DT);
+    expect(events).toHaveLength(1);
+    expect(events[0].type === 'explode' && events[0].blast.x).toBeGreaterThanOrEqual(120);
+  });
+
   it('explodes after its last bounce, before the fuse', () => {
     const ball = kickFootball(1, bro());
     Object.assign(ball, { x: 80, y: 40, xI: 0, yI: 0 });
