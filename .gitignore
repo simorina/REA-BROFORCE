@@ -1,0 +1,10 @@
+# Free Lives material: never commit or publish
+decompiled/
+game-data/
+analysis/
+# tooling
+extractor/.venv/
+**/__pycache__/
+.pytest_cache/
+web/node_modules/
+web/dist/
