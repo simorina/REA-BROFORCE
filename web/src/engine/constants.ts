@@ -10,7 +10,8 @@ export const LOW_SPEED_THRESHOLD = 50;
 export const MIN_START_SPEED = 25; // AddSpeed*: xI snaps to ±25 when starting to run
 export const DASH_SPEED_M = 1.33; // TestVanDammeAnim.dashSpeedM
 export const GROUND_FRICTION_M = 10; // TestVanDammeAnim.frictionM
-export const JUMP_GRACE = 0.1; // TestVanDammeAnim.Jump: realtimeSinceStartup - lastLandTime < 0.1
+export const JUMP_TIME = 0.123; // TestVanDammeAnim.JUMP_TIME: yI stays at jumpForce while jump is held
+export const JUMP_BUFFER = 0.2; // TestVanDammeAnim: pressedJumpInAirSoJumpIfTouchGroundGrace = 0.2
 export const WALL_CLIMB_BOOST = 190; // TestVanDammeAnim.AnimateWallClimb: yI = 190 on frame 1
 export const WALL_CLIMB_GRAVITY_M = 0.66; // TestVanDammeAnim.ApplyWallClimbingGravity
 export const WALL_CLIMB_CYCLE = 8 * 0.033; // AnimateWallClimb: 8 frames at frameRate 0.033
@@ -50,6 +51,7 @@ export const FOOTBALL = {
   damage: 5, range: 32, blastForce: 20, blastForceExtraY: 300,
 };
 export const AIRSTRIKE_FUSE = 1.0;
+export const JUMP_GRACE = 0.1; // coyote time after walking off a ledge (not in TestVanDammeAnim)
 export const LIVES_START = 3;
 export const MOOK_BURST = 3;
 export const MOOK_BURST_PAUSE = 1.0;

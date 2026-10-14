@@ -1,5 +1,5 @@
 import {
-  ACCEL_M, DASH_ACCEL_M, DASH_SPEED_M, GRAVITY, GROUND_FRICTION_M, JUMP_GRACE, LOW_SPEED_ACCEL_M,
+  ACCEL_M, DASH_ACCEL_M, DASH_SPEED_M, GRAVITY, GROUND_FRICTION_M, JUMP_BUFFER, JUMP_GRACE, JUMP_TIME, LOW_SPEED_ACCEL_M,
   LOW_SPEED_THRESHOLD, MIN_START_SPEED, TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT, WALL_CLIMB_BOOST,
   WALL_CLIMB_CYCLE, WALL_CLIMB_GRAVITY_M,
 } from './constants';
@@ -56,6 +56,7 @@ function moveAndCollide(u: Unit, map: TileMap, t: number, now: number): void {
       u.lastGroundedTime = now;
     } else {
       u.y = cellBottom(getRow(ny + UNIT_HEIGHT)) - UNIT_HEIGHT - EPS;
+      u.jumpTime = 0; // a ceiling ends the held jump
     }
     u.yI = 0;
   } else {
@@ -76,10 +77,24 @@ export function stepUnit(u: Unit, intent: MoveIntent, map: TileMap, t: number, n
     u.dashing = intent.dash && u.stats.canDash && intent.dir !== 0;
   }
   runHorizontal(u, intent.dir, t);
-  if (intent.jumpPressed && u.yI <= 0 && (u.onGround || now - u.lastGroundedTime < JUMP_GRACE)) {
+  if (u.jumpBuffer > 0) u.jumpBuffer -= t;
+  const canJump = u.yI <= 0 && (u.onGround || now - u.lastGroundedTime < JUMP_GRACE);
+  if (canJump && (intent.jumpPressed || (u.jumpBuffer > 0 && intent.jumpHeld))) {
     u.yI = u.stats.jumpForce;
     u.onGround = false;
     u.lastGroundedTime = -Infinity;
+    u.jumpTime = JUMP_TIME;
+    u.jumpBuffer = 0;
+  } else if (intent.jumpPressed) {
+    u.jumpBuffer = JUMP_BUFFER;
+  }
+  if (u.jumpTime > 0) {
+    // TestVanDammeAnim: while jumpTime > 0 and jump is held, yI is reset to jumpForce before gravity
+    if (!intent.jumpHeld) u.jumpTime = 0;
+    else {
+      u.jumpTime -= t;
+      if (u.yI < u.stats.jumpForce) u.yI = u.stats.jumpForce;
+    }
   }
   const climbing = !u.onGround && u.stats.canWallClimb && intent.dir !== 0 && intent.jumpHeld
     && touchesWall(u, intent.dir, map);

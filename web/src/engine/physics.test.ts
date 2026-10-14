@@ -50,6 +50,44 @@ describe('stepUnit (TestVanDammeAnim movement)', () => {
     expect(apex - 8).toBeLessThan(31.5);
   });
 
+  it('holding jump keeps yI at jumpForce for JUMP_TIME (0.123 s), about doubling the apex', () => {
+    const u = bro();
+    const map = floorMap();
+    const held = { ...NO_INTENT, jumpHeld: true };
+    let now = run(u, map, { ...held, jumpPressed: true }, 1);
+    let apex = u.y;
+    for (let i = 0; i < 60; i++) {
+      now = run(u, map, held, 1, now);
+      apex = Math.max(apex, u.y);
+    }
+    // TestVanDammeAnim: 260 * 0.123 = 32 units at full speed, then the 30.7 ballistic arc
+    expect(apex - 8).toBeGreaterThan(55);
+    expect(apex - 8).toBeLessThan(66);
+  });
+
+  it('a jump pressed just before landing fires on touchdown (pressedJumpInAirSoJumpIfTouchGroundGrace)', () => {
+    const u = bro(80, 20);
+    u.yI = -100;
+    const map = floorMap();
+    let now = run(u, map, { ...NO_INTENT, jumpPressed: true, jumpHeld: true }, 1);
+    let rose = false;
+    for (let i = 0; i < 15; i++) {
+      now = run(u, map, { ...NO_INTENT, jumpHeld: true }, 1, now);
+      if (u.yI > 0) rose = true;
+    }
+    expect(rose).toBe(true);
+  });
+
+  it('hitting a ceiling ends the held jump', () => {
+    const map = floorMap();
+    for (let c = 0; c < 30; c++) map.set(c, 3, makeBlock('dirt', TEST_STATS)); // ceiling bottom at y = 40
+    const u = bro();
+    const held = { ...NO_INTENT, jumpHeld: true };
+    let now = run(u, map, { ...held, jumpPressed: true }, 1);
+    now = run(u, map, held, 5, now);
+    expect(u.yI).toBeLessThanOrEqual(0);
+  });
+
   it('caps the fall speed at maxFallSpeed', () => {
     const u = bro(80, 150);
     run(u, new TileMap(30, 12), NO_INTENT, 120);

@@ -6,7 +6,7 @@ export function makeUnit(id: number, kind: UnitKind, team: Team, x: number, y: n
     facing: team === 'player' ? 1 : -1,
     health: stats.health, stats,
     onGround: false, lastGroundedTime: -Infinity,
-    wallClimbing: false, climbTimer: 0, dashing: false,
+    wallClimbing: false, climbTimer: 0, jumpTime: 0, jumpBuffer: 0, dashing: false,
     fireCooldown: 0, dead: false, deadTime: 0, animTime: 0,
     ai: team === 'enemy'
       ? { mode: 'idle', reaction: 0, burstLeft: 0, cooldown: 0, fuse: 0, patrolTimer: 2, lostSight: 0 }

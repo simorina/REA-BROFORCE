@@ -74,6 +74,8 @@ export interface Unit {
   lastGroundedTime: number;
   wallClimbing: boolean;
   climbTimer: number;
+  jumpTime: number;
+  jumpBuffer: number;
   dashing: boolean;
   fireCooldown: number;
   dead: boolean;
