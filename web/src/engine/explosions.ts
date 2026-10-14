@@ -1,0 +1,93 @@
+import {
+  BARREL_EXTRA_Y, BARREL_FORCE, BARREL_GROUND_DAMAGE, BARREL_UNIT_DAMAGE, BARREL_UNIT_RANGE_M,
+  BARREL_Y_OFFSET, MIN_KNOCK_DIST, SUICIDE_EXTRA_Y, SUICIDE_FORCE_M, SUICIDE_GROUND_DAMAGE,
+  SUICIDE_UNIT_DAMAGE, UNIT_HEIGHT,
+} from './constants';
+import type { TileMap } from './map';
+import { damageUnit, knock } from './units';
+import type { BlastTeam, BlockKind, RocketStats, Team, Unit } from './types';
+
+export interface Blast {
+  x: number;
+  y: number;
+  groundDamage: number;
+  groundRange: number; // DamageGround uses a sphere of radius range * 0.5
+  unitDamage: number;
+  unitRange: number;
+  killRange: number;
+  force: number;
+  extraY: number;
+  team: BlastTeam;
+  big: boolean; // which explosion sprite to draw
+}
+
+export interface BlastResult {
+  destroyed: Array<{ c: number; r: number; kind: BlockKind }>;
+  killed: number[];
+}
+
+/** Rocket.MakeEffects: DamageGround(damage, range); ExplodeUnits(range * 1.5, range, blastForce * 20, blastForceExtraY). */
+export function rocketBlast(x: number, y: number, s: RocketStats, team: Team, big = true): Blast {
+  return {
+    x, y, groundDamage: s.damage, groundRange: s.range, unitDamage: s.damage, unitRange: s.range * 1.5,
+    killRange: s.range, force: s.blastForce * 20, extraY: s.blastForceExtraY, team, big,
+  };
+}
+
+/** MookSuicide.MakeEffects */
+export function suicideBlast(x: number, y: number, s: { range: number; blastForce: number }): Blast {
+  return {
+    x, y, groundDamage: SUICIDE_GROUND_DAMAGE, groundRange: s.range, unitDamage: SUICIDE_UNIT_DAMAGE,
+    unitRange: s.range, killRange: s.range, force: s.blastForce * SUICIDE_FORCE_M, extraY: SUICIDE_EXTRA_Y,
+    team: 'enemy', big: true,
+  };
+}
+
+/** BarrelBlock explosion: fired as playerNum 15, so it hurts everyone. */
+export function barrelBlast(x: number, y: number, range: number): Blast {
+  return {
+    x, y: y + BARREL_Y_OFFSET, groundDamage: BARREL_GROUND_DAMAGE, groundRange: range,
+    unitDamage: BARREL_UNIT_DAMAGE, unitRange: range * BARREL_UNIT_RANGE_M, killRange: range,
+    force: BARREL_FORCE, extraY: BARREL_EXTRA_Y, team: 'neutral', big: true,
+  };
+}
+
+/** Map.ExplodeUnits: enemies (playerNum < 0) are always hurt; players only by other teams. */
+export function canDamage(blast: BlastTeam, unit: Team): boolean {
+  return unit === 'enemy' || blast !== unit;
+}
+
+export function applyBlast(map: TileMap, units: readonly Unit[], b: Blast): BlastResult {
+  const destroyed: BlastResult['destroyed'] = [];
+  for (const [c, r] of map.cellsInCircle(b.x, b.y, b.groundRange * 0.5)) {
+    const kind = map.damage(c, r, b.groundDamage);
+    if (kind) destroyed.push({ c, r, kind });
+  }
+  const killed: number[] = [];
+  for (const u of units) {
+    if (u.dead) continue;
+    let dx = u.x - b.x;
+    const dy = u.y + UNIT_HEIGHT / 2 - b.y;
+    if (Math.abs(dx) >= b.unitRange || Math.abs(dy) >= b.unitRange) continue;
+    const d2 = dx * dx + dy * dy;
+    if (d2 < b.killRange * b.killRange) {
+      if (canDamage(b.team, u.team)) {
+        const d = Math.max(Math.sqrt(d2), 1);
+        let extraY = b.extraY;
+        if (Math.abs(dx) < b.unitRange * 0.4) {
+          dx *= 0.66;
+          extraY *= 1.5;
+        }
+        knock(u, (dx / d) * b.force, (dy / d) * b.force + extraY);
+        if (damageUnit(u, b.unitDamage)) killed.push(u.id);
+      } else {
+        const d = Math.max(Math.sqrt(d2), MIN_KNOCK_DIST);
+        knock(u, (dx / d) * b.force, (dy / d) * b.force + b.extraY);
+      }
+    } else if (d2 < b.unitRange * b.unitRange) {
+      const d = Math.max(Math.sqrt(d2), MIN_KNOCK_DIST);
+      knock(u, (dx / d) * b.force, (dy / d) * b.force + b.extraY);
+    }
+  }
+  return { destroyed, killed };
+}
