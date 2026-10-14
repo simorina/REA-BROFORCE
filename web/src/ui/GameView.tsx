@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createHudStore } from '../app/hudStore';
 import { Keyboard } from '../app/input';
 import { createLoop } from '../app/loop';
@@ -10,6 +10,7 @@ import { createWorld, stepWorld } from '../engine/world';
 import { buildLevel1 } from '../levels/level1';
 import { isSheetKey, type Assets } from '../render/assets';
 import { VIEW_H, VIEW_W } from '../render/camera';
+import { fitCanvas } from '../render/layout';
 import { Renderer } from '../render/renderer';
 import { Hud } from './Hud';
 
@@ -27,6 +28,13 @@ interface Props {
 export function GameView({ assets, voice, onEnd }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hud = useMemo(() => createHudStore({ lives: LIVES_START, ammo: assets.stats.units.bro.specialAmmo }), [assets]);
+  const [size, setSize] = useState(() => fitCanvas(window.innerWidth, window.innerHeight));
+
+  useEffect(() => {
+    const onResize = () => setSize(fitCanvas(window.innerWidth, window.innerHeight));
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     const ctx = canvasRef.current?.getContext('2d');
@@ -62,7 +70,7 @@ export function GameView({ assets, voice, onEnd }: Props) {
   }, [assets, voice, onEnd, hud]);
 
   return (
-    <div className="game">
+    <div className="game" style={{ width: size.width, height: size.height }}>
       <canvas ref={canvasRef} width={VIEW_W * SCALE} height={VIEW_H * SCALE} />
       <Hud store={hud} portrait={`/${assets.sheets[BRO_SHEET].file}`} />
     </div>

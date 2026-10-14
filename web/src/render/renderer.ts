@@ -5,6 +5,7 @@ import type { Effect, World } from '../engine/world';
 import { loopFrame, prisonerFrame, stripFrame, unitFrame } from './animation';
 import type { Assets, SheetKey } from './assets';
 import { VIEW_H, VIEW_W, followCamera, type Camera } from './camera';
+import { clampBubbleLeft } from './layout';
 
 const ENEMY_SHEETS: Record<Exclude<UnitKind, 'bro'>, SheetKey> = {
   mook: 'mook', mook_suicide: 'mook_suicide', mook_bazooka: 'mook_bazooka',
@@ -166,7 +167,7 @@ export class Renderer {
     ctx.font = `bold ${7 * s}px ui-monospace, Consolas, monospace`;
     const width = ctx.measureText(text).width + 8 * s;
     const height = 14 * s;
-    const left = this.sx(x) - width / 2;
+    const left = clampBubbleLeft(this.sx(x), width, ctx.canvas.width);
     const top = this.sy(y) - height;
     ctx.fillStyle = '#fff';
     ctx.strokeStyle = '#000';
