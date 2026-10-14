@@ -27,3 +27,5 @@ pre { text-align: left; background: #221d19; padding: 12px; white-space: pre-wra
 .lives { font-weight: 700; }
 .pip { display: inline-block; width: 10px; height: 14px; margin-right: 4px; background: var(--danger); border: 2px solid var(--fg); }
 .end h1 { color: var(--accent); }
+.pause { position: absolute; inset: 0; display: grid; place-content: center; gap: 8px; text-align: center; background: rgba(20, 17, 15, 0.72); }
+.pause h2 { margin: 0 0 8px; color: var(--accent); letter-spacing: 0.1em; }

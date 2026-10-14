@@ -27,6 +27,7 @@ export function Menu({ voice, onToggleVoice, onStart }: Props) {
           <tr><td>X / J</td><td>Calcia un pallone esplosivo</td></tr>
           <tr><td>C / K</td><td>Attacco aereo (con ↓ lo lanci corto)</td></tr>
           <tr><td>Shift</td><td>Scatto</td></tr>
+          <tr><td>Esc / P</td><td>Pausa</td></tr>
         </tbody>
       </table>
       <label className="toggle">

@@ -51,6 +51,8 @@ export function App() {
   if (screen.name === 'missing') return <MissingData reason={screen.reason} />;
   if (!assets) return null;
   if (screen.name === 'menu') return <Menu voice={voice} onToggleVoice={toggleVoice} onStart={start} />;
-  if (screen.name === 'playing') return <GameView key={run} assets={assets} voice={voice} onEnd={onEnd} />;
+  if (screen.name === 'playing') {
+    return <GameView key={run} assets={assets} voice={voice} onEnd={onEnd} onMenu={() => setScreen({ name: 'menu' })} />;
+  }
   return <EndScreen result={screen.result} onRestart={start} onMenu={() => setScreen({ name: 'menu' })} />;
 }

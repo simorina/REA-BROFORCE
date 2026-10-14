@@ -13,7 +13,8 @@ with UnityPy 1.25.4 from `networkobjects`, `sharedtextures` and `sharedassets` b
 | Run accel speed·2 (dash ·4), start at 25, extra ·2.6 below 50 | `TestVanDammeAnim.AddSpeedLeft/Right` |
 | Dash ×1.33 | `TestVanDammeAnim.dashSpeedM` |
 | Ground friction 10 | `TestVanDammeAnim.frictionM` |
-| Jump grace 0.1 s | `TestVanDammeAnim.Jump` |
+| Held jump: yI stays at jumpForce for JUMP_TIME 0.123 s while jump is held; a ceiling ends it | `TestVanDammeAnim.JUMP_TIME`, `jumpTime` handling |
+| Jump buffer 0.2 s: jump pressed in the air fires on landing if still held | `pressedJumpInAirSoJumpIfTouchGroundGrace` |
 | Wall climb: boost 190, gravity ×0.66, 8 frames × 0.033 s | `AnimateWallClimb`, `ApplyWallClimbingGravity` |
 | Half width 6, head height 15 | `TestVanDammeAnim.halfWidth`, `Unit.headHeight` |
 | Mook bullet 250, bazooka rocket 100, bazooka delay 1.4 s | `Mook.UseFire`, `MookBazooka.UseFire/FireWeapon` |
@@ -39,7 +40,8 @@ the bow tie stays black (it shares the outline colour).
 ## Design values (not in Broforce)
 
 Football: kick (220, 160), bounce 0.7, friction 0.85, explodes on contact / after 3 bounces / 1.6 s,
-damage 5, range 32. Airstrike fuse 1.0 s (the prefab's `life` is 0; the real fuse is set elsewhere).
+damage 5, range 32. Airstrike fuse 1.0 s (the prefab's `life` is 0; the real fuse is set elsewhere). Coyote time 0.1 s after
+walking off a ledge.
 Mook bursts of 3, 1 s pause, 0.4 s reaction, turn every 2.5 s. Lives 3, respawn 1.5 s, extraction 3 s.
 
 ## Simplified or left out

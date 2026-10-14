@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { createHudStore } from '../app/hudStore';
 import { Keyboard } from '../app/input';
 import { createLoop } from '../app/loop';
+import { createPause, isPauseKey } from '../app/pause';
 import { speak } from '../app/speech';
 import { BROLUSCONI } from '../bros';
 import { LIVES_START } from '../engine/constants';
@@ -23,11 +24,14 @@ interface Props {
   assets: Assets;
   voice: boolean;
   onEnd: (result: 'won' | 'lost') => void;
+  onMenu: () => void;
 }
 
-export function GameView({ assets, voice, onEnd }: Props) {
+export function GameView({ assets, voice, onEnd, onMenu }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hud = useMemo(() => createHudStore({ lives: LIVES_START, ammo: assets.stats.units.bro.specialAmmo }), [assets]);
+  const pause = useMemo(() => createPause(), []);
+  const paused = useSyncExternalStore(pause.subscribe, pause.get);
   const [size, setSize] = useState(() => fitCanvas(window.innerWidth, window.innerHeight));
 
   useEffect(() => {
@@ -43,11 +47,24 @@ export function GameView({ assets, voice, onEnd }: Props) {
     const renderer = new Renderer(ctx, assets, SCALE, BRO_SHEET);
     const keyboard = new Keyboard();
     keyboard.attach(window);
+    const onPauseKey = (e: KeyboardEvent) => {
+      if (!isPauseKey(e.code)) return;
+      e.preventDefault();
+      pause.toggle();
+    };
+    const onBlur = () => pause.set(true);
+    const onVisibility = () => {
+      if (document.hidden) pause.set(true);
+    };
+    window.addEventListener('keydown', onPauseKey);
+    window.addEventListener('blur', onBlur);
+    document.addEventListener('visibilitychange', onVisibility);
     let prev: Controls = NO_CONTROLS;
     let ended = false;
     let endTimer = 0;
     const loop = createLoop(
       (dt) => {
+        if (pause.get()) return;
         const controls = keyboard.snapshot();
         stepWorld(world, controls, prev, dt);
         prev = controls;
@@ -65,14 +82,26 @@ export function GameView({ assets, voice, onEnd }: Props) {
     return () => {
       loop.stop();
       keyboard.detach();
+      window.removeEventListener('keydown', onPauseKey);
+      window.removeEventListener('blur', onBlur);
+      document.removeEventListener('visibilitychange', onVisibility);
       window.clearTimeout(endTimer);
     };
-  }, [assets, voice, onEnd, hud]);
+  }, [assets, voice, onEnd, hud, pause]);
 
   return (
     <div className="game" style={{ width: size.width, height: size.height }}>
       <canvas ref={canvasRef} width={VIEW_W * SCALE} height={VIEW_H * SCALE} />
       <Hud store={hud} portrait={`/${assets.sheets[BRO_SHEET].file}`} />
+      {paused && (
+        <div className="pause">
+          <h2>PAUSA</h2>
+          <button onClick={() => pause.set(false)} autoFocus>
+            Riprendi (Esc)
+          </button>
+          <button onClick={onMenu}>Menu</button>
+        </div>
+      )}
     </div>
   );
 }
