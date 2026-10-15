@@ -4,6 +4,7 @@ import datetime
 import os
 import sys
 
+from . import effects
 from .catalog import SPRITES, TEXTURES, VALUES
 from .manifest import OutputWriter
 from .repaint import repaint
@@ -58,6 +59,7 @@ def run(data_dir: str, out_dir: str) -> None:
                            **{k: plain(v) for k, v in fields.items()}}
     out.write_json("sheets.json", sheets, "SpriteSM frame grids")
     out.write_json("values.json", values, "prefab MonoBehaviour fields")
+    effects.extract(os.path.join(data_dir, "StreamingAssets"), out)
     out.finish({"generatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(), "dataDir": data_dir})
 
 

@@ -28,7 +28,15 @@ class ValuesRef:
 BUNDLES = ("networkobjects.assetbundle", "sharedtextures.assetbundle", "sharedassets.assetbundle")
 
 UNIT_FIELDS = ("speed", "_jumpForce", "health", "fireRate", "maxFallSpeed", "canWallClimb", "canDash",
-               "originalSpecialAmmo")
+               "originalSpecialAmmo", "hearingRangeX", "hearingRangeY")
+# PolymorphicAI fields, read from each mook's AI component (MookTrooperAI, MookBazookaAi, SuicideAI)
+AI_FIELDS = ("sightRangeX", "sightRangeY", "attackTime", "sightDelay", "delayBetweenFiring", "patrolBlocksRadius",
+             "minIdleWaitDuration", "maxIdleWaitDuration", "hidingLookXRange")
+MOOK_FIELDS = UNIT_FIELDS + ("canHideInGrass", "canBeSetOnFire", "willPanicWhenOnFire")
+PATH_FIELDS = ("capabilities", "agentSize")  # PathAgent
+DOOR_FIELDS = ("spawningRate", "maxMookCount", "chanceToSpawnSuicideMook", "maxAlarmedMooksCount", "closedAtStart",
+               "limitedNumberOfMooks", "maxMooksOnCollapse", "maxMookCountAfterCollapse", "spawnEscapingUnitsOnFire",
+               "explodeAtEnd", "mooksAlwaysWalkOut", "mooksStartSuspicious")
 BULLET_FIELDS = ("damage", "life")
 ROCKET_FIELDS = ("damage", "range", "blastForce", "blastForceExtraY", "life")
 GRENADE_FIELDS = ("bounceM", "frictionM")
@@ -38,6 +46,7 @@ SPRITES = (
     SpriteRef("mook", "MookTrooper", "ZMook", True),
     SpriteRef("mook_suicide", "MookSuicide", "ZMookSuicide", True),
     SpriteRef("mook_bazooka", "MookBazooka", "ZMookBazooka", True),
+    SpriteRef("mook_scout", "ScoutMook", "ZMookScout", True),
     SpriteRef("prisoner", "RescueBro", "Hobro", True),
     SpriteRef("cage", "Cage", "CageBig", True),
     SpriteRef("helicopter", "Helicopter", "Helicopter", True),
@@ -54,15 +63,23 @@ SPRITES = (
 TEXTURES = (
     TextureRef("bullet", "Bullet Enemy"),
     TextureRef("flag", "AmericanFlagTiny"),
-    TextureRef("explosion", "ExplosionBallFlame"),
-    TextureRef("explosion_small", "ExplosionSmallBall"),
 )
 
 VALUES = (
     ValuesRef("bro_base", "DoubleBroSeven", "DoubleBroSeven", UNIT_FIELDS),
-    ValuesRef("mook", "MookTrooper", "ZMook", UNIT_FIELDS),
-    ValuesRef("mook_suicide", "MookSuicide", "ZMookSuicide", UNIT_FIELDS),
-    ValuesRef("mook_bazooka", "MookBazooka", "ZMookBazooka", UNIT_FIELDS),
+    ValuesRef("mook", "MookTrooper", "ZMook", MOOK_FIELDS),
+    ValuesRef("mook_suicide", "MookSuicide", "ZMookSuicide", MOOK_FIELDS),
+    ValuesRef("mook_bazooka", "MookBazooka", "ZMookBazooka", MOOK_FIELDS),
+    ValuesRef("ai_mook", "MookTrooperAI", "ZMook", AI_FIELDS),
+    ValuesRef("ai_mook_suicide", "SuicideAI", "ZMookSuicide", AI_FIELDS),
+    ValuesRef("ai_mook_bazooka", "MookBazookaAi", "ZMookBazooka", AI_FIELDS),
+    ValuesRef("mook_scout", "ScoutMook", "ZMookScout", MOOK_FIELDS + ("runSpeed",)),
+    ValuesRef("ai_mook_scout", "ScoutAI", "ZMookScout", AI_FIELDS),
+    ValuesRef("path_mook", "PathAgent", "ZMook", PATH_FIELDS),
+    ValuesRef("path_mook_scout", "PathAgent", "ZMookScout", PATH_FIELDS),
+    ValuesRef("path_mook_suicide", "PathAgent", "ZMookSuicide", PATH_FIELDS),
+    ValuesRef("path_mook_bazooka", "PathAgent", "ZMookBazooka", PATH_FIELDS),
+    ValuesRef("mook_door", "MookDoor", "DoodadMookDoor", DOOR_FIELDS),
     ValuesRef("bullet", "Projectile", "Bullet", BULLET_FIELDS),
     ValuesRef("rocket_mook", "RocketSeeking", "Rocket Mook Bazooka", ROCKET_FIELDS),
     ValuesRef("bomb", "RocketBombardment", "Rocket Bombardment", ROCKET_FIELDS),
@@ -72,4 +89,5 @@ VALUES = (
     ValuesRef("block_brick", "BrickBlock", "WallBrick1", ("health",)),
     ValuesRef("block_steel", "SteelBlock", "SteelBlock", ("health",)),
     ValuesRef("block_barrel", "BarrelBlock", "Barrel 1", ("health", "range")),
+    ValuesRef("grass", "DoodadGrass", "Desert Long Grass Doodad", ("health", "width", "height")),
 )

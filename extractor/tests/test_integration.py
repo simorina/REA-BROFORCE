@@ -22,8 +22,56 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert values["mook"]["health"] == 3
     assert values["bomb"]["range"] == 28.0
     assert values["block_barrel"]["range"] == 50.0
+    assert values["mook"]["hearingRangeX"] == 50.0
+    assert values["ai_mook"]["sightDelay"] == pytest.approx(1.66)
+    assert values["ai_mook"]["delayBetweenFiring"] == pytest.approx(1.78)
+    assert values["ai_mook_bazooka"]["sightRangeY"] == 64
+    assert values["ai_mook_suicide"]["sightDelay"] == pytest.approx(0.55)
+    assert values["mook_scout"]["runSpeed"] == 100.0 and values["mook_scout"]["canHideInGrass"] == 0
+    assert values["ai_mook_scout"]["sightDelay"] == pytest.approx(0.2)
+    assert values["path_mook"]["capabilities"]["jumpHeight"] == 3 and values["path_mook"]["agentSize"] == 9.0
+    assert values["path_mook_scout"]["capabilities"]["maxDropDistance"] == 3
+    assert values["mook_door"]["maxMookCount"] == 3 and values["mook_door"]["maxAlarmedMooksCount"] == 5
     sheets = json.loads((tmp_path / "sheets.json").read_text(encoding="utf-8"))
     assert sheets["brolusconi"]["frameW"] == 32 and sheets["brolusconi"]["cols"] == 32
     assert sheets["helicopter"]["frameW"] == 96 and sheets["helicopter"]["cols"] == 21
-    assert sheets["explosion"]["frameW"] == 64 and sheets["explosion"]["cols"] == 16
     assert Image.open(tmp_path / "sprites" / "block_dirt.png").size == (16, 16)
+
+
+def test_extracts_the_desert_background_and_the_effects(tmp_path):
+    run(DATA, str(tmp_path))
+    bg = json.loads((tmp_path / "background.json").read_text(encoding="utf-8"))
+    assert bg["cloudScatter"] == "BlueSky"
+    assert bg["sky"]["parallax"] == [1.0, 1.0]
+    assert [round(l["parallax"][0], 2) for l in bg["near"][:5]] == [0.3] * 5
+    assert (tmp_path / bg["distant"][0]["file"]).is_file()
+    fx = json.loads((tmp_path / "effects.json").read_text(encoding="utf-8"))
+    blood = fx["emitters"]["bloodBig"]
+    assert blood["collision"]["gravity"] == 400.0 and blood["collision"]["leavesDecals"] == 1
+    assert fx["puffs"]["bloodGush1"]["frames"] == 7
+    assert fx["bubbles"]["!"]["animatedRestFrame"] == 10
+    assert [g["name"] for g in fx["gibs"]] == ["BodyArm1", "BodyArm2", "BodyHead", "BodyLeg1", "BodyLeg2", "BodyTorso"]
+    assert fx["blocks"]["dirt"]["customColors"] is not None
+    assert set(fx["blocks"]["brick"]["blood"]) == {"top", "bottom", "left", "right"}
+    assert fx["bubbles"]["rambro"]["animatedBubble"] == 0
+    assert fx["suicide"]["explosionSize"] == "small" and fx["airstrike"]["range"] == 48.0 and fx["barrelFullExplosion"]
+    assert fx["rangePop"]["w"] == 128.0 and fx["plume"]["deathOnBounce"] == 1
+    shuriken = json.loads((tmp_path / "shuriken.json").read_text(encoding="utf-8"))
+    medium = shuriken["systems"]["medium"]
+    assert medium[0]["name"] == "ExplosionSepSmoke" and medium[0]["sub"] == [{"system": 1, "type": 0, "properties": 2}]
+    assert medium[1]["isSub"] and medium[1]["renderer"]["material"]["ramp"] == "smokeRamp"
+    assert all(s["renderer"]["material"]["worldToPixel"] == 1.0 for v in shuriken["systems"].values() for s in v)
+    for name, t in shuriken["textures"].items():
+        assert Image.open(tmp_path / t["file"]).size == (t["w"] * 2, t["h"]), name
+    door = fx["door"]
+    assert Image.open(tmp_path / door["frame"]["file"]).size == (48, 48)
+    assert Image.open(tmp_path / door["frameDestroyed"]["file"]).size == (48, 48)
+    assert door["inside"]["offset"][1] == 8.0 and len(door["smoke"]) == 2 and door["sparks"]["bounceM"] == pytest.approx(0.4)
+    assert sorted(f["name"] for f in fx["flames"]) == ["Flame1", "Flame2", "Flame3"]
+    flame = fx["flames"][0]
+    assert Image.open(tmp_path / flame["file"]).size == (flame["frameW"] * flame["frames"], flame["frameH"])
+    assert Image.open(tmp_path / fx["scoutDisarmed"]).size == (1024, 512)
+    files = {e["texture"] for e in fx["emitters"].values()} | {p["file"] for p in fx["puffs"].values()}
+    files |= {door[k]["file"] for k in ("frame", "frameDestroyed", "inside", "insideDestroyed", "sparks")}
+    for rel in files:
+        assert (tmp_path / rel).is_file(), rel
