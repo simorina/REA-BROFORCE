@@ -11,6 +11,8 @@ export interface MoveIntent {
   jumpPressed: boolean;
   jumpHeld: boolean;
   dash: boolean;
+  speed?: number; // overrides stats.speed, as MookSuicide does while charging
+  down?: boolean; // ducking (a hidden mook crouches in the grass)
 }
 
 export const NO_INTENT: MoveIntent = { dir: 0, jumpPressed: false, jumpHeld: false, dash: false };
@@ -26,25 +28,29 @@ export function touchesWall(u: Unit, dir: -1 | 1, map: TileMap): boolean {
 }
 
 /** TestVanDammeAnim.AddSpeedLeft/Right, plus ground friction when there's no input. */
-function runHorizontal(u: Unit, dir: -1 | 0 | 1, t: number): void {
+function runHorizontal(u: Unit, dir: -1 | 0 | 1, speed: number, t: number): void {
   if (dir === 0) {
     if (u.onGround) u.xI *= 1 - Math.min(1, t * GROUND_FRICTION_M);
     return;
   }
   u.facing = dir;
-  const max = u.stats.speed * (u.dashing ? DASH_SPEED_M : 1);
+  const max = speed * (u.dashing ? DASH_SPEED_M : 1);
   if (u.xI * dir < MIN_START_SPEED) u.xI = dir * MIN_START_SPEED;
-  u.xI += dir * u.stats.speed * (u.dashing ? DASH_ACCEL_M : ACCEL_M) * t;
+  u.xI += dir * speed * (u.dashing ? DASH_ACCEL_M : ACCEL_M) * t;
   if (u.xI * dir > max) u.xI = dir * max;
-  else if (u.xI * dir < LOW_SPEED_THRESHOLD) u.xI += dir * u.stats.speed * LOW_SPEED_ACCEL_M * t;
+  else if (u.xI * dir < LOW_SPEED_THRESHOLD) u.xI += dir * speed * LOW_SPEED_ACCEL_M * t;
 }
 
 function moveAndCollide(u: Unit, map: TileMap, t: number, now: number): void {
-  const nx = u.x + u.xI * t;
+  // TestVanDammeAnim.ConstrainToWalls: xIBlast decays, then the unit moves by xI + xIBlast
+  if (!u.dashing) u.xIBlast *= 1 - t * 4;
+  const vx = u.xI + u.xIBlast;
+  const nx = u.x + vx * t;
   if (unitHitsSolid(map, nx, u.y)) {
-    if (u.xI > 0) u.x = cellLeft(getColumn(nx + UNIT_HALF_WIDTH)) - UNIT_HALF_WIDTH - EPS;
-    else if (u.xI < 0) u.x = cellLeft(getColumn(nx - UNIT_HALF_WIDTH)) + TILE + UNIT_HALF_WIDTH + EPS;
+    if (vx > 0) u.x = cellLeft(getColumn(nx + UNIT_HALF_WIDTH)) - UNIT_HALF_WIDTH - EPS;
+    else if (vx < 0) u.x = cellLeft(getColumn(nx - UNIT_HALF_WIDTH)) + TILE + UNIT_HALF_WIDTH + EPS;
     u.xI = 0;
+    u.xIBlast = 0;
   } else {
     u.x = nx;
   }
@@ -76,7 +82,8 @@ export function stepUnit(u: Unit, intent: MoveIntent, map: TileMap, t: number, n
     if (u.yI < 0) u.yI = 0;
     u.dashing = intent.dash && u.stats.canDash && intent.dir !== 0;
   }
-  runHorizontal(u, intent.dir, t);
+  u.ducking = !!intent.down && u.onGround && intent.dir === 0;
+  runHorizontal(u, intent.dir, intent.speed ?? u.stats.speed, t);
   if (u.jumpBuffer > 0) u.jumpBuffer -= t;
   const canJump = u.yI <= 0 && (u.onGround || now - u.lastGroundedTime < JUMP_GRACE);
   if (canJump && (intent.jumpPressed || (u.jumpBuffer > 0 && intent.jumpHeld))) {

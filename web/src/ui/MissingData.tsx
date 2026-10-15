@@ -5,7 +5,10 @@ export function MissingData({ reason }: { reason: string }) {
   return (
     <div className="screen missing">
       <h1>Mancano i dati del gioco</h1>
-      <p>Il remake usa sprite e valori estratti dalla tua installazione di Broforce. Esegui l'estrattore una volta:</p>
+      <p>
+        Il remake usa sprite e valori estratti dalla tua installazione di Broforce. Esegui l'estrattore (di nuovo, se
+        hai aggiornato il remake e mancano dei valori):
+      </p>
       <pre>{COMMAND}</pre>
       <p>Poi ricarica la pagina.</p>
       <p className="note">Dettaglio: {reason}</p>

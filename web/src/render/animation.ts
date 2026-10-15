@@ -1,4 +1,15 @@
-import { CLIMB_FRAME_RATE, JUMP_FRAME_RATE, RUN_FRAME_RATE } from '../engine/constants';
+import { CLIMB_FRAME_RATE, FLEX_FRAMES, FLEX_ROW, JUMP_FRAME_RATE, RUN_FRAME_RATE } from '../engine/constants';
+
+const PANIC_FRAME_RATE = 0.044455; // Mook.AnimateRunning while burning, blind or scared
+const SPECIAL2_FRAME_RATE = 0.045; // MookSuicide.AnimateSpecial2, with frame 9 held for 1 s
+
+/** MookSuicide.AnimateSpecial2's frame t seconds in. */
+export function special2Frame(t: number): number {
+  const held = 9 * SPECIAL2_FRAME_RATE;
+  if (t < held) return Math.floor(t / SPECIAL2_FRAME_RATE);
+  if (t < held + 1) return 9;
+  return Math.min(16, 10 + Math.floor((t - held - 1) / SPECIAL2_FRAME_RATE));
+}
 import type { Unit } from '../engine/types';
 
 export interface Frame {
@@ -9,7 +20,15 @@ export interface Frame {
 /** Body frame after TestVanDammeAnim's Animate* methods (lowerLeftPixel y = (row + 1) * 32). */
 export function unitFrame(u: Unit): Frame {
   if (u.dead) return { col: u.onGround ? 5 : 4, row: 0 }; // AnimateActualDeath / AnimateFallingDeath
+  if (u.special2 >= 0) return { col: special2Frame(u.special2), row: 7 }; // MookSuicide.AnimateSpecial2
+  if (u.flex) return { col: Math.min(u.flex.frame, FLEX_FRAMES - 1), row: FLEX_ROW }; // AnimateGesture (Flex)
   if (u.wallClimbing) return { col: 12 + (Math.floor(u.animTime / CLIMB_FRAME_RATE) % 5), row: 2 }; // AnimateWallClimb
+  // Mook.AnimateRunning while burning, blind or panicking; ScoutMook's has four frames and also waves
+  const scout = u.kind === 'mook_scout';
+  if (u.onGround && (u.blindTime > 0 || u.burnTime > 0 || (scout && u.waveTime > 0)) && Math.abs(u.xI) > 1) {
+    return { col: 21 + (Math.floor(u.animTime / PANIC_FRAME_RATE) % (scout ? 4 : 8)), row: 0 };
+  }
+  if (u.ducking) return { col: 6, row: 0 }; // AnimateActualIdleDuckingFrames
   if (!u.onGround) {
     // AnimateActualJumpingFrames (useNewFrames)
     const fast = Math.abs(u.xI) > 50;

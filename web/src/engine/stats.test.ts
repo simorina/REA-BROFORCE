@@ -16,4 +16,11 @@ describe('parseValues', () => {
     const raw = { ...RAW_VALUES, bullet: { damage: 'x', life: 0.45 } };
     expect(() => parseValues(raw)).toThrow('bullet.damage');
   });
+
+  it('reads each mook AI component', () => {
+    expect(parseValues(RAW_VALUES).ai.mook.sightDelay).toBe(1.66);
+    const raw = { ...RAW_VALUES, ai_mook_bazooka: { ...RAW_VALUES.ai_mook_bazooka, sightRangeY: undefined } };
+    expect(() => parseValues(raw)).toThrow('ai_mook_bazooka.sightRangeY');
+  });
 });
+

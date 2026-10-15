@@ -1,7 +1,7 @@
 import {
   BARREL_EXTRA_Y, BARREL_FORCE, BARREL_GROUND_DAMAGE, BARREL_UNIT_DAMAGE, BARREL_UNIT_RANGE_M,
-  BARREL_Y_OFFSET, MIN_KNOCK_DIST, SUICIDE_EXTRA_Y, SUICIDE_FORCE_M, SUICIDE_GROUND_DAMAGE,
-  SUICIDE_UNIT_DAMAGE, UNIT_HEIGHT,
+  BARREL_Y_OFFSET, MIN_KNOCK_DIST, NOISE_BARREL, NOISE_ROCKET, SUICIDE_EXTRA_Y, SUICIDE_FORCE_M,
+  SUICIDE_GROUND_DAMAGE, SUICIDE_UNIT_DAMAGE, UNIT_BOX_HEIGHT,
 } from './constants';
 import type { TileMap } from './map';
 import { damageUnit, knock } from './units';
@@ -18,7 +18,12 @@ export interface Blast {
   force: number;
   extraY: number;
   team: BlastTeam;
-  big: boolean; // which explosion sprite to draw
+  big: boolean; // shakes the screen
+  noise: number; // Map.DisturbWildLife range: mooks this close (plus their hearing) turn to look
+  source: 'rocket' | 'bomb' | 'football' | 'barrel' | 'suicide'; // whose MakeEffects to show
+  owner?: Unit; // the suicide mook that went off
+  doodadDamage: number; // Map.DamageDoodads: what long grass and other doodads take ...
+  doodadRange: number; // ... within this range
 }
 
 export interface BlastResult {
@@ -27,19 +32,22 @@ export interface BlastResult {
 }
 
 /** Rocket.MakeEffects: DamageGround(damage, range); ExplodeUnits(range * 1.5, range, blastForce * 20, blastForceExtraY). */
-export function rocketBlast(x: number, y: number, s: RocketStats, team: Team, big = true): Blast {
+export function rocketBlast(x: number, y: number, s: RocketStats, team: Team, big = true,
+  source: Blast['source'] = 'rocket'): Blast {
   return {
     x, y, groundDamage: s.damage, groundRange: s.range, unitDamage: s.damage, unitRange: s.range * 1.5,
-    killRange: s.range, force: s.blastForce * 20, extraY: s.blastForceExtraY, team, big,
+    killRange: s.range, force: s.blastForce * 20, extraY: s.blastForceExtraY, team, big, noise: NOISE_ROCKET, source,
+    doodadDamage: s.damage, doodadRange: s.range * 0.6, // Rocket.MakeEffects
   };
 }
 
-/** MookSuicide.MakeEffects */
+/** MookSuicide.MakeEffects: fired by an enemy (playerNum < 0), so it alerts no one. */
 export function suicideBlast(x: number, y: number, s: { range: number; blastForce: number }): Blast {
   return {
     x, y, groundDamage: SUICIDE_GROUND_DAMAGE, groundRange: s.range, unitDamage: SUICIDE_UNIT_DAMAGE,
     unitRange: s.range, killRange: s.range, force: s.blastForce * SUICIDE_FORCE_M, extraY: SUICIDE_EXTRA_Y,
-    team: 'enemy', big: true,
+    team: 'enemy', big: true, noise: 0, source: 'suicide',
+    doodadDamage: 20, doodadRange: s.range, // MookSuicide.MakeEffects
   };
 }
 
@@ -48,7 +56,8 @@ export function barrelBlast(x: number, y: number, range: number): Blast {
   return {
     x, y: y + BARREL_Y_OFFSET, groundDamage: BARREL_GROUND_DAMAGE, groundRange: range,
     unitDamage: BARREL_UNIT_DAMAGE, unitRange: range * BARREL_UNIT_RANGE_M, killRange: range,
-    force: BARREL_FORCE, extraY: BARREL_EXTRA_Y, team: 'neutral', big: true,
+    force: BARREL_FORCE, extraY: BARREL_EXTRA_Y, team: 'neutral', big: true, noise: NOISE_BARREL, source: 'barrel',
+    doodadDamage: BARREL_GROUND_DAMAGE, doodadRange: range,
   };
 }
 
@@ -65,9 +74,10 @@ export function applyBlast(map: TileMap, units: readonly Unit[], b: Blast): Blas
   }
   const killed: number[] = [];
   for (const u of units) {
-    if (u.dead) continue;
+    // corpses are knocked and damaged too, which is how they fly and gib; invulnerable units are skipped
+    if (u.gibbed || u.invulnerable > 0) continue;
     let dx = u.x - b.x;
-    const dy = u.y + UNIT_HEIGHT / 2 - b.y;
+    const dy = u.y + UNIT_BOX_HEIGHT / 2 - b.y;
     if (Math.abs(dx) >= b.unitRange || Math.abs(dy) >= b.unitRange) continue;
     const d2 = dx * dx + dy * dy;
     if (d2 < b.killRange * b.killRange) {

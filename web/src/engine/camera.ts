@@ -1,4 +1,4 @@
-import { CAMERA_LERP, CAMERA_Y_OFFSET, HALF_TILE, TILE } from '../engine/constants';
+import { CAMERA_LERP, CAMERA_Y_OFFSET, HALF_TILE, TILE } from './constants';
 
 export const VIEW_W = 400; // world units visible across (16:9)
 export const VIEW_H = 225;
@@ -18,3 +18,11 @@ export function followCamera(cam: Camera, target: { x: number; y: number }, map:
   cam.x = clamp(cam.x, -HALF_TILE + VIEW_W / 2, map.cols * TILE - HALF_TILE - VIEW_W / 2);
   cam.y = clamp(cam.y, -HALF_TILE + VIEW_H / 2, map.rows * TILE - HALF_TILE - VIEW_H / 2);
 }
+
+/** SortOfFollow.IsItSortOfVisible: inside the view grown by a buffer (0 for SetResolutionCamera.IsItVisible). */
+export function isVisible(cam: Camera, x: number, y: number, bufferX = 0, bufferY = 0): boolean {
+  return Math.abs(x - cam.x) < VIEW_W / 2 + bufferX && Math.abs(y - cam.y) < VIEW_H / 2 + bufferY;
+}
+
+/** SortOfFollow.GetScreenMaxY */
+export const screenMaxY = (cam: Camera): number => cam.y + VIEW_H / 2;

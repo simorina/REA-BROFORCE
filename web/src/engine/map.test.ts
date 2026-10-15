@@ -68,4 +68,23 @@ describe('TileMap', () => {
     expect(m.boxHitsSolid(12, 8, 24, 23)).toBe(false);
     expect(m.boxHitsSolid(12, 7, 25, 23)).toBe(true);
   });
+
+  it('a destroyed block with a replacement turns into it (Block.replaceOnCollapse)', () => {
+    const m = new TileMap(1, 1);
+    const dirt = makeBlock('dirt', TEST_STATS);
+    dirt.replacement = makeBlock('steel', TEST_STATS);
+    m.set(0, 0, dirt);
+    expect(m.damage(0, 0, 10)).toBe('dirt');
+    expect(m.get(0, 0)?.kind).toBe('steel');
+  });
+
+  it('rayBlocked stops short and only counts real blocks', () => {
+    const m = new TileMap(10, 3);
+    m.set(5, 1, makeBlock('dirt', TEST_STATS)); // x 72..88, y 8..24
+    expect(m.rayBlocked(0, 16, 150, 16)).toBe(true);
+    expect(m.rayBlocked(0, 30, 150, 30)).toBe(false);
+    expect(m.rayBlocked(0, 16, 76, 16, 6)).toBe(false); // ends 6 short of the block
+    expect(m.rayBlocked(-50, 16, -10, 16)).toBe(false); // outside the map is open
+  });
 });
+

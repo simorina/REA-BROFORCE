@@ -1,4 +1,4 @@
-import type { LevelData } from '../engine/level';
+import type { Cell, LevelData, ParallaxDoodad } from '../engine/level';
 
 const COLS = 120;
 const ROWS = 18;
@@ -30,6 +30,10 @@ export function buildLevel1(): LevelData {
   put(28, 4, 'x');
   put(29, 4, 'x');
   put(33, 4, 'm');
+  // Checkpoints (CheckPoint flagpoles): before the pit, after the hill and after the tunnel.
+  put(35, 4, 'C');
+  put(56, 4, 'C');
+  put(82, 4, 'C');
   // A suicide mook past the pit; a hill with a steel core and a bazooka mook on top.
   put(42, 4, 'k');
   fill(44, 54, 4, 5, 'd');
@@ -50,10 +54,34 @@ export function buildLevel1(): LevelData {
   fill(92, 93, 4, 8, 'b');
   put(92, 9, 'm');
   put(97, 4, 'z');
-  // End: the last prisoner, the flag and a steel wall.
+  // A scout past the tower, who runs for the mook door between the last prisoner and the flag.
+  put(99, 4, 'o');
+  // End: the last prisoner, the door, the flag and a steel wall.
   put(104, 4, 'c');
+  put(108, 4, 'D');
   put(114, 4, 'F');
   fill(119, 119, 4, ROWS - 1, 's');
 
-  return { cols: COLS, rows: ROWS, tiles: grid.map((row) => row.join('')) };
+  // Long grass: the open-field mooks wait hidden in it (PolymorphicAI.HideInGrass), more tufts for cover.
+  const grass: Cell[] = [86, 90, 8, 9, 30, 84, 85, 99, 100].map((c) => ({ c, r: 4 }));
+
+  // FlexPowerMapType.SpawnWithAllure: flexing (F) draws the mooks over to have a look
+  return { cols: COLS, rows: ROWS, tiles: grid.map((row) => row.join('')), parallax: hills(), grass, flexPower: 'allure' };
+}
+
+/**
+ * The Desert theme's background hills, spread along the level as a level designer places Parallax1/2/3
+ * doodads. Spacing and heights are ours; each layer's art and parallax factor come from the ThemeHolder.
+ */
+export function hills(): ParallaxDoodad[] {
+  const layers = [
+    { layer: 'distant', from: -800, to: 2700, step: 650, y: 148, variants: 3 },
+    { layer: 'mid', from: -480, to: 2400, step: 470, y: 47, variants: 3 },
+    { layer: 'near', from: -390, to: 2300, step: 430, y: 31, variants: 5 },
+  ] as const;
+  const out: ParallaxDoodad[] = [];
+  for (const l of layers) {
+    for (let x = l.from, i = 0; x <= l.to; x += l.step, i++) out.push({ layer: l.layer, variant: i % l.variants, x, y: l.y });
+  }
+  return out;
 }

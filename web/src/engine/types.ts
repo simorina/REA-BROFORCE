@@ -1,12 +1,14 @@
 export type Team = 'player' | 'enemy';
 export type BlastTeam = Team | 'neutral';
 export type BlockKind = 'dirt' | 'brick' | 'steel' | 'barrel';
-export type UnitKind = 'bro' | 'mook' | 'mook_suicide' | 'mook_bazooka';
+export type UnitKind = 'bro' | 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout';
+export type EnemyKind = Exclude<UnitKind, 'bro'>;
 export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker';
 
 export interface Block {
   kind: BlockKind;
   health: number;
+  replacement?: Block; // Block.replaceOnCollapse: what takes its place when it is destroyed
 }
 
 export interface UnitStats {
@@ -18,6 +20,50 @@ export interface UnitStats {
   canWallClimb: boolean;
   canDash: boolean;
   specialAmmo: number;
+  hearingX: number; // Unit.hearingRangeX/Y: added to a noise's range (Map.DisturbWildLife)
+  hearingY: number;
+  canHideInGrass: boolean; // Mook.canHideInGrass
+  canBeSetOnFire: boolean; // Mook.canBeSetOnFire / willPanicWhenOnFire
+  panicsOnFire: boolean;
+}
+
+/** PolymorphicAI fields from each mook's AI component. */
+export interface AiStats {
+  sightX: number;
+  sightY: number;
+  attackTime: number; // how long a Fire action holds the trigger
+  sightDelay: number; // reaction time after the "!" before the first shot
+  delayBetweenFiring: number;
+  patrolRadius: number; // patrolBlocksRadius
+  minIdleWait: number;
+  maxIdleWait: number;
+  hidingLookX: number; // hidingLookXRange: how close a hidden mook lets the player get
+}
+
+/** PathAgent.capabilities and agentSize (ladders and roof climbing are left out: no such blocks here). */
+export interface PathCaps {
+  canJump: boolean;
+  jumpHeight: number;
+  maxDropDistance: number;
+  canWallClimb: boolean;
+  fudge: boolean;
+  agentSize: number;
+}
+
+/** MookDoor fields. */
+export interface DoorStats {
+  spawningRate: number;
+  maxMookCount: number;
+  chanceSuicide: number;
+  maxAlarmed: number;
+  closedAtStart: boolean;
+  limited: number; // limitedNumberOfMooks, -1 for no limit
+  maxOnCollapse: number;
+  maxAfterCollapse: number;
+  escapeOnFire: boolean; // spawnEscapingUnitsOnFire
+  explodeAtEnd: boolean;
+  alwaysWalkOut: boolean;
+  startSuspicious: boolean;
 }
 
 export interface BulletStats {
@@ -40,6 +86,10 @@ export interface GrenadeStats {
 
 export interface GameStats {
   units: Record<UnitKind, UnitStats>;
+  ai: Record<EnemyKind, AiStats>;
+  paths: Record<EnemyKind, PathCaps>;
+  scoutRunSpeed: number; // ScoutMook.runSpeed: a scout runs this fast once alerted
+  door: DoorStats;
   bullet: BulletStats;
   rocketMook: RocketStats;
   bomb: RocketStats;
@@ -47,16 +97,86 @@ export interface GameStats {
   blocks: Record<BlockKind, { health: number }>;
   barrelRange: number;
   suicide: { range: number; blastForce: number };
+  grass: { health: number; width: number; height: number }; // DoodadGrass
+}
+
+export type MentalState = 'idle' | 'suspicious' | 'alerted' | 'hiding' | 'panicking' | 'attracted';
+export type AiActionType =
+  | 'wait' | 'move' | 'fire' | 'look' | 'greet' | 'question' | 'face' | 'becomeIdle' | 'laugh' | 'jump' | 'special2'
+  | 'followPath';
+
+/** PolymorphicAI's ActionObject: a queued step with a duration and, for move/face/followPath, a grid point. */
+export interface AiAction {
+  type: AiActionType;
+  duration: number;
+  c: number;
+  r: number;
+}
+
+/** PathfindingController's PathPoint: a grid cell and how it is reached. */
+export type PathMoveMode = 'normal' | 'wallClimbLeft' | 'wallClimbRight' | 'jump';
+export interface PathPoint {
+  c: number;
+  r: number;
+  mode: PathMoveMode;
+  g: number; // gValue
+  f: number; // fScore
+  h: number; // fScoreHeuristic
+  previous: PathPoint | null;
+}
+
+/** PathAgent's state between steps. */
+export interface PathAgentState {
+  path: PathPoint[] | null;
+  index: number; // currentNodeIndex
+  stuck: number; // timeStuckOnThisNode
+  reachedCenter: boolean;
+  startX: number; // tileStartPos
+  startY: number;
+  agentX: number; // currentAgentPos (y + 8)
+  agentY: number;
+  targetX: number; // currentTargetWorldPoint
+  targetY: number;
+  direction: -1 | 0 | 1;
+  jitter: -1 | 0 | 1; // jitterPreventionLastMoveDirection
 }
 
 export interface AiState {
-  mode: 'idle' | 'alert' | 'charging' | 'exploded';
-  reaction: number;
-  burstLeft: number;
-  cooldown: number;
-  fuse: number;
-  patrolTimer: number;
-  lostSight: number;
+  mental: MentalState;
+  queue: AiAction[];
+  walkDir: -1 | 1;
+  setup: boolean;
+  grid: Array<{ c: number; r: number }>; // availableGridPoints: where the mook may patrol
+  blockOffset: number; // Map.GetUnitXOffset: spreads mooks standing on the same column
+  seenPlayer: boolean;
+  thoughtsSinceSeen: number;
+  suspiciousThinks: number;
+  stuckTime: number;
+  sameSpotTime: number;
+  lastC: number;
+  lastR: number;
+  bubble: '!' | '?' | null;
+  bubbleTime: number;
+  attractC: number; // PolymorphicAI.attractPoint
+  attractR: number;
+  wasJump: boolean;
+  agent: PathAgentState;
+  repathCount: number;
+  speed: number | null; // the mook's speed when something changed it (ScoutAI: runSpeed)
+  // ScoutAI
+  startC: number | null; // startPoint: where the player was when the scout saw him
+  startR: number;
+  interest: number | null; // mookInterestPoint: the door the scout runs to
+  runDir: -1 | 0 | 1;
+  alertDelay: number;
+  rambro: number; // ramboBubble: seconds left, and its life
+  rambroLife: number;
+  // SuicideAI / MookSuicide
+  litFuse: boolean;
+  suicideDelay: number;
+  suicideTimer: number;
+  deathFuse: number;
+  exploded: boolean;
 }
 
 export interface Unit {
@@ -67,6 +187,7 @@ export interface Unit {
   y: number;
   xI: number; // velocity, named as in Broforce
   yI: number;
+  xIBlast: number; // TestVanDammeAnim.xIBlast: knockback and recoil, added to xI and decaying on its own
   facing: 1 | -1;
   health: number;
   stats: UnitStats;
@@ -77,9 +198,25 @@ export interface Unit {
   jumpTime: number;
   jumpBuffer: number;
   dashing: boolean;
-  fireCooldown: number;
+  fireCooldown: number; // the bro's kick interval
+  fireCounter: number; // TestVanDammeAnim.RunFiring, used by mooks
+  fireDelay: number;
+  wasFire: boolean;
+  invulnerable: number; // seconds left; TestVanDammeAnim.SetInvulnerable
+  ducking: boolean;
+  special2: number; // MookSuicide.AnimateSpecial2: seconds into the idle special, or -1
+  blindTime: number; // Mook.blindTime: blinded or panicking for this long
+  burnTime: number; // Mook.burnTime: on fire for this long (it runs down twice as fast while alive)
+  burnDamage: number; // Mook.burnDamage: dealt when the fire goes out
+  burnCounter: number;
+  waveTime: number; // ScoutMook.waveTime: waving the others over instead of shooting
+  exitDoor: { x: number; dir: number } | null; // Mook.exitingDoor: walking out of a mook door to exitDoorX
+  originDoor: number; // index of the MookDoor it counts towards (-1: none)
+  flex: { frame: number; counter: number; block: boolean } | null; // GestureElement.Gestures.Flex in progress
   dead: boolean;
   deadTime: number;
+  gibbed: boolean; // blown to pieces: no corpse is left
+  reported: { death: boolean; gib: boolean }; // the world has announced these
   animTime: number;
   ai: AiState | null;
 }
@@ -95,6 +232,7 @@ export interface Projectile {
   life: number;
   bounces: number;
   dead: boolean;
+  warning?: number; // Grenade.panicCounter
 }
 
 export interface Controls {
@@ -106,8 +244,9 @@ export interface Controls {
   fire: boolean;
   special: boolean;
   dash: boolean;
+  gesture: boolean; // the flex
 }
 
 export const NO_CONTROLS: Controls = {
-  left: false, right: false, up: false, down: false, jump: false, fire: false, special: false, dash: false,
+  left: false, right: false, up: false, down: false, jump: false, fire: false, special: false, dash: false, gesture: false,
 };

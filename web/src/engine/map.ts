@@ -58,13 +58,27 @@ export class TileMap {
     return false;
   }
 
-  /** Applies damage; returns the kind if the block was destroyed. */
+  /** Physics.Raycast against the ground layer: true if a block lies on the segment, which stops `shorten` early. */
+  rayBlocked(x0: number, y0: number, x1: number, y1: number, shorten = 0): boolean {
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const len = Math.hypot(dx, dy) - shorten;
+    if (len <= 0) return false;
+    const steps = Math.ceil(len / 2);
+    for (let i = 0; i <= steps; i++) {
+      const k = (len * i) / steps / (len + shorten);
+      if (this.blockAt(x0 + dx * k, y0 + dy * k)) return true;
+    }
+    return false;
+  }
+
+  /** Applies damage; returns the kind if the block was destroyed (and replaced, if it has a replacement). */
   damage(c: number, r: number, amount: number): BlockKind | null {
     const block = this.get(c, r);
     if (!block) return null;
     block.health -= amount;
     if (block.health > 0) return null;
-    this.cells[r * this.cols + c] = null;
+    this.cells[r * this.cols + c] = block.replacement ?? null;
     return block.kind;
   }
 

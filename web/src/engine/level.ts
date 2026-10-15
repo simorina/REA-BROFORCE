@@ -1,16 +1,27 @@
 import { TileMap, makeBlock } from './map';
 import type { BlockKind, GameStats, UnitKind } from './types';
 
+export interface Cell {
+  c: number;
+  r: number;
+}
+
+/** A background hill of the theme at a world position (DoodadType.Parallax1/2/3 in Map.PlaceDoodad). */
+export interface ParallaxDoodad {
+  layer: 'near' | 'mid' | 'distant';
+  variant: number;
+  x: number;
+  y: number;
+}
+
 /** tiles[0] is the TOP row. */
 export interface LevelData {
   cols: number;
   rows: number;
   tiles: string[];
-}
-
-export interface Cell {
-  c: number;
-  r: number;
+  parallax?: ParallaxDoodad[];
+  grass?: Cell[]; // long grass that can share a cell with a unit ('g' tiles add more)
+  flexPower?: 'allure'; // Map.MapData.flexPowerType: SpawnWithAllure gives the bro the Alluring flex
 }
 
 export interface ParsedLevel {
@@ -18,11 +29,14 @@ export interface ParsedLevel {
   player: Cell;
   enemies: Array<Cell & { kind: UnitKind }>;
   cages: Cell[];
+  checkpoints: Cell[];
+  grass: Cell[]; // DoodadGrass: long grass mooks can hide in
+  doors: Cell[]; // DoodadMookDoor: mooks walk out of these
   flag: Cell;
 }
 
 const BLOCKS: Record<string, BlockKind> = { d: 'dirt', b: 'brick', s: 'steel', x: 'barrel' };
-const ENEMIES: Record<string, UnitKind> = { m: 'mook', k: 'mook_suicide', z: 'mook_bazooka' };
+const ENEMIES: Record<string, UnitKind> = { m: 'mook', k: 'mook_suicide', z: 'mook_bazooka', o: 'mook_scout' };
 
 export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
   if (level.tiles.length !== level.rows) {
@@ -31,6 +45,9 @@ export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
   const map = new TileMap(level.cols, level.rows);
   const enemies: ParsedLevel['enemies'] = [];
   const cages: Cell[] = [];
+  const checkpoints: Cell[] = [];
+  const grass: Cell[] = [];
+  const doors: Cell[] = [];
   let player: Cell | null = null;
   let flag: Cell | null = null;
   for (let i = 0; i < level.tiles.length; i++) {
@@ -43,6 +60,9 @@ export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
       if (ch in BLOCKS) map.set(c, r, makeBlock(BLOCKS[ch], stats));
       else if (ch in ENEMIES) enemies.push({ c, r, kind: ENEMIES[ch] });
       else if (ch === 'c') cages.push({ c, r });
+      else if (ch === 'C') checkpoints.push({ c, r });
+      else if (ch === 'g') grass.push({ c, r });
+      else if (ch === 'D') doors.push({ c, r });
       else if (ch === 'P') {
         if (player) throw new Error('level has more than one P');
         player = { c, r };
@@ -54,7 +74,11 @@ export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
       }
     }
   }
+  for (const g of level.grass ?? []) {
+    if (!map.inBounds(g.c, g.r)) throw new Error(`grass at ${g.c},${g.r} is outside the level`);
+    grass.push(g);
+  }
   if (!player) throw new Error('level has no player start (P)');
   if (!flag) throw new Error('level has no flag (F)');
-  return { map, player, enemies, cages, flag };
+  return { map, player, enemies, cages, checkpoints, grass, doors, flag };
 }

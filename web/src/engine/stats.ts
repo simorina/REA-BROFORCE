@@ -1,4 +1,4 @@
-import type { GameStats, RocketStats, UnitStats } from './types';
+import type { AiStats, DoorStats, GameStats, PathCaps, RocketStats, UnitStats } from './types';
 
 type Raw = Record<string, Record<string, unknown>>;
 
@@ -20,6 +20,57 @@ function unit(raw: Raw, key: string): UnitStats {
     canWallClimb: num(raw, key, 'canWallClimb') !== 0,
     canDash: num(raw, key, 'canDash') !== 0,
     specialAmmo: num(raw, key, 'originalSpecialAmmo'),
+    hearingX: num(raw, key, 'hearingRangeX'),
+    hearingY: num(raw, key, 'hearingRangeY'),
+    canHideInGrass: key !== 'bro_base' && num(raw, key, 'canHideInGrass') !== 0,
+    canBeSetOnFire: key !== 'bro_base' && num(raw, key, 'canBeSetOnFire') !== 0,
+    panicsOnFire: key !== 'bro_base' && num(raw, key, 'willPanicWhenOnFire') !== 0,
+  };
+}
+
+function path(raw: Raw, key: string): PathCaps {
+  const caps = raw[key]?.capabilities as Raw[string] | undefined;
+  if (!caps) throw new Error(`values.json: ${key}.capabilities is missing`);
+  const wrapped: Raw = { [key]: caps };
+  return {
+    canJump: num(wrapped, key, 'canJump') !== 0,
+    jumpHeight: num(wrapped, key, 'jumpHeight'),
+    maxDropDistance: num(wrapped, key, 'maxDropDistance'),
+    canWallClimb: num(wrapped, key, 'canWallClimb') !== 0,
+    fudge: num(wrapped, key, 'fudge') !== 0,
+    agentSize: num(raw, key, 'agentSize'),
+  };
+}
+
+function door(raw: Raw, key: string): DoorStats {
+  const flag = (f: string) => num(raw, key, f) !== 0;
+  return {
+    spawningRate: num(raw, key, 'spawningRate'),
+    maxMookCount: num(raw, key, 'maxMookCount'),
+    chanceSuicide: num(raw, key, 'chanceToSpawnSuicideMook'),
+    maxAlarmed: num(raw, key, 'maxAlarmedMooksCount'),
+    closedAtStart: flag('closedAtStart'),
+    limited: num(raw, key, 'limitedNumberOfMooks'),
+    maxOnCollapse: num(raw, key, 'maxMooksOnCollapse'),
+    maxAfterCollapse: num(raw, key, 'maxMookCountAfterCollapse'),
+    escapeOnFire: flag('spawnEscapingUnitsOnFire'),
+    explodeAtEnd: flag('explodeAtEnd'),
+    alwaysWalkOut: flag('mooksAlwaysWalkOut'),
+    startSuspicious: flag('mooksStartSuspicious'),
+  };
+}
+
+function ai(raw: Raw, key: string): AiStats {
+  return {
+    sightX: num(raw, key, 'sightRangeX'),
+    sightY: num(raw, key, 'sightRangeY'),
+    attackTime: num(raw, key, 'attackTime'),
+    sightDelay: num(raw, key, 'sightDelay'),
+    delayBetweenFiring: num(raw, key, 'delayBetweenFiring'),
+    patrolRadius: num(raw, key, 'patrolBlocksRadius'),
+    minIdleWait: num(raw, key, 'minIdleWaitDuration'),
+    maxIdleWait: num(raw, key, 'maxIdleWaitDuration'),
+    hidingLookX: num(raw, key, 'hidingLookXRange'),
   };
 }
 
@@ -40,7 +91,18 @@ export function parseValues(raw: Raw): GameStats {
       mook: unit(raw, 'mook'),
       mook_suicide: unit(raw, 'mook_suicide'),
       mook_bazooka: unit(raw, 'mook_bazooka'),
+      mook_scout: unit(raw, 'mook_scout'),
     },
+    ai: {
+      mook: ai(raw, 'ai_mook'), mook_suicide: ai(raw, 'ai_mook_suicide'), mook_bazooka: ai(raw, 'ai_mook_bazooka'),
+      mook_scout: ai(raw, 'ai_mook_scout'),
+    },
+    paths: {
+      mook: path(raw, 'path_mook'), mook_suicide: path(raw, 'path_mook_suicide'), mook_bazooka: path(raw, 'path_mook_bazooka'),
+      mook_scout: path(raw, 'path_mook_scout'),
+    },
+    scoutRunSpeed: num(raw, 'mook_scout', 'runSpeed'),
+    door: door(raw, 'mook_door'),
     bullet: { damage: num(raw, 'bullet', 'damage'), life: num(raw, 'bullet', 'life') },
     rocketMook: rocket(raw, 'rocket_mook'),
     bomb: rocket(raw, 'bomb'),
@@ -53,5 +115,6 @@ export function parseValues(raw: Raw): GameStats {
     },
     barrelRange: num(raw, 'block_barrel', 'range'),
     suicide: { range: num(raw, 'suicide_blast', 'range'), blastForce: num(raw, 'suicide_blast', 'blastForce') },
+    grass: { health: num(raw, 'grass', 'health'), width: num(raw, 'grass', 'width'), height: num(raw, 'grass', 'height') },
   };
 }

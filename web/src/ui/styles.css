@@ -17,7 +17,8 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: ui-monos
 .controls td:first-child { color: var(--accent); white-space: nowrap; }
 button { font: inherit; font-weight: 700; padding: 10px 22px; margin: 6px; background: var(--accent); color: var(--bg); border: 0; cursor: pointer; box-shadow: 4px 4px 0 var(--danger); }
 button:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
-.toggle { display: block; margin: 12px 0 18px; }
+.toggles { margin: 12px 0 18px; }
+.toggle { display: block; margin: 6px 0; }
 .note { opacity: 0.6; font-size: 12px; margin-top: 18px; }
 pre { text-align: left; background: #221d19; padding: 12px; white-space: pre-wrap; word-break: break-all; }
 .game { position: relative; }

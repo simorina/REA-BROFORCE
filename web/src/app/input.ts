@@ -9,6 +9,7 @@ export const KEY_BINDINGS: Record<string, keyof Controls> = {
   KeyX: 'fire', KeyJ: 'fire',
   KeyC: 'special', KeyK: 'special',
   ShiftLeft: 'dash', ShiftRight: 'dash',
+  KeyF: 'gesture', KeyL: 'gesture',
 };
 
 export function controlsFromKeys(down: ReadonlySet<string>): Controls {
@@ -22,12 +23,14 @@ export function controlsFromKeys(down: ReadonlySet<string>): Controls {
 
 export class Keyboard {
   private readonly down = new Set<string>();
+  private readonly tapped = new Set<string>(); // pressed since the last snapshot, so a quick tap still counts
   private target: EventTarget | null = null;
 
   private readonly onDown = (e: Event) => {
     const code = (e as KeyboardEvent).code;
     if (code in KEY_BINDINGS) {
       this.down.add(code);
+      this.tapped.add(code);
       e.preventDefault();
     }
   };
@@ -38,6 +41,7 @@ export class Keyboard {
 
   private readonly onBlur = () => {
     this.down.clear();
+    this.tapped.clear();
   };
 
   attach(target: EventTarget): void {
@@ -53,9 +57,13 @@ export class Keyboard {
     this.target?.removeEventListener('blur', this.onBlur);
     this.target = null;
     this.down.clear();
+    this.tapped.clear();
   }
 
+  /** Keys held now, plus any pressed and released since the previous snapshot. */
   snapshot(): Controls {
-    return controlsFromKeys(this.down);
+    const keys = this.tapped.size > 0 ? new Set([...this.down, ...this.tapped]) : this.down;
+    this.tapped.clear();
+    return controlsFromKeys(keys);
   }
 }

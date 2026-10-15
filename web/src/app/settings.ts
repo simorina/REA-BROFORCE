@@ -1,17 +1,23 @@
 const VOICE_KEY = 'brolusconi.voice';
+const SOUND_KEY = 'brolusconi.sound';
 
-export function loadVoiceSetting(): boolean {
+function load(key: string): boolean {
   try {
-    return localStorage.getItem(VOICE_KEY) !== 'off';
+    return localStorage.getItem(key) !== 'off';
   } catch {
     return true;
   }
 }
 
-export function saveVoiceSetting(on: boolean): void {
+function save(key: string, on: boolean): void {
   try {
-    localStorage.setItem(VOICE_KEY, on ? 'on' : 'off');
+    localStorage.setItem(key, on ? 'on' : 'off');
   } catch {
     // storage unavailable: the choice lasts for this session only
   }
 }
+
+export const loadVoiceSetting = (): boolean => load(VOICE_KEY);
+export const saveVoiceSetting = (on: boolean): void => save(VOICE_KEY, on);
+export const loadSoundSetting = (): boolean => load(SOUND_KEY);
+export const saveSoundSetting = (on: boolean): void => save(SOUND_KEY, on);

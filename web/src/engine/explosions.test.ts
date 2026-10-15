@@ -52,17 +52,32 @@ describe('applyBlast (Rocket.MakeEffects + Map.ExplodeUnits + MapController.Dama
     expect(m.xI).toBeGreaterThan(0);
   });
 
-  it('ignores units outside the range and dead units', () => {
+  it('ignores units outside the range, gibbed and invulnerable units', () => {
     const far = mookAt(200);
-    const dead = mookAt(85);
-    dead.dead = true;
-    applyBlast(new TileMap(10, 10), [far, dead], rocketBlast(80, 80, rocket, 'player'));
+    const gibbed = mookAt(85);
+    gibbed.gibbed = true;
+    const spawning = broAt(85);
+    spawning.invulnerable = 0.5;
+    applyBlast(new TileMap(10, 10), [far, gibbed, spawning], rocketBlast(80, 80, rocket, 'enemy'));
     expect(far.xI).toBe(0);
-    expect(dead.xI).toBe(0);
+    expect(gibbed.xI).toBe(0);
+    expect(spawning.xI).toBe(0);
+    expect(spawning.dead).toBe(false);
+  });
+
+  it('knocks corpses about and gibs them below -10 health (TestVanDammeAnim.gibThreshold)', () => {
+    const corpse = mookAt(85);
+    const res1 = applyBlast(new TileMap(10, 10), [corpse], rocketBlast(80, 80, rocket, 'player'));
+    expect(res1.killed).toEqual([2]);
+    expect(corpse.health).toBe(-7);
+    expect(corpse.gibbed).toBe(false);
+    const res2 = applyBlast(new TileMap(10, 10), [corpse], rocketBlast(80, 80, rocket, 'player'));
+    expect(res2.killed).toEqual([]); // already dead
+    expect(corpse.gibbed).toBe(true);
   });
 
   it('a blast centred exactly on a unit keeps velocities finite', () => {
-    const m = mookAt(80, 72.5); // chest at y = 80
+    const m = mookAt(80, 77); // body centre (Y + height / 2) at y = 80
     applyBlast(new TileMap(10, 10), [m], rocketBlast(80, 80, rocket, 'player'));
     expect(Number.isFinite(m.xI) && Number.isFinite(m.yI)).toBe(true);
   });

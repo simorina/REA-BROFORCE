@@ -61,8 +61,8 @@ describe('bullets (Mook.UseFire, Projectile)', () => {
     const p = fireMookBullet(1, mook(), TEST_STATS, () => 0.5);
     const events = steps(p, world(map), 30);
     expect(map.get(5, 3)).toBeNull();
-    expect(events).toHaveLength(1);
-    expect(events[0].type === 'explode' && events[0].blast.team).toBe('neutral');
+    expect(events.map((e) => e.type)).toEqual(['block', 'explode']);
+    expect(events[1].type === 'explode' && events[1].blast.team).toBe('neutral');
   });
 });
 

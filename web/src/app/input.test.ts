@@ -4,10 +4,13 @@ import { Keyboard, controlsFromKeys } from './input';
 const key = (type: string, code: string) => Object.assign(new Event(type), { code });
 
 describe('input', () => {
-  it('maps arrows/WASD, jump, fire, special and dash', () => {
+  it('maps arrows/WASD, jump, fire, special, dash and the flex', () => {
     const c = controlsFromKeys(new Set(['ArrowLeft', 'KeyZ', 'KeyX', 'KeyC', 'ShiftLeft']));
-    expect(c).toEqual({ left: true, right: false, up: false, down: false, jump: true, fire: true, special: true, dash: true });
+    expect(c).toEqual({
+      left: true, right: false, up: false, down: false, jump: true, fire: true, special: true, dash: true, gesture: false,
+    });
     expect(controlsFromKeys(new Set(['KeyD', 'KeyS'])).right).toBe(true);
+    expect(controlsFromKeys(new Set(['KeyF'])).gesture).toBe(true);
   });
 
   it('tracks key presses and releases', () => {
@@ -17,6 +20,16 @@ describe('input', () => {
     target.dispatchEvent(key('keydown', 'KeyX'));
     expect(kb.snapshot().fire).toBe(true);
     target.dispatchEvent(key('keyup', 'KeyX'));
+    expect(kb.snapshot().fire).toBe(false);
+  });
+
+  it('a tap released before the next snapshot still counts once', () => {
+    const target = new EventTarget();
+    const kb = new Keyboard();
+    kb.attach(target);
+    target.dispatchEvent(key('keydown', 'KeyX'));
+    target.dispatchEvent(key('keyup', 'KeyX'));
+    expect(kb.snapshot().fire).toBe(true);
     expect(kb.snapshot().fire).toBe(false);
   });
 
