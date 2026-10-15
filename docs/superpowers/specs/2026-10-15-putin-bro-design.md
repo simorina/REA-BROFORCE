@@ -109,7 +109,8 @@ and their existing tests pass untouched. The special's speech bubble and
 
 ### Judo (`judo`): ported from `BroLee.StartFiring` / `RunFiring` / `AnimateAttackForwards`
 
-- Pressing fire with no attack running and `fireCooldown <= 0` starts a forward
+- A new press of fire (held fire doesn't repeat, as in `BroLee.StartFiring`)
+  with no attack running and `fireCooldown <= 0` starts a forward
   attack: `player.attack = { frame: 0, counter: 0, row, grabbed: false }`.
   `row` alternates 0/1 per attack (`attackSpriteRow`). The cooldown is BroLee's
   `fireRate`, 0.2 s.
