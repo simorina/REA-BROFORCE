@@ -70,15 +70,18 @@ inevitable, strike first"). `bros/index.ts` exports `BROS = [BROLUSCONI, PUTIN]`
   - `brolusconi`: Double Bro Seven with today's `PALETTE_MAP`. The output stays
     byte-identical.
   - `putin`: BroLee. His 13-colour palette was measured: skin `#EEB891`,
-    `#D7A17F`, `#C3866D`, `#AA735D`, `#AA7C5D` → pale pink; hair `#161616` →
-    light ash-brown; trousers `#161616` → olive camo green. Outline, whites and
-    the reds are kept.
-- **Hair mask.** Hair and trousers share `#161616`, so a colour map can't split
-  them. In each 32×32 frame the 8-connected `#161616` components are labelled:
-  the one whose top edge is highest becomes hair, and the rest become trousers.
-  Where this misfires (lying, rolling, upside-down poses), the recipe lists
-  per-frame overrides `(col, row) → all hair | all trousers`, found by looking
-  at the whole output sheet.
+    `#D7A17F`, `#C3866D`, `#AA735D`, `#AA7C5D` → pale pink. Hair and trousers
+    are both `#161616` (hair top, trousers) with `#000000` shading (hair sides
+    and back, eyes, belt); shoes are `#0E0E0E` and socks `#F1F2F6`. Hair becomes
+    ash-brown `#A88B6A` with `#6B5440` shading, and the trousers become olive
+    `#4B5320`. The trousers' black shading, the shoes and the socks are kept.
+- **Hair mask.** A colour map can't tell hair from trousers. In each 32×32
+  frame, flood-fill 8-connected regions of `#161616` + `#000000` that start at
+  a `#161616` pixel. A region that touches a shoe or sock pixel is trousers;
+  any other is hair. Prototyped on the real sheet: this is right on every frame
+  the game draws (idle, death, duck, run, jump, wall climb, dash, flex, and the
+  attack rows 7–8). It is wrong only on somersault frames the game never uses,
+  so no per-frame overrides are needed.
 - Output: `sprites/putin.png`, plus a `putin` entry in `sheets.json` that copies
   BroLee's frame grid.
 
