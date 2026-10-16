@@ -4,7 +4,7 @@ import { makeUnit } from '../engine/units';
 import { loopFrame, prisonerFrame, special2Frame, stripFrame, unitFrame } from './animation';
 
 const bro = (patch: Partial<ReturnType<typeof makeUnit>>) =>
-  Object.assign(makeUnit(1, 'bro', 'player', 0, 8, TEST_STATS.units.bro), { onGround: true }, patch);
+  Object.assign(makeUnit(1, 'bro', 'player', 0, 8, TEST_STATS.bros.bro_base), { onGround: true }, patch);
 
 describe('unitFrame (TestVanDammeAnim.Animate*)', () => {
   it('idles on row 0, column 0', () => {

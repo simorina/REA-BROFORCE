@@ -10,7 +10,7 @@ function num(raw: Raw, key: string, field: string): number {
   return value;
 }
 
-function unit(raw: Raw, key: string): UnitStats {
+function unit(raw: Raw, key: string, bro = false): UnitStats {
   return {
     speed: num(raw, key, 'speed'),
     jumpForce: num(raw, key, '_jumpForce'),
@@ -22,9 +22,9 @@ function unit(raw: Raw, key: string): UnitStats {
     specialAmmo: num(raw, key, 'originalSpecialAmmo'),
     hearingX: num(raw, key, 'hearingRangeX'),
     hearingY: num(raw, key, 'hearingRangeY'),
-    canHideInGrass: key !== 'bro_base' && num(raw, key, 'canHideInGrass') !== 0,
-    canBeSetOnFire: key !== 'bro_base' && num(raw, key, 'canBeSetOnFire') !== 0,
-    panicsOnFire: key !== 'bro_base' && num(raw, key, 'willPanicWhenOnFire') !== 0,
+    canHideInGrass: !bro && num(raw, key, 'canHideInGrass') !== 0,
+    canBeSetOnFire: !bro && num(raw, key, 'canBeSetOnFire') !== 0,
+    panicsOnFire: !bro && num(raw, key, 'willPanicWhenOnFire') !== 0,
   };
 }
 
@@ -87,12 +87,12 @@ function rocket(raw: Raw, key: string): RocketStats {
 export function parseValues(raw: Raw): GameStats {
   return {
     units: {
-      bro: unit(raw, 'bro_base'),
       mook: unit(raw, 'mook'),
       mook_suicide: unit(raw, 'mook_suicide'),
       mook_bazooka: unit(raw, 'mook_bazooka'),
       mook_scout: unit(raw, 'mook_scout'),
     },
+    bros: { bro_base: unit(raw, 'bro_base', true), bro_lee: unit(raw, 'bro_lee', true) },
     ai: {
       mook: ai(raw, 'ai_mook'), mook_suicide: ai(raw, 'ai_mook_suicide'), mook_bazooka: ai(raw, 'ai_mook_bazooka'),
       mook_scout: ai(raw, 'ai_mook_scout'),

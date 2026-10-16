@@ -3,6 +3,7 @@ import type { GameStats } from './types';
 /** values.json as extracted from the real install (Task 3). */
 export const RAW_VALUES: Record<string, Record<string, unknown>> = {
   bro_base: { speed: 110, _jumpForce: 260, health: 1, fireRate: 0.27, maxFallSpeed: -400, canWallClimb: 1, canDash: 1, originalSpecialAmmo: 4, hearingRangeX: 300, hearingRangeY: 200 },
+  bro_lee: { speed: 120, _jumpForce: 260, health: 1, fireRate: 0.2, maxFallSpeed: -400, canWallClimb: 1, canDash: 1, originalSpecialAmmo: 2, hearingRangeX: 300, hearingRangeY: 200 },
   mook: { speed: 70, _jumpForce: 200, health: 3, fireRate: 0.17, maxFallSpeed: -400, canWallClimb: 0, canDash: 0, originalSpecialAmmo: 3, hearingRangeX: 50, hearingRangeY: 0, canHideInGrass: 1, canBeSetOnFire: 1, willPanicWhenOnFire: 1 },
   mook_suicide: { speed: 70, _jumpForce: 200, health: 3, fireRate: 0.1, maxFallSpeed: -400, canWallClimb: 0, canDash: 0, originalSpecialAmmo: 3, hearingRangeX: 100, hearingRangeY: 50, canHideInGrass: 1, canBeSetOnFire: 1, willPanicWhenOnFire: 1 },
   mook_bazooka: { speed: 70, _jumpForce: 200, health: 4, fireRate: 0.17, maxFallSpeed: -400, canWallClimb: 0, canDash: 0, originalSpecialAmmo: 3, hearingRangeX: 50, hearingRangeY: 0, canHideInGrass: 1, canBeSetOnFire: 1, willPanicWhenOnFire: 1 },
@@ -34,11 +35,14 @@ const AI = { sightX: 300, patrolRadius: 2, minIdleWait: 0.3, maxIdleWait: 1 };
 
 export const TEST_STATS: GameStats = {
   units: {
-    bro: { speed: 110, jumpForce: 260, health: 1, fireRate: 0.27, maxFallSpeed: -400, canWallClimb: true, canDash: true, specialAmmo: 4, hearingX: 300, hearingY: 200, canHideInGrass: false, canBeSetOnFire: false, panicsOnFire: false },
     mook: { ...ENEMY, speed: 70, jumpForce: 200, health: 3, fireRate: 0.17, hearingX: 50, hearingY: 0 },
     mook_suicide: { ...ENEMY, speed: 70, jumpForce: 200, health: 3, fireRate: 0.1, hearingX: 100, hearingY: 50 },
     mook_bazooka: { ...ENEMY, speed: 70, jumpForce: 200, health: 4, fireRate: 0.17, hearingX: 50, hearingY: 0 },
     mook_scout: { ...ENEMY, speed: 80, jumpForce: 160, health: 3, fireRate: 0.1, hearingX: 350, hearingY: 150, canHideInGrass: false },
+  },
+  bros: {
+    bro_base: { speed: 110, jumpForce: 260, health: 1, fireRate: 0.27, maxFallSpeed: -400, canWallClimb: true, canDash: true, specialAmmo: 4, hearingX: 300, hearingY: 200, canHideInGrass: false, canBeSetOnFire: false, panicsOnFire: false },
+    bro_lee: { speed: 120, jumpForce: 260, health: 1, fireRate: 0.2, maxFallSpeed: -400, canWallClimb: true, canDash: true, specialAmmo: 2, hearingX: 300, hearingY: 200, canHideInGrass: false, canBeSetOnFire: false, panicsOnFire: false },
   },
   ai: {
     mook: { ...AI, sightY: 20, attackTime: 0.06, sightDelay: 1.66, delayBetweenFiring: 1.78, hidingLookX: 50 },

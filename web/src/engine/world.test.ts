@@ -59,7 +59,7 @@ describe('stepWorld', () => {
     let prev = play(w, { special: true }, 30);
     expect(w.specialAmmo).toBe(3);
     expect(w.projectiles.filter((p) => p.kind === 'marker')).toHaveLength(1);
-    expect(w.events.filter((e) => e.type === 'voice')).toEqual([{ type: 'voice', text: BROLUSCONI.voiceLine }]);
+    expect(w.events.filter((e) => e.type === 'voice')).toEqual([{ type: 'voice', text: BROLUSCONI.voiceLine, lang: 'it-IT' }]);
     expect(w.effects.some((e) => e.kind === 'speech' && e.text === BROLUSCONI.voiceLine)).toBe(true);
     prev = play(w, {}, 1, prev);
     prev = play(w, { special: true }, 1, prev);
@@ -69,6 +69,12 @@ describe('stepWorld', () => {
     play(w, { special: true }, 1, prev);
     expect(w.specialAmmo).toBe(0);
     expect(w.events.filter((e) => e.type === 'voice')).toHaveLength(2);
+  });
+
+  it('the bro uses the unit values of his base prefab', () => {
+    const w = createWorld(EMPTY, TEST_STATS, { ...BROLUSCONI, base: 'bro_lee' }, () => 0.5);
+    expect(w.player.stats).toBe(TEST_STATS.bros.bro_lee);
+    expect(w.specialAmmo).toBe(2);
   });
 
   it('the airstrike brings five bombs from outside the map, and they all land', () => {

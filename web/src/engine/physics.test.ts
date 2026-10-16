@@ -11,7 +11,7 @@ function floorMap(cols = 30, rows = 12): TileMap {
   for (let c = 0; c < cols; c++) m.set(c, 0, makeBlock('dirt', TEST_STATS)); // floor top at y = 8
   return m;
 }
-const bro = (x = 80, y = 8): Unit => makeUnit(1, 'bro', 'player', x, y, TEST_STATS.units.bro);
+const bro = (x = 80, y = 8): Unit => makeUnit(1, 'bro', 'player', x, y, TEST_STATS.bros.bro_base);
 function run(u: Unit, map: TileMap, intent: MoveIntent, frames: number, start = 0): number {
   let now = start;
   for (let i = 0; i < frames; i++) {

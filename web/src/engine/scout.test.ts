@@ -45,7 +45,7 @@ describe('ScoutAI', () => {
   const map = new TileMap(60, 10);
   for (let c = 0; c < 60; c++) map.set(c, 0, makeBlock('dirt', TEST_STATS));
   const scene = (doors: Array<{ c: number; r: number }>) => ({
-    player: makeUnit(1, 'bro', 'player', 10 * TILE, 8, TEST_STATS.units.bro), map, runSpeed: TEST_STATS.scoutRunSpeed,
+    player: makeUnit(1, 'bro', 'player', 10 * TILE, 8, TEST_STATS.bros.bro_base), map, runSpeed: TEST_STATS.scoutRunSpeed,
     doors: doors.map((d) => ({ ...d, x: d.c * TILE, y: d.r * TILE })),
   });
 

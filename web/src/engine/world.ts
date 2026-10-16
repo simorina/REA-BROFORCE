@@ -58,7 +58,7 @@ export interface Grass {
 
 /** What happened during a step, for sound, particles and the voice line. Positions are world units. */
 export type GameEvent =
-  | { type: 'voice'; text: string }
+  | { type: 'voice'; text: string; lang: string }
   | { type: 'shot'; weapon: 'football' | 'marker' | 'bullet' | 'rocket'; x: number; y: number; facing: 1 | -1 }
   | { type: 'explosion'; x: number; y: number; big: boolean; source: Blast['source']; range: number }
   | { type: 'airstrike'; x: number; y: number } // GrenadeAirstrike.Death: the marker calls the strike in
@@ -117,7 +117,7 @@ export function createWorld(level: LevelData, stats: GameStats, bro: BroDef, rng
   const parsed = parseLevel(level, stats);
   let nextId = 1;
   const spawn = { x: cellX(parsed.player.c), y: feetY(parsed.player.r) };
-  const player = makeUnit(nextId++, 'bro', 'player', spawn.x, spawn.y, stats.units.bro);
+  const player = makeUnit(nextId++, 'bro', 'player', spawn.x, spawn.y, stats.bros[bro.base]);
   const enemies = parsed.enemies.map((e) => makeUnit(nextId++, e.kind, 'enemy', cellX(e.c), feetY(e.r), stats.units[e.kind]));
   const doors = parsed.doors.map((d) => makeDoor(d.c, d.r, parsed.map, stats.door));
   const camera = { x: spawn.x, y: spawn.y };
@@ -136,7 +136,7 @@ export function createWorld(level: LevelData, stats: GameStats, bro: BroDef, rng
     grass: parsed.grass.map((c) => ({ x: cellX(c.c), y: c.r * TILE, health: stats.grass.health, destroyed: false })),
     doors, doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), flexPower: level.flexPower ?? null,
     flag: { x: cellX(parsed.flag.c), y: feetY(parsed.flag.r) },
-    lives: LIVES_START, specialAmmo: stats.units.bro.specialAmmo, respawnTimer: 0,
+    lives: LIVES_START, specialAmmo: stats.bros[bro.base].specialAmmo, respawnTimer: 0,
     state: 'playing', extractionTime: 0, time: 0, nextId, camera, events: [], laughIndex: 0,
   };
 }
@@ -221,7 +221,7 @@ export function inGrass(w: World, x: number, y: number, range: number): boolean 
 
 function respawn(w: World): void {
   w.lives -= 1;
-  w.player = makeUnit(w.nextId++, 'bro', 'player', w.spawn.x, w.spawn.y, w.stats.units.bro);
+  w.player = makeUnit(w.nextId++, 'bro', 'player', w.spawn.x, w.spawn.y, w.stats.bros[w.bro.base]);
   w.player.invulnerable = SPAWN_INVULNERABLE;
   w.events.push({ type: 'respawn', x: w.spawn.x, y: w.spawn.y });
 }
@@ -291,7 +291,7 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number): vo
     w.specialAmmo -= 1;
     w.projectiles.push(SPECIAL_SPAWN[w.bro.special](w.nextId++, p, controls.down));
     w.effects.push({ kind: 'speech', x: p.x, y: p.y + 40, age: 0, duration: SPEECH_DURATION, text: w.bro.voiceLine });
-    w.events.push({ type: 'voice', text: w.bro.voiceLine }, { type: 'shot', weapon: 'marker', x: p.x, y: p.y, facing: p.facing });
+    w.events.push({ type: 'voice', text: w.bro.voiceLine, lang: w.bro.voiceLang }, { type: 'shot', weapon: 'marker', x: p.x, y: p.y, facing: p.facing });
   }
   if (p.y < -64) {
     p.invulnerable = 0;

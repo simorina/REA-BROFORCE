@@ -31,7 +31,7 @@ interface Props {
 
 export function GameView({ assets, voice, sound, onEnd, onMenu }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const hud = useMemo(() => createHudStore({ lives: LIVES_START, ammo: assets.stats.units.bro.specialAmmo }), [assets]);
+  const hud = useMemo(() => createHudStore({ lives: LIVES_START, ammo: assets.stats.bros[BRO.base].specialAmmo }), [assets]);
   const pause = useMemo(() => createPause(), []);
   const paused = useSyncExternalStore(pause.subscribe, pause.get);
   const [size, setSize] = useState(() => fitCanvas(window.innerWidth, window.innerHeight));

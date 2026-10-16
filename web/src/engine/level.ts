@@ -1,5 +1,5 @@
 import { TileMap, makeBlock } from './map';
-import type { BlockKind, GameStats, UnitKind } from './types';
+import type { BlockKind, EnemyKind, GameStats } from './types';
 
 export interface Cell {
   c: number;
@@ -27,7 +27,7 @@ export interface LevelData {
 export interface ParsedLevel {
   map: TileMap;
   player: Cell;
-  enemies: Array<Cell & { kind: UnitKind }>;
+  enemies: Array<Cell & { kind: EnemyKind }>;
   cages: Cell[];
   checkpoints: Cell[];
   grass: Cell[]; // DoodadGrass: long grass mooks can hide in
@@ -36,7 +36,7 @@ export interface ParsedLevel {
 }
 
 const BLOCKS: Record<string, BlockKind> = { d: 'dirt', b: 'brick', s: 'steel', x: 'barrel' };
-const ENEMIES: Record<string, UnitKind> = { m: 'mook', k: 'mook_suicide', z: 'mook_bazooka', o: 'mook_scout' };
+const ENEMIES: Record<string, EnemyKind> = { m: 'mook', k: 'mook_suicide', z: 'mook_bazooka', o: 'mook_scout' };
 
 export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
   if (level.tiles.length !== level.rows) {

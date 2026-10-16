@@ -25,7 +25,7 @@ const mook = (x = 40, y = 40) => {
   m.facing = 1;
   return m;
 };
-const bro = (x = 80, y = 8) => makeUnit(1, 'bro', 'player', x, y, TEST_STATS.units.bro);
+const bro = (x = 80, y = 8) => makeUnit(1, 'bro', 'player', x, y, TEST_STATS.bros.bro_base);
 
 describe('bullets (Mook.UseFire, Projectile)', () => {
   it('fly at 250 u/s and expire after their 0.45 s life', () => {

@@ -2,19 +2,27 @@ import { describe, expect, it } from 'vitest';
 import { BROLUSCONI } from '../bros';
 import { parseBro } from './bro';
 
-const valid = { id: 'x', name: 'X', sheet: 'brolusconi', weapon: 'football', special: 'airstrike', voiceLine: 'Ciao' };
+const valid = {
+  id: 'x', name: 'X', sheet: 'brolusconi', base: 'bro_base', weapon: 'football', special: 'airstrike',
+  voiceLine: 'Ciao', voiceLang: 'it-IT',
+};
 
 describe('bro definitions', () => {
   it('Brolusconi kicks footballs and calls the airstrike with his line', () => {
     expect(BROLUSCONI).toEqual({
-      id: 'brolusconi', name: 'Silvio Brolusconi', sheet: 'brolusconi', weapon: 'football', special: 'airstrike',
-      voiceLine: 'Siete solo dei poveri comunisti!',
+      id: 'brolusconi', name: 'Silvio Brolusconi', sheet: 'brolusconi', base: 'bro_base', weapon: 'football',
+      special: 'airstrike', voiceLine: 'Siete solo dei poveri comunisti!', voiceLang: 'it-IT',
     });
   });
 
   it('rejects unknown weapons and specials', () => {
     expect(() => parseBro({ ...valid, weapon: 'laser' })).toThrow("unknown weapon 'laser'");
     expect(() => parseBro({ ...valid, special: 'nuke' })).toThrow("unknown special 'nuke'");
+  });
+
+  it('rejects an unknown base prefab and a missing voice language', () => {
+    expect(() => parseBro({ ...valid, base: 'rambro' })).toThrow("unknown base 'rambro'");
+    expect(() => parseBro({ ...valid, voiceLang: '' })).toThrow('voiceLang');
   });
 
   it('rejects missing or empty text fields', () => {

@@ -6,7 +6,7 @@ import { makeUnit } from './units';
 
 const rocket = TEST_STATS.rocketMook; // damage 10, range 28, blastForce 20, extraY 300
 const mookAt = (x: number, y = 72) => makeUnit(2, 'mook', 'enemy', x, y, TEST_STATS.units.mook);
-const broAt = (x: number, y = 72) => makeUnit(1, 'bro', 'player', x, y, TEST_STATS.units.bro);
+const broAt = (x: number, y = 72) => makeUnit(1, 'bro', 'player', x, y, TEST_STATS.bros.bro_base);
 
 describe('applyBlast (Rocket.MakeEffects + Map.ExplodeUnits + MapController.DamageGround)', () => {
   it('destroys dirt within half the range and spares steel', () => {

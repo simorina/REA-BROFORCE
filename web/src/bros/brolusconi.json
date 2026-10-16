@@ -2,7 +2,9 @@
   "id": "brolusconi",
   "name": "Silvio Brolusconi",
   "sheet": "brolusconi",
+  "base": "bro_base",
   "weapon": "football",
   "special": "airstrike",
-  "voiceLine": "Siete solo dei poveri comunisti!"
+  "voiceLine": "Siete solo dei poveri comunisti!",
+  "voiceLang": "it-IT"
 }

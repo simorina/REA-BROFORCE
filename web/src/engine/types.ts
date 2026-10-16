@@ -3,6 +3,9 @@ export type BlastTeam = Team | 'neutral';
 export type BlockKind = 'dirt' | 'brick' | 'steel' | 'barrel';
 export type UnitKind = 'bro' | 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout';
 export type EnemyKind = Exclude<UnitKind, 'bro'>;
+/** The bro prefabs a custom bro takes his unit values from (values.json keys). */
+export const BRO_BASES = ['bro_base', 'bro_lee'] as const;
+export type BroBase = (typeof BRO_BASES)[number];
 export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker';
 
 export interface Block {
@@ -85,7 +88,8 @@ export interface GrenadeStats {
 }
 
 export interface GameStats {
-  units: Record<UnitKind, UnitStats>;
+  units: Record<EnemyKind, UnitStats>;
+  bros: Record<BroBase, UnitStats>; // Double Bro Seven (bro_base) and BroLee (bro_lee)
   ai: Record<EnemyKind, AiStats>;
   paths: Record<EnemyKind, PathCaps>;
   scoutRunSpeed: number; // ScoutMook.runSpeed: a scout runs this fast once alerted

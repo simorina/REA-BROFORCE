@@ -8,7 +8,7 @@ describe('sfx', () => {
     expect(sfxFor({ type: 'explosion', x: 0, y: 0, big: true, source: 'rocket', range: 28 })).toBe('boom');
     expect(sfxFor({ type: 'explosion', x: 0, y: 0, big: false, source: 'rocket', range: 28 })).toBe('pop');
     expect(sfxFor({ type: 'block', x: 0, y: 0, kind: 'barrel', damage: 1 })).toBeNull();
-    expect(sfxFor({ type: 'voice', text: 'x' })).toBeNull();
+    expect(sfxFor({ type: 'voice', text: 'x', lang: 'it-IT' })).toBeNull();
     expect(sfxFor({ type: 'respawn', x: 0, y: 0 })).toBeNull();
   });
 

@@ -11,7 +11,7 @@ function scene(kind: EnemyKind = 'mook', broX = 120) {
   const map = new TileMap(40, 10);
   for (let c = 0; c < 40; c++) map.set(c, 0, makeBlock('dirt', TEST_STATS));
   const mook = makeUnit(2, kind, 'enemy', 200, 8, TEST_STATS.units[kind]); // faces left (-1)
-  const bro = makeUnit(1, 'bro', 'player', broX, 8, TEST_STATS.units.bro);
+  const bro = makeUnit(1, 'bro', 'player', broX, 8, TEST_STATS.bros.bro_base);
   return { map, mook, bro };
 }
 
