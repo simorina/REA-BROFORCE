@@ -12,7 +12,7 @@ pytestmark = pytest.mark.skipif(not os.path.isdir(DATA), reason="Broforce is not
 
 
 def test_extracts_sprites_values_and_the_repaint(tmp_path):
-    run(DATA, str(tmp_path))
+    run(DATA, str(tmp_path), fetch_audio=False)
     manifest = json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))
     assert "sprites/brolusconi.png" in manifest["files"]
     values = json.loads((tmp_path / "values.json").read_text(encoding="utf-8"))
@@ -51,7 +51,7 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
 
 
 def test_extracts_the_desert_background_and_the_effects(tmp_path):
-    run(DATA, str(tmp_path))
+    run(DATA, str(tmp_path), fetch_audio=False)
     bg = json.loads((tmp_path / "background.json").read_text(encoding="utf-8"))
     assert bg["cloudScatter"] == "BlueSky"
     assert bg["sky"]["parallax"] == [1.0, 1.0]

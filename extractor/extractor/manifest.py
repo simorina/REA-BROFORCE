@@ -28,6 +28,9 @@ class OutputWriter:
     def write_json(self, rel: str, obj, source: str) -> None:
         self._record(rel, json.dumps(obj, indent=2, sort_keys=True).encode("utf-8"), source)
 
+    def write_bytes(self, rel: str, data: bytes, source: str) -> None:
+        self._record(rel, data, source)
+
     def finish(self, meta: dict) -> None:
         manifest = {"version": 1, **meta, "files": dict(sorted(self.entries.items()))}
         with open(os.path.join(self.out_dir, "manifest.json"), "w", encoding="utf-8") as fh:

@@ -4,7 +4,7 @@ import datetime
 import os
 import sys
 
-from . import effects
+from . import audio, effects
 from .catalog import SPRITES, TEXTURES, VALUES
 from .manifest import OutputWriter
 from .repaint import RECIPES, repaint
@@ -20,7 +20,7 @@ def sheet_entry(file: str, width: int, height: int, frame: dict) -> dict:
             "cols": width // frame["w"], "rows": height // frame["h"]}
 
 
-def run(data_dir: str, out_dir: str) -> None:
+def run(data_dir: str, out_dir: str, fetch_audio: bool = True) -> None:
     stale = os.path.join(out_dir, "manifest.json")
     if os.path.exists(stale):
         os.remove(stale)
@@ -62,6 +62,8 @@ def run(data_dir: str, out_dir: str) -> None:
     out.write_json("sheets.json", sheets, "SpriteSM frame grids")
     out.write_json("values.json", values, "prefab MonoBehaviour fields")
     effects.extract(os.path.join(data_dir, "StreamingAssets"), out)
+    if fetch_audio:
+        audio.fetch(audio.ANTHEM, out)
     out.finish({"generatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(), "dataDir": data_dir})
 
 
@@ -69,9 +71,10 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="extractor", description="Extract Broforce sprites and prefab values")
     parser.add_argument("data_dir", help="path to Broforce_beta_Data")
     parser.add_argument("out_dir", help="output folder, e.g. ../game-data")
+    parser.add_argument("--no-audio", action="store_true", help="skip downloading the anthem")
     args = parser.parse_args(argv)
     try:
-        run(args.data_dir, args.out_dir)
+        run(args.data_dir, args.out_dir, fetch_audio=not args.no_audio)
     except AssetNotFound as exc:
         print(f"extractor: {exc}", file=sys.stderr)
         return 1
