@@ -346,7 +346,13 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
   checkCheckpoints(w);
   alertMooks(w, p.x, p.y, ALERT_TOUCH, ALERT_TOUCH); // TestVanDammeAnim.AlertNearbyMooks, every frame
   if (Math.abs(p.x - w.flag.x) < FLAG_REACH && Math.abs(p.y - w.flag.y) < FLAG_REACH * 2) {
-    if (w.driving) exitTank(w, TANK_EXIT_YI);
+    const k = w.driving;
+    if (k) {
+      exitTank(w, TANK_EXIT_YI);
+      p.y = k.y; // down on the ground for the extraction, which stops moving him
+      p.yI = 0;
+      p.onGround = true;
+    }
     w.state = 'extracting';
     w.extractionTime = 0;
     w.projectiles = [];

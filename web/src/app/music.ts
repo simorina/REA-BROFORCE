@@ -39,13 +39,27 @@ export class Music {
     if (this.fade > 0 && a.paused) {
       try {
         const started = a.play();
-        if (started) started.catch(() => { this.broken = true; });
+        if (started) started.catch((e: unknown) => this.failed(e));
       } catch {
         this.broken = true;
       }
     } else if (this.fade === 0 && !a.paused) {
       a.pause();
     }
+  }
+
+  /** Stops it at once: the game paused without rendering frames (a hidden tab stops requestAnimationFrame). */
+  silence(): void {
+    this.fade = 0;
+    if (this.audio) {
+      this.audio.volume = 0;
+      if (!this.audio.paused) this.audio.pause();
+    }
+  }
+
+  /** A play() interrupted by a pause (AbortError) is harmless; anything else (no file, no codec) mutes it for good. */
+  private failed(e: unknown): void {
+    if (!(e instanceof Error && e.name === 'AbortError')) this.broken = true;
   }
 
   dispose(): void {

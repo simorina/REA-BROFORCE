@@ -45,3 +45,31 @@ describe('the anthem', () => {
     expect(() => new Music(null).update(true, 1)).not.toThrow();
   });
 });
+
+describe('the anthem when the game is paused or interrupted', () => {
+  it('silence() stops it at once (a hidden tab pauses the game without rendering frames)', () => {
+    const a = fakeAudio();
+    const m = new Music(a);
+    m.update(true, 1);
+    m.silence();
+    expect(m.level).toBe(0);
+    expect(a.paused).toBe(true);
+  });
+
+  it('a play() aborted by a quick pause does not mute it for the rest of the game', async () => {
+    const a = fakeAudio();
+    let abort = true;
+    a.play = function play() {
+      this.paused = false;
+      return abort ? Promise.reject(Object.assign(new Error('interrupted'), { name: 'AbortError' })) : Promise.resolve();
+    };
+    const m = new Music(a);
+    m.update(true, 0.1);
+    m.silence();
+    await Promise.resolve();
+    abort = false;
+    m.update(true, 0.1);
+    expect(a.paused).toBe(false);
+    expect(m.level).toBeGreaterThan(0);
+  });
+});

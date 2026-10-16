@@ -58,7 +58,10 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
     keyboard.attach(window);
     const sfx = new Sfx(sound);
     const music = new Music(sound ? new Audio('/audio/anthem_ru.ogg') : null);
-    const unsubscribePause = pause.subscribe(() => sfx.setPaused(pause.get()));
+    const unsubscribePause = pause.subscribe(() => {
+      sfx.setPaused(pause.get());
+      if (pause.get()) music.silence(); // a hidden tab pauses without rendering frames, so don't wait for a fade
+    });
     const onPauseKey = (e: KeyboardEvent) => {
       if (!isPauseKey(e.code)) return;
       e.preventDefault();

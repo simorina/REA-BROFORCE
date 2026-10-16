@@ -637,6 +637,30 @@ describe('driving the tank (MookArmouredGuy / TankBroTank)', () => {
     expect(w.driving).toBe(w.tanks[0]);
   });
 
+  it('climbing out under a low ceiling stays under it instead of pushing up through the ground', () => {
+    const cols = 30;
+    const corridor: LevelData = {
+      cols, rows: 8,
+      tiles: [line(cols), line(cols), line(cols), line(cols, [], 'd'), line(cols), line(cols, [[2, 'P'], [27, 'F']]), line(cols, [], 'd'), line(cols, [], 's')],
+    };
+    const w = withTank(10, corridor); // the ceiling's underside is at y 56: 32 px of room
+    let prev = play(w, {}, 1);
+    prev = play(w, { gesture: true }, 1, prev);
+    expect(w.player.y + 15).toBeLessThanOrEqual(56);
+    play(w, {}, 30, prev);
+    expect(w.player.y).toBeLessThan(56);
+  });
+
+  it('reaching the flag while driving puts him down on the ground for the extraction', () => {
+    const w = withTank();
+    play(w, {}, 1);
+    w.tanks[0].x = w.flag.x - 4;
+    play(w, {}, 2);
+    expect(w.state).toBe('extracting');
+    expect(w.player.y).toBeCloseTo(w.tanks[0].y, 3);
+    expect(w.player.onGround).toBe(true);
+  });
+
   it('reaching the flag while driving climbs out and extracts', () => {
     const w = withTank();
     play(w, {}, 1);

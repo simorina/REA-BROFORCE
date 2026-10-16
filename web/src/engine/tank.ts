@@ -72,7 +72,9 @@ function columnTop(map: TileMap, c: number): number {
  * of that pair. With the ground near the top of the screen it drops at the screen's left edge instead.
  */
 export function tankDrop(map: TileMap, x: number, y: number, screenMaxY: number, screenMinX: number): TankDrop {
-  const snapped = Math.round(x / TILE) * TILE;
+  // projectiles ignore the side walls, so the grenade can be off the map: probe and drop inside it (ours)
+  const snapped = Math.min(Math.max(Math.round(x / TILE) * TILE, 2 * TILE), (map.cols - 3) * TILE);
+  const inside = (dx: number) => Math.min(Math.max(dx, cellLeft(0) + TANK_BOX.halfWidth), cellLeft(map.cols) - TANK_BOX.halfWidth);
   const tops = [-2, -1, 0, 1, 2].map((i) => ({ x: snapped + i * TILE, y: columnTop(map, getColumn(snapped + i * TILE)) }));
   let low = tops[2].y;
   let lowX = snapped;
@@ -82,8 +84,8 @@ export function tankDrop(map: TileMap, x: number, y: number, screenMaxY: number,
       lowX = tops[j].x;
     }
   }
-  if (low > screenMaxY - 16) return { x: screenMinX, y: y + 48, fallback: true };
-  return { x: lowX + 8, y: screenMaxY + TANK_DROP_HEIGHT, fallback: false };
+  if (low > screenMaxY - 16) return { x: inside(screenMinX), y: y + 48, fallback: true };
+  return { x: inside(lowX + 8), y: screenMaxY + TANK_DROP_HEIGHT, fallback: false };
 }
 
 const EPS = 0.001;

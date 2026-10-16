@@ -24,8 +24,17 @@ describe('tankDrop (GrenadeAirstrike.SpawnTank)', () => {
     expect(tankDrop(map, 160, 30, 200, 0).x).toBe(128 + 8);
   });
 
+  it('a grenade at or past the map edge still drops the tank inside the map', () => {
+    for (const x of [-197, 0, 5, 40 * 16 + 30]) {
+      const d = tankDrop(ground(), x, 20, 200, 0);
+      expect(d.x).toBeGreaterThanOrEqual(-8 + 15);
+      expect(d.x).toBeLessThanOrEqual(40 * 16 - 8 - 15);
+    }
+  });
+
   it('rolls in from the left edge when the ground is near the top of the screen', () => {
-    expect(tankDrop(ground(), 160, 20, 20, -40)).toEqual({ x: -40, y: 68, fallback: true });
+    expect(tankDrop(ground(), 160, 20, 20, 100)).toEqual({ x: 100, y: 68, fallback: true });
+    expect(tankDrop(ground(), 160, 20, 20, -40).x).toBe(-8 + 15); // a screen edge past the map's is clamped inside it
   });
 });
 

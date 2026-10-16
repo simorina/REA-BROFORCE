@@ -4,6 +4,7 @@ import {
   TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT,
 } from './constants';
 import { barrelBlast, tankBlast, type Blast } from './explosions';
+import { unitHitsSolid } from './physics';
 import { fireBigRocket, fireShell } from './projectiles';
 import {
   NO_DRIVE, damageTank, makeTank, pressFire, stepCountdown, stepTankBody, stepTurret, switchGun, tankDrop, type Tank,
@@ -43,11 +44,14 @@ export function exitTank(w: World, disChargeYI: number): void {
   const k = w.driving;
   if (!k) return;
   const p = w.player;
+  // under a low ceiling he comes out as high as there is room for, without the pop (he'd be pushed up through it)
+  let y = k.y + TANK_EXIT_Y;
+  while (y > k.y && unitHitsSolid(w.map, k.x, y)) y -= 1;
   p.x = k.x;
-  p.y = k.y + TANK_EXIT_Y;
+  p.y = y;
   p.xI = k.xI;
   p.xIBlast = 0;
-  p.yI = disChargeYI + TANK_EXIT_BOOST;
+  p.yI = y < k.y + TANK_EXIT_Y ? 0 : disChargeYI + TANK_EXIT_BOOST;
   p.onGround = false;
   k.driven = false;
   k.drive = NO_DRIVE;
