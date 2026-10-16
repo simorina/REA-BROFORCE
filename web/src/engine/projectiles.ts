@@ -5,9 +5,9 @@ import {
 } from './constants';
 import { barrelBlast, rocketBlast, shellBlast, suicideBlast, type Blast } from './explosions';
 import { TileMap, getColumn, getRow } from './map';
-import { tankAt, type Tank } from './tank';
 import { damageUnit } from './units';
 import type { BlockKind, EnemyKind, GameStats, Projectile, ProjectileKind, RocketStats, Team, Unit } from './types';
+import { vehicleAt, type Vehicle } from './vehicle';
 
 export type ProjectileEvent =
   | { type: 'explode'; blast: Blast }
@@ -16,13 +16,13 @@ export type ProjectileEvent =
   | { type: 'hit'; unit: Unit; x: number; y: number; xI: number; yI: number }
   | { type: 'gib'; kind: EnemyKind; x: number; y: number; xI: number; yI: number }
   | { type: 'callTank'; x: number; y: number; dir: 1 | -1 }
-  | { type: 'hitTank'; tank: Tank; damage: number };
+  | { type: 'hitVehicle'; vehicle: Vehicle; damage: number };
 
 export interface ProjectileWorld {
   map: TileMap;
   units: readonly Unit[];
   stats: GameStats;
-  tanks?: readonly Tank[];
+  vehicles?: readonly Vehicle[];
 }
 
 const HIT_MARGIN = 2;
@@ -183,9 +183,9 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
         p.dead = true;
         break;
       }
-      const tank = p.team === 'enemy' ? tankAt(w.tanks ?? [], p.x, p.y) : null;
-      if (tank) {
-        events.push({ type: 'hitTank', tank, damage });
+      const vehicle = p.team === 'enemy' ? vehicleAt(w.vehicles ?? [], p.x, p.y) : null;
+      if (vehicle) {
+        events.push({ type: 'hitVehicle', vehicle, damage });
         p.dead = true;
         break;
       }
@@ -204,7 +204,7 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
       p.x += p.xI * t;
       p.y += p.yI * t;
       if (w.map.blockAt(p.x, p.y) || unitAt(w.units, p.x, p.y, p.team) || p.life <= 0
-        || (p.team === 'enemy' && tankAt(w.tanks ?? [], p.x, p.y) !== null)) {
+        || (p.team === 'enemy' && vehicleAt(w.vehicles ?? [], p.x, p.y) !== null)) {
         explodeAt(p, p.kind === 'rocket' ? w.stats.rocketMook : w.stats.bomb, true, events);
       }
       break;

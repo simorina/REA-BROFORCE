@@ -21,11 +21,12 @@ import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
   fireBazookaRocket, fireMookBullet, spawnAirstrike, stepProjectile,
 } from './projectiles';
-import { boardTanks, callTank, driveTank, exitTank, hitTank, stepTanks } from './driving';
+import { allVehicles, boardVehicles, callTank, carryDriver, driveVehicle, exitVehicle, hitVehicle, stepTanks } from './driving';
 import { stepJudo } from './judo';
 import { SPECIAL_KITS, WEAPON_KITS } from './kits';
 import { damageUnit, makeUnit, runFiring } from './units';
-import { tankInBlast, type Tank } from './tank';
+import type { Tank } from './tank';
+import { vehicleInBlast, type Vehicle } from './vehicle';
 import type { BlockKind, Controls, EnemyKind, GameStats, Projectile, ProjectileKind, Team, Unit, UnitKind } from './types';
 
 /** Something the renderer times: a screen shake (SortOfFollow.Shake) or the bro's speech bubble. */
@@ -82,6 +83,8 @@ export type GameEvent =
   | { type: 'flex'; x: number; y: number } // TestVanDammeAnim.PlayFlexSound / TriggerFlexEvent
   | { type: 'boardTank'; x: number; y: number }
   | { type: 'exitTank'; x: number; y: number }
+  | { type: 'boardJet'; x: number; y: number }
+  | { type: 'exitJet'; x: number; y: number }
   | { type: 'gunSwitch'; x: number; y: number };
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
 
@@ -102,8 +105,8 @@ export interface World {
   doors: MookDoor[];
   doorPoints: DoorPoint[]; // the doors as ScoutMookInterestPoints
   tanks: Tank[]; // TankBroTank vehicles on the map
-  driving: Tank | null; // the tank the player is in
-  reboard: Tank | null; // the tank just left: no boarding it until he stands clear of it
+  driving: Vehicle | null; // what the player is in
+  reboard: Vehicle | null; // the vehicle just left: no boarding it until he stands clear of it
   flexPower: 'allure' | null; // PlayerInventory.flexPowers: what flexing does
   flag: { x: number; y: number };
   lives: number;
@@ -305,7 +308,7 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
   }
   if (p.invulnerable > 0) p.invulnerable = p.invulnerable - t > 1e-9 ? p.invulnerable - t : 0;
   if (w.driving) {
-    driveTank(w, controls, prev);
+    driveVehicle(w, controls, prev);
   } else {
     if (!p.attack) startOrStopFlex(p, controls, prev);
     stepUnit(p, p.attack ? NO_INTENT : intentFrom(controls, prev), w.map, t, w.time); // BroLee holds still to strike
@@ -350,13 +353,13 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
     }
   }
   if (p.dead) return;
-  boardTanks(w);
+  boardVehicles(w);
   checkCheckpoints(w);
   alertMooks(w, p.x, p.y, ALERT_TOUCH, ALERT_TOUCH); // TestVanDammeAnim.AlertNearbyMooks, every frame
   if (Math.abs(p.x - w.flag.x) < FLAG_REACH && Math.abs(p.y - w.flag.y) < FLAG_REACH * 2) {
     const k = w.driving;
     if (k) {
-      exitTank(w, TANK_EXIT_YI);
+      exitVehicle(w, TANK_EXIT_YI);
       p.y = k.y; // down on the ground for the extraction, which stops moving him
       p.yI = 0;
       p.onGround = true;
@@ -553,7 +556,7 @@ function explodeSuicide(w: World, m: Unit, blasts: Blast[]): void {
 }
 
 function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
-  const pw = { map: w.map, units: [w.player, ...w.enemies], stats: w.stats, tanks: w.tanks };
+  const pw = { map: w.map, units: [w.player, ...w.enemies], stats: w.stats, vehicles: allVehicles(w) };
   for (const p of w.projectiles) {
     // Grenade.RunWarnings: in its last half second a grenade sends the mooks around it running
     if (p.kind !== 'marker' || p.dead || p.life >= GRENADE_WARNING_LIFE) continue;
@@ -569,7 +572,7 @@ function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
       else if (ev.type === 'block') w.events.push({ type: 'block', x: cellX(ev.c), y: ev.r * TILE, kind: ev.kind, damage: ev.damage });
       else if (ev.type === 'hit') w.events.push({ type: 'hit', x: ev.unit.x, y: ev.unit.y, hitY: ev.y, xI: ev.xI, yI: ev.yI });
       else if (ev.type === 'gib') w.events.push({ type: 'gib', x: ev.x, y: ev.y, team: 'enemy', kind: ev.kind, xI: ev.xI, yI: ev.yI });
-      else if (ev.type === 'hitTank') hitTank(w, ev.tank, ev.damage, blasts);
+      else if (ev.type === 'hitVehicle') hitVehicle(w, ev.vehicle, ev.damage, blasts);
       else if (ev.type === 'callTank') {
         w.events.push({ type: 'airstrike', x: ev.x, y: ev.y }); // GrenadeAirstrike.MakeEffects
         callTank(w, ev.x, ev.y, ev.dir);
@@ -603,8 +606,8 @@ function resolveBlasts(w: World, blasts: Blast[]): void {
     if (b.source === 'suicide') burnAround(w, b.owner ?? null, b.x, b.y, b.groundRange + SUICIDE_BURN_EXTRA);
     if (b.noise > 0) makeNoise(w, b.x, b.y, b.noise);
     damageGrass(w, b);
-    // Map.ExplodeUnits on the tanks: enemy and neutral blasts (the player's own don't hurt his tanks)
-    if (b.team !== 'player') for (const k of w.tanks) if (!k.exploded && tankInBlast(k, b)) hitTank(w, k, b.unitDamage, blasts);
+    // Map.ExplodeUnits on the vehicles: enemy and neutral blasts (the player's own don't hurt his vehicles)
+    if (b.team !== 'player') for (const v of allVehicles(w)) if (!v.exploded && vehicleInBlast(v, b)) hitVehicle(w, v, b.unitDamage, blasts);
     // MookSuicide.Gib: a suicide mook blown apart before it went off goes off right away
     for (const m of w.enemies) if (m.kind === 'mook_suicide' && m.gibbed) explodeSuicide(w, m, blasts);
     for (const d of res.destroyed) {
@@ -667,6 +670,7 @@ export function stepWorld(w: World, controls: Controls, prev: Controls, t: numbe
   reportUnits(w); // deaths caused outside a step still start the respawn timer
   stepPlayer(w, controls, prev, t, blasts);
   stepTanks(w, t, blasts);
+  carryDriver(w);
   stepEnemies(w, t, blasts);
   stepDoors(w, t);
   stepProjectiles(w, t, blasts);

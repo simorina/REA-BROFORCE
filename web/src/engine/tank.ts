@@ -1,10 +1,9 @@
 import {
-  ACCEL_M, GRAVITY, GROUND_FRICTION_M, HALF_TILE, TANK_BOX, TANK_COUNTDOWN, TANK_DROP_HEIGHT, TANK_EMPTY_LIMIT,
-  TANK_RUN_FRAME_RATE, TILE, TURRET_FRAME_RATE,
+  ACCEL_M, GRAVITY, GROUND_FRICTION_M, HALF_TILE, TANK_BOX, TANK_DROP_HEIGHT, TANK_RUN_FRAME_RATE, TILE, TURRET_FRAME_RATE,
 } from './constants';
-import type { Blast } from './explosions';
 import { cellBottom, cellLeft, getColumn, getRow, type TileMap } from './map';
 import type { TankStats } from './types';
+import type { Vehicle } from './vehicle';
 
 /** TankBroTankTurret: which gun (0 mortar, 1 cannon) and where its firing or gun-switch animation is. */
 export interface Turret {
@@ -25,29 +24,18 @@ export interface TankDrive {
 export const NO_DRIVE: TankDrive = { dir: 0, jump: false };
 
 /** TankBroTank: a vehicle beside the units. `y` is its feet, like a unit's. */
-export interface Tank {
-  id: number;
-  x: number;
-  y: number;
-  xI: number;
-  yI: number;
-  facing: 1 | -1;
-  onGround: boolean;
+export interface Tank extends Vehicle {
+  kind: 'tank';
   animTime: number;
   bob: number; // TankBroTank.tankBobFrame
   bobCounter: number;
-  driven: boolean;
   drive: TankDrive; // the driver's controls this step
-  damage: number; // MookArmouredGuy.shieldDamage + fireAmount
-  countdown: number; // deathCountdown ticks, -1 until the death countdown starts
-  countdownCounter: number;
   turret: Turret;
-  exploded: boolean;
 }
 
 export function makeTank(id: number, x: number, y: number, facing: 1 | -1): Tank {
   return {
-    id, x, y, xI: 0, yI: 0, facing, onGround: false, animTime: 0, bob: 0, bobCounter: 0, driven: false, drive: NO_DRIVE,
+    kind: 'tank', id, x, y, xI: 0, yI: 0, facing, onGround: false, animTime: 0, bob: 0, bobCounter: 0, driven: false, drive: NO_DRIVE,
     damage: 0, countdown: -1, countdownCounter: 0,
     turret: { gun: 0, firing: false, frame: 0, counter: 0, queued: false, switching: false, switchFrame: 0 },
     exploded: false,
@@ -233,40 +221,4 @@ export function stepTurret(tu: Turret, t: number): TurretShot {
   return shot;
 }
 
-/**
- * MookArmouredGuy.Damage / TankBroTank.Damage: hits add up. Past maxDamageBeforeExploding a driven tank starts its
- * death countdown. True when the tank must gib at once: an empty one past 60.
- */
-export function damageTank(k: Tank, amount: number, s: TankStats): boolean {
-  k.damage += amount;
-  if (k.driven && k.damage > s.maxDamage && k.countdown < 0) k.countdown = 0;
-  return !k.driven && !k.exploded && k.damage > TANK_EMPTY_LIMIT;
-}
-
-/** MookArmouredGuy.Update (deathCount > 2): a tick every 0.2667 s after the first 0.4667, speeding up to 5x. */
-export function stepCountdown(k: Tank, s: TankStats, t: number): boolean {
-  if (k.countdown < 0) return false;
-  k.countdownCounter += t * (1 + Math.min(TANK_COUNTDOWN.speedup, Math.max(0, (k.countdown / s.countdownThreshold) * TANK_COUNTDOWN.speedup)));
-  if (k.countdownCounter >= TANK_COUNTDOWN.first) {
-    k.countdownCounter -= TANK_COUNTDOWN.step;
-    k.countdown += 1;
-  }
-  return k.countdown >= s.countdownThreshold;
-}
-
-const HIT_MARGIN = 2;
-
-/** The first standing tank whose box holds (x, y): enemy shots stop on it. */
-export function tankAt(tanks: readonly Tank[], x: number, y: number): Tank | null {
-  for (const k of tanks) {
-    if (k.exploded) continue;
-    if (Math.abs(x - k.x) <= TANK_BOX.halfWidth + HIT_MARGIN && y >= k.y - HIT_MARGIN && y <= k.y + TANK_BOX.height + HIT_MARGIN) return k;
-  }
-  return null;
-}
-
-/** Map.ExplodeUnits reaching the tank: its box within the blast's unit range. */
-export function tankInBlast(k: Tank, b: Blast): boolean {
-  return Math.abs(k.x - b.x) < b.unitRange + TANK_BOX.halfWidth
-    && Math.abs(k.y + TANK_BOX.height / 2 - b.y) < b.unitRange + TANK_BOX.height / 2;
-}
+export { damageVehicle as damageTank, stepCountdown, vehicleAt as tankAt, vehicleInBlast as tankInBlast } from './vehicle';
