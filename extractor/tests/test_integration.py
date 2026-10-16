@@ -40,6 +40,13 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert sheets["putin"]["frameW"] == 32 and sheets["putin"]["offsetY"] == 15.0
     putin = Image.open(tmp_path / "sprites" / "putin.png").convert("RGBA")
     assert (0x16, 0x16, 0x16) not in {p[:3] for p in putin.get_flattened_data() if p[3]}  # every hair/trouser pixel recoloured
+    assert values["tank"]["speed"] == 60.0 and values["tank"]["_jumpForce"] == 290.0
+    assert values["tank"]["maxDamageBeforeExploding"] == 25 and values["tank"]["deathCountdownExplodeThreshold"] == 45
+    assert values["tank_turret"]["cannonFireSpeed"] == 44.0
+    assert values["tank_shell"]["damage"] == 10 and values["tank_shell"]["range"] == 36.0
+    assert values["tank_rocket"]["horizontalAcceleration"] == 120.0 and values["tank_rocket"]["crushWallLayers"] == 3
+    assert sheets["tank_ru"]["frameW"] == 48 and sheets["turret_ru"]["frameW"] == 48
+    assert sheets["tank_shell"]["frameW"] == 32 and sheets["tank_rocket"]["frameH"] == 16
     assert Image.open(tmp_path / "sprites" / "block_dirt.png").size == (16, 16)
 
 

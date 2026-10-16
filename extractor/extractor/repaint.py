@@ -63,17 +63,58 @@ PUTIN_HAIR = HairMask(
 )
 
 
+# TankBroTank: the grey hull and turret plates -> military olive
+OLIVE: dict[RGB, RGB] = {
+    (0x80, 0x81, 0x78): (0x8A, 0x94, 0x60),
+    (0x67, 0x68, 0x5F): (0x6B, 0x75, 0x47),
+    (0x4F, 0x4F, 0x47): (0x53, 0x5C, 0x37),
+    (0x42, 0x42, 0x3B): (0x44, 0x4C, 0x2C),
+    (0x31, 0x31, 0x2C): (0x34, 0x3A, 0x22),
+}
+HULL_MAP: dict[RGB, RGB] = {
+    **OLIVE,
+    (0x3B, 0x3B, 0x3B): (0x3C, 0x44, 0x28),
+    (0x36, 0x35, 0x35): (0x37, 0x3E, 0x26),
+    (0x3D, 0x3D, 0x3D): (0x3E, 0x46, 0x29),
+}
+TURRET_MAP: dict[RGB, RGB] = dict(OLIVE)
+
+
+@dataclass(frozen=True)
+class Decal:
+    """Repaints a fixed rectangle of every frame (the turret's flag) as horizontal stripes, one colour per row.
+    Only pixels of the `sources` colours change, so the outline around the flag is kept."""
+    x: int
+    y: int
+    w: int
+    h: int
+    sources: frozenset
+    stripes: tuple
+    frame: int = 48
+
+
+# The turret's US flag (6x5 at 17,22; its lower rows sit at 16 in the recoil and cannon frames) -> white-blue-red
+RU_FLAG = Decal(
+    x=16, y=22, w=7, h=5,
+    sources=frozenset({(0x49, 0x78, 0xB9), (0x8F, 0x32, 0x32), (0xB8, 0xB3, 0xAF)}),
+    stripes=((0xEE, 0xEE, 0xEE), (0xEE, 0xEE, 0xEE), (0x1F, 0x4F, 0xB0), (0xC8, 0x22, 0x1F), (0xC8, 0x22, 0x1F)),
+)
+
+
 @dataclass(frozen=True)
 class Recipe:
     key: str                  # output sheet: sprites/<key>.png
     source: str               # catalog SpriteRef key of the sheet it repaints
     palette: dict
     hair: HairMask | None = None
+    decal: Decal | None = None
 
 
 RECIPES = (
     Recipe("brolusconi", "bro_base", PALETTE_MAP),
     Recipe("putin", "bro_lee", PUTIN_MAP, PUTIN_HAIR),
+    Recipe("tank_ru", "tank_hull", HULL_MAP),
+    Recipe("turret_ru", "tank_turret", TURRET_MAP, decal=RU_FLAG),
 )
 
 
@@ -113,7 +154,8 @@ def _split_hair(px, width: int, height: int, mask: HairMask) -> tuple[set, set]:
     return hair, trousers
 
 
-def repaint(img: Image.Image, mapping: dict = PALETTE_MAP, hair: HairMask | None = None) -> Image.Image:
+def repaint(img: Image.Image, mapping: dict = PALETTE_MAP, hair: HairMask | None = None,
+            decal: Decal | None = None) -> Image.Image:
     out = img.convert("RGBA").copy()
     px = out.load()
     width, height = out.size
@@ -130,4 +172,16 @@ def repaint(img: Image.Image, mapping: dict = PALETTE_MAP, hair: HairMask | None
                 new = hair.trousers
             if new is not None:
                 px[x, y] = (*new, a)
+    if decal:
+        src = img.convert("RGBA").load()
+        for fy in range(0, height - decal.h + 1, decal.frame):
+            for fx in range(0, width - decal.w + 1, decal.frame):
+                for dy in range(decal.h):
+                    for dx in range(decal.w):
+                        x, y = fx + decal.x + dx, fy + decal.y + dy
+                        if x >= width or y >= height:
+                            continue
+                        r, g, b, a = src[x, y]
+                        if a and (r, g, b) in decal.sources:
+                            px[x, y] = (*decal.stripes[dy], a)
     return out

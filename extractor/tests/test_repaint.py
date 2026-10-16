@@ -1,7 +1,7 @@
 from PIL import Image
 
 from extractor.catalog import SPRITES
-from extractor.repaint import PALETTE_MAP, PUTIN_HAIR, PUTIN_MAP, RECIPES, repaint
+from extractor.repaint import HULL_MAP, PALETTE_MAP, PUTIN_HAIR, PUTIN_MAP, RECIPES, RU_FLAG, TURRET_MAP, repaint
 
 
 def test_maps_known_colours_and_keeps_alpha():
@@ -81,4 +81,30 @@ def test_recipes_repaint_extracted_sheets_into_new_keys():
     assert len(keys) == len(set(keys))
     assert all(r.source in sprite_keys for r in RECIPES)
     assert not set(keys) & sprite_keys
-    assert [(r.key, r.source) for r in RECIPES] == [("brolusconi", "bro_base"), ("putin", "bro_lee")]
+    assert [(r.key, r.source) for r in RECIPES][:2] == [("brolusconi", "bro_base"), ("putin", "bro_lee")]
+
+
+def test_tank_greys_become_olive():
+    img = Image.new("RGBA", (2, 1))
+    img.putpixel((0, 0), (0x67, 0x68, 0x5F, 255))
+    img.putpixel((1, 0), (0x3B, 0x3B, 0x3B, 255))
+    assert repaint(img, TURRET_MAP).getpixel((0, 0)) == (0x6B, 0x75, 0x47, 255)
+    assert repaint(img, HULL_MAP).getpixel((1, 0)) == (0x3C, 0x44, 0x28, 255)
+
+
+def test_the_turret_flag_becomes_the_russian_tricolour_in_every_frame():
+    blue, red, white = (0x49, 0x78, 0xB9, 255), (0x8F, 0x32, 0x32, 255), (0xB8, 0xB3, 0xAF, 255)
+    img = Image.new("RGBA", (96, 48))
+    for fx in (0, 48):
+        for y in range(22, 27):
+            for x in range(17, 23):
+                img.putpixel((fx + x, y), (blue, red, white)[(x + y) % 3])
+    img.putpixel((5, 5), blue)  # the same blue outside the flag stays
+    out = repaint(img, TURRET_MAP, decal=RU_FLAG)
+    for fx in (0, 48):
+        assert [out.getpixel((fx + 18, y))[:3] for y in range(22, 27)] == list(RU_FLAG.stripes)
+    assert out.getpixel((5, 5)) == blue
+
+
+def test_tank_recipes():
+    assert [(r.key, r.source) for r in RECIPES][2:] == [("tank_ru", "tank_hull"), ("turret_ru", "tank_turret")]

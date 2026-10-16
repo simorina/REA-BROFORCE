@@ -46,7 +46,7 @@ def run(data_dir: str, out_dir: str) -> None:
         for recipe in RECIPES:
             if recipe.source == ref.key:
                 repainted = f"sprites/{recipe.key}.png"
-                out.write_png(repainted, repaint(image, recipe.palette, recipe.hair), f"repaint of {source}")
+                out.write_png(repainted, repaint(image, recipe.palette, recipe.hair, recipe.decal), f"repaint of {source}")
                 sheets[recipe.key] = {**sheets[ref.key], "file": repainted}
     for ref in TEXTURES:
         image = prefabs.texture(ref.texture)

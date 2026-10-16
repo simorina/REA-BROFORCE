@@ -44,6 +44,10 @@ GRENADE_FIELDS = ("bounceM", "frictionM")
 SPRITES = (
     SpriteRef("bro_base", "DoubleBroSeven", "DoubleBroSeven", True),
     SpriteRef("bro_lee", "BroLee", "BroLee", True),
+    SpriteRef("tank_hull", "TankBroTank", "TankBrosTank", True),
+    SpriteRef("tank_turret", "TankBroTankTurret", "Turret", True),
+    SpriteRef("tank_shell", "HeavyShell", "Shell Heavy Tankbro", True),
+    SpriteRef("tank_rocket", "RocketMassive", "Rocket Tankbro BIG", True),
     SpriteRef("mook", "MookTrooper", "ZMook", True),
     SpriteRef("mook_suicide", "MookSuicide", "ZMookSuicide", True),
     SpriteRef("mook_bazooka", "MookBazooka", "ZMookBazooka", True),
@@ -69,6 +73,12 @@ TEXTURES = (
 VALUES = (
     ValuesRef("bro_base", "DoubleBroSeven", "DoubleBroSeven", UNIT_FIELDS),
     ValuesRef("bro_lee", "BroLee", "BroLee", UNIT_FIELDS),
+    ValuesRef("tank", "TankBroTank", "TankBrosTank",
+              ("speed", "_jumpForce", "maxFallSpeed", "maxDamageBeforeExploding", "deathCountdownExplodeThreshold")),
+    ValuesRef("tank_turret", "TankBroTankTurret", "Turret", ("cannonFireSpeed",)),
+    ValuesRef("tank_shell", "HeavyShell", "Shell Heavy Tankbro", ("damage", "range", "life")),
+    ValuesRef("tank_rocket", "RocketMassive", "Rocket Tankbro BIG",
+              ("damage", "range", "blastForce", "blastForceExtraY", "life", "horizontalAcceleration", "crushWallLayers")),
     ValuesRef("mook", "MookTrooper", "ZMook", MOOK_FIELDS),
     ValuesRef("mook_suicide", "MookSuicide", "ZMookSuicide", MOOK_FIELDS),
     ValuesRef("mook_bazooka", "MookBazooka", "ZMookBazooka", MOOK_FIELDS),

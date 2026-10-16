@@ -1,9 +1,9 @@
 from extractor.catalog import AI_FIELDS, MOOK_FIELDS, SPRITES, TEXTURES, UNIT_FIELDS, VALUES
 
-SPRITE_KEYS = ("bro_base", "bro_lee", "mook", "mook_suicide", "mook_bazooka", "prisoner", "cage", "helicopter",
+SPRITE_KEYS = ("bro_base", "bro_lee", "tank_hull", "tank_turret", "tank_shell", "tank_rocket", "mook", "mook_suicide", "mook_bazooka", "prisoner", "cage", "helicopter",
                "bullet", "rocket", "bomb", "marker", "block_dirt", "block_brick", "block_steel",
                "block_barrel", "flagpole", "flag", "mook_scout")
-VALUE_KEYS = ("bro_base", "bro_lee", "mook", "mook_suicide", "mook_bazooka", "bullet", "rocket_mook", "bomb",
+VALUE_KEYS = ("bro_base", "bro_lee", "tank", "tank_turret", "tank_shell", "tank_rocket", "mook", "mook_suicide", "mook_bazooka", "bullet", "rocket_mook", "bomb",
               "marker", "suicide_blast", "block_dirt", "block_brick", "block_steel", "block_barrel",
               "ai_mook", "ai_mook_suicide", "ai_mook_bazooka", "grass", "mook_scout", "ai_mook_scout", "path_mook",
               "path_mook_scout", "path_mook_suicide", "path_mook_bazooka", "mook_door")
