@@ -69,7 +69,6 @@ Football: kick (220, 160), bounce 0.7, friction 0.85, explodes on contact / afte
 damage 5, range 32. Airstrike fuse 1.0 s (the prefab's `life` is 0; the real fuse is set elsewhere). Coyote time 0.1 s after
 walking off a ledge.
 Judo: the grabbed mook (instead of BroLee's back somersault) is thrown at (180, 240) from 10 px ahead and 10 up, and blows up on a block, an enemy or after 2 s with the football's blast (a suicide mook with its own, on the bro's side).
-Matryoshka: thrown and bouncing like the airstrike grenade, it opens after 1 s or on an enemy into three small dolls fanned at (−60, 220), (40, 260), (140, 220) along the throw; each blows up on an enemy, after 3 bounces or 1.2 s with RocketBombardment's blast. Our own art.
 Lives 3, extraction 3 s; a checkpoint flag takes 0.6 s to climb. Freeing a prisoner gives the bro the freed
 prisoner's 0.75 s of invulnerability and swaps to the next bro (HeroController.SwapBro respawns a new bro; ours takes over in place). The suicide mook's warning flash speeds up as its fuse
 runs down. The pathfinder's budget is 60 expanded points per millisecond of the C#'s time limit. Our own art and sound:

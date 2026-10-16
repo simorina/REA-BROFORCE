@@ -12,7 +12,6 @@ import { Effects } from './fx/controller';
 import { particleFrame } from './fx/particles';
 import { drawParticle, type PixelBuffer } from './fx/pixelShader';
 import { puffRect } from './fx/puffs';
-import { SHELL_LIFE, openShells, stepShells, type Shell } from './shells';
 import { bubbleFrame, bubbleOffsetY, stillBubble } from './bubbles';
 import type { RGBA } from './fxdata';
 import { GrassWobble } from './grass';
@@ -37,7 +36,6 @@ export class Renderer {
   private readonly tints = new Map<string, HTMLCanvasElement>();
   private shaderCanvas: HTMLCanvasElement | null = null; // the PixelExplosion layer, one pixel per world unit
   private shaderImage: ImageData | null = null;
-  private shells: Shell[] = []; // the opened matryoshkas' half shells
 
   constructor(
     private readonly ctx: CanvasRenderingContext2D,
@@ -55,7 +53,6 @@ export class Renderer {
 
   /** Feeds a step's events to the effects (EffectsController's call sites). */
   onEvent(e: GameEvent): void {
-    if (e.type === 'dollOpen') this.shells.push(...openShells(e.x, e.y));
     this.effects.onEvent(e, this.sheetOf);
   }
 
@@ -69,7 +66,6 @@ export class Renderer {
         this.grass.push(w.grass, u);
       }
       this.grass.step(dt);
-      this.shells = stepShells(this.shells, dt);
       shake = w.effects.reduce((s, e) => (e.kind === 'shake' && e.age >= 0 ? Math.max(s, 1 - e.age / SHAKE_TIME) : s), 0);
     }
     this.viewX = w.camera.x + (Math.random() * 2 - 1) * SHAKE_AMOUNT * shake;
@@ -100,7 +96,6 @@ export class Renderer {
     this.drawFlames();
     this.drawGrass(w, 'blades');
     for (const p of w.projectiles) this.drawProjectile(p, w.time);
-    for (const s of this.shells) this.drawDoll(s.x, s.y + 7, 1, s.side * s.age * 8, s.side, 1 - s.age / SHELL_LIFE);
     for (const e of w.effects) this.drawEffect(e, w);
     for (const e of w.enemies) this.drawBubble(e);
     if (w.state === 'extracting') this.drawHelicopter(w);
@@ -420,12 +415,6 @@ export class Renderer {
         // the grabbed mook in its falling pose, spinning
         this.sprite(ENEMY_SHEETS[p.body ?? 'mook'], 4, 0, p.x, p.y, p.xI < 0, time * 14 * Math.sign(p.xI || 1));
         break;
-      case 'doll':
-        this.drawDoll(p.x, p.y + 7, 1, Math.sin(time * 18) * 0.3); // standing on its point, like the marker
-        break;
-      case 'dollSmall':
-        this.drawDoll(p.x, p.y + 4, 0.6, time * 10 * Math.sign(p.xI || 1));
-        break;
     }
   }
 
@@ -447,40 +436,6 @@ export class Renderer {
     ctx.fillRect(-this.scale, -this.scale, this.scale * 2, this.scale * 2);
     ctx.fillRect(r * 0.5, -r * 0.6, this.scale, this.scale);
     ctx.fillRect(-r * 0.9, r * 0.3, this.scale, this.scale);
-    ctx.restore();
-  }
-
-  /** The matryoshka is our own art: red, with a white face, black eyes and a gold trim. `half` draws one shell. */
-  private drawDoll(x: number, y: number, size: number, angle = 0, half: -1 | 0 | 1 = 0, alpha = 1): void {
-    const { ctx } = this;
-    const s = this.scale * size;
-    ctx.save();
-    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
-    ctx.translate(this.sx(x), this.sy(y));
-    if (angle) ctx.rotate(angle);
-    if (half !== 0) {
-      ctx.beginPath();
-      ctx.rect(half < 0 ? -6 * s : 0, -8 * s, 6 * s, 16 * s);
-      ctx.clip();
-    }
-    ctx.fillStyle = '#c8341f';
-    ctx.strokeStyle = '#111';
-    ctx.lineWidth = this.scale;
-    ctx.beginPath();
-    ctx.ellipse(0, 2 * s, 5 * s, 5 * s, 0, 0, Math.PI * 2); // body
-    ctx.moveTo(3.5 * s, -3.5 * s);
-    ctx.ellipse(0, -3.5 * s, 3.5 * s, 3.5 * s, 0, 0, Math.PI * 2); // head
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#f4ead5';
-    ctx.beginPath();
-    ctx.ellipse(0, -3.5 * s, 2.2 * s, 2.2 * s, 0, 0, Math.PI * 2); // face
-    ctx.fill();
-    ctx.fillStyle = '#111';
-    ctx.fillRect(-1.2 * s, -4 * s, 0.8 * s, 0.8 * s); // eyes
-    ctx.fillRect(0.4 * s, -4 * s, 0.8 * s, 0.8 * s);
-    ctx.fillStyle = '#e8b23a';
-    ctx.fillRect(-4 * s, 1.5 * s, 8 * s, s); // gold trim
     ctx.restore();
   }
 

@@ -6,7 +6,7 @@ export type EnemyKind = Exclude<UnitKind, 'bro'>;
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
 export const BRO_BASES = ['bro_base', 'bro_lee'] as const;
 export type BroBase = (typeof BRO_BASES)[number];
-export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'doll' | 'dollSmall';
+export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket';
 
 export interface Block {
   kind: BlockKind;
@@ -87,6 +87,16 @@ export interface GrenadeStats {
   frictionM: number;
 }
 
+/** TankBroTank and its turret's cannon speed. */
+export interface TankStats {
+  speed: number;
+  jumpForce: number;
+  maxFallSpeed: number;
+  maxDamage: number; // maxDamageBeforeExploding
+  countdownThreshold: number; // deathCountdownExplodeThreshold
+  cannonFireSpeed: number; // TankBroTankTurret.cannonFireSpeed
+}
+
 export interface GameStats {
   units: Record<EnemyKind, UnitStats>;
   bros: Record<BroBase, UnitStats>; // Double Bro Seven (bro_base) and BroLee (bro_lee)
@@ -98,6 +108,9 @@ export interface GameStats {
   rocketMook: RocketStats;
   bomb: RocketStats;
   marker: GrenadeStats;
+  tank: TankStats;
+  tankShell: { damage: number; range: number; life: number }; // HeavyShell "Shell Heavy Tankbro"
+  tankRocket: RocketStats & { acceleration: number; crushLayers: number }; // RocketMassive "Rocket Tankbro BIG"
   blocks: Record<BlockKind, { health: number }>;
   barrelRange: number;
   suicide: { range: number; blastForce: number };
@@ -249,6 +262,9 @@ export interface Projectile {
   dead: boolean;
   warning?: number; // Grenade.panicCounter
   body?: EnemyKind; // a 'body': the mook the judo throw grabbed
+  call?: 'tank'; // a 'marker' that calls in the tank instead of the airstrike (GrenadeAirstrike.callInTank)
+  dip?: number; // HeavyShell.dipCounter
+  crush?: number; // RocketMassive.crushWallLayers left
 }
 
 export interface Controls {

@@ -15,7 +15,6 @@ export function sfxFor(e: GameEvent): SfxName | null {
         case 'judo':
           return 'swish';
         case 'marker':
-        case 'doll':
         case 'body':
           return 'throw';
         case 'rocket':
@@ -23,8 +22,6 @@ export function sfxFor(e: GameEvent): SfxName | null {
         default:
           return 'shot';
       }
-    case 'dollOpen':
-      return 'pop';
     case 'explosion':
       return e.big ? 'boom' : 'pop';
     case 'block':

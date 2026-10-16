@@ -97,6 +97,9 @@ export const JUDO_STRIKE_LAST = 5; // BroLee.RunFiring: units are hit while atta
 export const JUDO_HIT = { range: 13, x: 7, y: 7 }; // BroLee.RunFiring: Map.HitUnits(..., 13, X + dir * 7, Y + 7, ...)
 export const JUDO_GROUND = { damage: 5, x: 9, y: 6, reach: 8 }; // AnimateAttackForwards: FireWeaponGround(X + dir * 9, Y + 6, dir, 8); groundSwordDamage 5
 export const JUDO_COL = 24; // AnimateAttackForwards: column 24 + attackFrames ...
+export const TANK_BOX = { halfWidth: 15, height: 28 }; // MookArmouredGuy.Awake: halfWidth 15; TankBroTank.Start: height 28
+export const TANK_RUN_FRAME_RATE = 0.0334; // TankBroTank prefab runningFrameRate
+export const TANK_DROP_HEIGHT = 200; // GrenadeAirstrike.SpawnTank: screenMaxY + 200
 export const JUDO_ROW = 7; // ... lowerLeftPixel y = 32 * (8 + attackSpriteRow): sheet rows 7 and 8 from the top
 
 // Design values (not in the original game). Tuned in playtesting; listed in docs/findings.md.
@@ -106,8 +109,6 @@ export const FOOTBALL = {
 };
 export const AIRSTRIKE_FUSE = 1.0;
 export const JUDO_THROW = { x: 180, y: 240, ox: 10, oy: 10, fuse: 2 }; // the grabbed mook, thrown ahead in an arc
-// The matryoshka opens (after the airstrike grenade's fuse, or on an enemy) into three small dolls, fanned along the throw
-export const MATRYOSHKA = { fan: [[-60, 220], [40, 260], [140, 220]] as const, smallFuse: 1.2, smallMaxBounces: 2 };
 export const JUMP_GRACE = 0.1; // coyote time after walking off a ledge (not in TestVanDammeAnim)
 export const LIVES_START = 3;
 export const PRISONER_RESCUE_DIST = 16;

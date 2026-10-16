@@ -484,24 +484,6 @@ describe('the judo throw (BroLee.AnimateAttackForwards / RunFiring)', () => {
   });
 });
 
-describe('the matryoshka in the world', () => {
-  const DOLLER: BroDef = { ...BROLUSCONI, id: 'doller', base: 'bro_lee', special: 'matryoshka', voiceLine: 'Если драка неизбежна, бей первым!', voiceLang: 'ru-RU' };
-
-  it('speaks Russian, opens into three small dolls, and all three go off', () => {
-    const w = createWorld(EMPTY, TEST_STATS, [DOLLER], () => 0.5);
-    const prev = play(w, { special: true }, 1);
-    expect(w.specialAmmo).toBe(1);
-    expect(w.events).toContainEqual({ type: 'voice', text: DOLLER.voiceLine, lang: 'ru-RU' });
-    play(w, {}, 62, prev);
-    expect(w.events.some((e) => e.type === 'dollOpen')).toBe(true);
-    expect(w.projectiles.filter((p) => p.kind === 'dollSmall')).toHaveLength(3);
-    play(w, {}, 120);
-    expect(w.projectiles).toHaveLength(0);
-    expect(w.events.filter((e) => e.type === 'explosion' && e.source === 'bomb')).toHaveLength(3);
-    expect(w.player.dead).toBe(false);
-  });
-});
-
 describe('extraction', () => {
   it('reaching the flag mid-strike ends the judo, so the bro does not board frozen in the punch', () => {
     const w = createWorld(EMPTY, TEST_STATS, [{ ...BROLUSCONI, base: 'bro_lee', weapon: 'judo' }], () => 0.5);
@@ -509,5 +491,23 @@ describe('extraction', () => {
     play(w, { fire: true }, 1);
     expect(w.state).toBe('extracting');
     expect(w.player.attack).toBeNull();
+  });
+});
+
+describe("Putin's tank special (GrenadeAirstrike with callInTank)", () => {
+  const TANKER: BroDef = { ...BROLUSCONI, id: 'tanker', base: 'bro_lee', special: 'tank' };
+
+  it('throws the signal grenade; after its fuse a tank falls in from above the screen and lands, no airstrike', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [TANKER], () => 0.5);
+    const prev = play(w, { special: true }, 1);
+    expect(w.specialAmmo).toBe(1);
+    expect(w.projectiles.find((p) => p.kind === 'marker')?.call).toBe('tank');
+    play(w, {}, 62, prev);
+    expect(w.tanks).toHaveLength(1);
+    expect(w.tanks[0].y).toBeGreaterThan(200);
+    play(w, {}, 120);
+    expect(w.tanks[0].onGround).toBe(true);
+    expect(w.tanks[0].y).toBeCloseTo(24, 3);
+    expect(w.projectiles.filter((p) => p.kind === 'bomb')).toHaveLength(0);
   });
 });

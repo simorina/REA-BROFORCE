@@ -7,7 +7,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
 };
 const SPECIAL_HINT: Record<SpecialId, string> = {
   airstrike: 'Attacco aereo (con ↓ lo lanci corto)',
-  matryoshka: 'Matrioska esplosiva (con ↓ la lanci corta)',
+  tank: 'Carro armato: lancia il segnale e salici sopra (X spara, C cambia arma, F scendi)',
 };
 
 interface Props {

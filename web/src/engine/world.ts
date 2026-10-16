@@ -19,11 +19,13 @@ import { parseLevel, type LevelData } from './level';
 import { makeBlock, type TileMap } from './map';
 import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
-  fireBazookaRocket, fireMookBullet, openDoll, spawnAirstrike, stepProjectile,
+  fireBazookaRocket, fireMookBullet, spawnAirstrike, stepProjectile,
 } from './projectiles';
+import { callTank, stepTanks } from './driving';
 import { stepJudo } from './judo';
 import { SPECIAL_KITS, WEAPON_KITS } from './kits';
 import { damageUnit, makeUnit, runFiring } from './units';
+import type { Tank } from './tank';
 import type { BlockKind, Controls, EnemyKind, GameStats, Projectile, ProjectileKind, Team, Unit, UnitKind } from './types';
 
 /** Something the renderer times: a screen shake (SortOfFollow.Shake) or the bro's speech bubble. */
@@ -77,8 +79,7 @@ export type GameEvent =
   | { type: 'wave'; x: number; y: number } // ScoutMook.FireWeapon: a wave and a whistle instead of a shot
   | { type: 'doorCollapse'; x: number; y: number } // MookDoor.Collapse
   | { type: 'doorBlast'; x: number; y: number } // MookDoor.DestroyDoor with explodeAtEnd
-  | { type: 'flex'; x: number; y: number } // TestVanDammeAnim.PlayFlexSound / TriggerFlexEvent
-  | { type: 'dollOpen'; x: number; y: number }; // the matryoshka opens
+  | { type: 'flex'; x: number; y: number }; // TestVanDammeAnim.PlayFlexSound / TriggerFlexEvent
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
 
 export interface World {
@@ -97,6 +98,9 @@ export interface World {
   grass: Grass[];
   doors: MookDoor[];
   doorPoints: DoorPoint[]; // the doors as ScoutMookInterestPoints
+  tanks: Tank[]; // TankBroTank vehicles on the map
+  driving: Tank | null; // the tank the player is in
+  reboard: Tank | null; // the tank just left: no boarding it until he stands clear of it
   flexPower: 'allure' | null; // PlayerInventory.flexPowers: what flexing does
   flag: { x: number; y: number };
   lives: number;
@@ -138,7 +142,7 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
     prisoners: parsed.cages.map((c) => ({ x: cellX(c.c), y: feetY(c.r), freed: false })),
     checkpoints: parsed.checkpoints.map((c) => ({ x: cellX(c.c), y: feetY(c.r), activated: false, raisedAt: 0 })),
     grass: parsed.grass.map((c) => ({ x: cellX(c.c), y: c.r * TILE, health: stats.grass.health, destroyed: false })),
-    doors, doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), flexPower: level.flexPower ?? null,
+    doors, doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], driving: null, reboard: null, flexPower: level.flexPower ?? null,
     flag: { x: cellX(parsed.flag.c), y: feetY(parsed.flag.r) },
     lives: LIVES_START, specialAmmo: stats.bros[bro.base].specialAmmo, respawnTimer: 0,
     state: 'playing', extractionTime: 0, time: 0, nextId, camera, events: [], laughIndex: 0,
@@ -542,9 +546,9 @@ function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
       else if (ev.type === 'block') w.events.push({ type: 'block', x: cellX(ev.c), y: ev.r * TILE, kind: ev.kind, damage: ev.damage });
       else if (ev.type === 'hit') w.events.push({ type: 'hit', x: ev.unit.x, y: ev.unit.y, hitY: ev.y, xI: ev.xI, yI: ev.yI });
       else if (ev.type === 'gib') w.events.push({ type: 'gib', x: ev.x, y: ev.y, team: 'enemy', kind: ev.kind, xI: ev.xI, yI: ev.yI });
-      else if (ev.type === 'dollOpen') {
-        w.events.push({ type: 'dollOpen', x: ev.x, y: ev.y });
-        w.projectiles.push(...openDoll(() => w.nextId++, ev.x, ev.y, ev.dir, ev.team));
+      else if (ev.type === 'callTank') {
+        w.events.push({ type: 'airstrike', x: ev.x, y: ev.y }); // GrenadeAirstrike.MakeEffects
+        callTank(w, ev.x, ev.y, ev.dir);
       } else {
         w.events.push({ type: 'airstrike', x: ev.x, y: ev.y });
         w.projectiles.push(...spawnAirstrike(() => w.nextId++, ev.x, ev.y, screenMaxY(w.camera), w.stats, w.rng));
@@ -636,6 +640,7 @@ export function stepWorld(w: World, controls: Controls, prev: Controls, t: numbe
   const blasts: Blast[] = [];
   reportUnits(w); // deaths caused outside a step still start the respawn timer
   stepPlayer(w, controls, prev, t, blasts);
+  stepTanks(w, t, blasts);
   stepEnemies(w, t, blasts);
   stepDoors(w, t);
   stepProjectiles(w, t, blasts);

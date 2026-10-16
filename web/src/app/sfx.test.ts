@@ -6,9 +6,7 @@ describe('sfx', () => {
     expect(sfxFor({ type: 'shot', weapon: 'football', x: 0, y: 0, facing: 1 })).toBe('kick');
     expect(sfxFor({ type: 'shot', weapon: 'rocket', x: 0, y: 0, facing: 1 })).toBe('rocket');
     expect(sfxFor({ type: 'shot', weapon: 'judo', x: 0, y: 0, facing: 1 })).toBe('swish');
-    expect(sfxFor({ type: 'shot', weapon: 'doll', x: 0, y: 0, facing: 1 })).toBe('throw');
     expect(sfxFor({ type: 'shot', weapon: 'body', x: 0, y: 0, facing: 1 })).toBe('throw');
-    expect(sfxFor({ type: 'dollOpen', x: 0, y: 0 })).toBe('pop');
     expect(sfxFor({ type: 'explosion', x: 0, y: 0, big: true, source: 'rocket', range: 28 })).toBe('boom');
     expect(sfxFor({ type: 'explosion', x: 0, y: 0, big: false, source: 'rocket', range: 28 })).toBe('pop');
     expect(sfxFor({ type: 'block', x: 0, y: 0, kind: 'barrel', damage: 1 })).toBeNull();

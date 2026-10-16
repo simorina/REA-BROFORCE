@@ -20,6 +20,13 @@ describe('parseValues', () => {
     expect(() => parseValues(old)).toThrow('bro_lee.speed');
   });
 
+  it('reads the tank, its turret and its two projectiles', () => {
+    const s = parseValues(RAW_VALUES);
+    expect(s.tank).toEqual({ speed: 60, jumpForce: 290, maxFallSpeed: -600, maxDamage: 25, countdownThreshold: 45, cannonFireSpeed: 44 });
+    expect(s.tankShell).toEqual({ damage: 10, range: 36, life: 6 });
+    expect(s.tankRocket).toEqual({ damage: 15, range: 56, blastForce: 16, blastForceExtraY: 220, life: 1, acceleration: 120, crushLayers: 3 });
+  });
+
   it('names the missing field', () => {
     const raw = { ...RAW_VALUES, bomb: { damage: 10 } };
     expect(() => parseValues(raw)).toThrow('bomb.range');

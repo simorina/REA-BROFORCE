@@ -107,6 +107,20 @@ export function parseValues(raw: Raw): GameStats {
     rocketMook: rocket(raw, 'rocket_mook'),
     bomb: rocket(raw, 'bomb'),
     marker: { bounceM: num(raw, 'marker', 'bounceM'), frictionM: num(raw, 'marker', 'frictionM') },
+    tank: {
+      speed: num(raw, 'tank', 'speed'),
+      jumpForce: num(raw, 'tank', '_jumpForce'),
+      maxFallSpeed: num(raw, 'tank', 'maxFallSpeed'),
+      maxDamage: num(raw, 'tank', 'maxDamageBeforeExploding'),
+      countdownThreshold: num(raw, 'tank', 'deathCountdownExplodeThreshold'),
+      cannonFireSpeed: num(raw, 'tank_turret', 'cannonFireSpeed'),
+    },
+    tankShell: { damage: num(raw, 'tank_shell', 'damage'), range: num(raw, 'tank_shell', 'range'), life: num(raw, 'tank_shell', 'life') },
+    tankRocket: {
+      ...rocket(raw, 'tank_rocket'),
+      acceleration: num(raw, 'tank_rocket', 'horizontalAcceleration'),
+      crushLayers: num(raw, 'tank_rocket', 'crushWallLayers'),
+    },
     blocks: {
       dirt: { health: num(raw, 'block_dirt', 'health') },
       brick: { health: num(raw, 'block_brick', 'health') },

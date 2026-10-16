@@ -15,9 +15,9 @@ describe('bro definitions', () => {
     });
   });
 
-  it('Putin throws mooks with judo and opens a matryoshka, in Russian', () => {
+  it('Putin throws mooks with judo and calls in a tank, in Russian', () => {
     expect(PUTIN).toEqual({
-      id: 'putin', name: 'Vladimir Putin', sheet: 'putin', base: 'bro_lee', weapon: 'judo', special: 'matryoshka',
+      id: 'putin', name: 'Vladimir Putin', sheet: 'putin', base: 'bro_lee', weapon: 'judo', special: 'tank',
       voiceLine: 'Если драка неизбежна, бей первым!', voiceLang: 'ru-RU',
     });
   });
@@ -35,6 +35,7 @@ describe('bro definitions', () => {
   it('rejects unknown weapons and specials', () => {
     expect(() => parseBro({ ...valid, weapon: 'laser' })).toThrow("unknown weapon 'laser'");
     expect(() => parseBro({ ...valid, special: 'nuke' })).toThrow("unknown special 'nuke'");
+    expect(() => parseBro({ ...valid, special: 'matryoshka' })).toThrow("unknown special 'matryoshka'");
   });
 
   it('rejects an unknown base prefab and a missing voice language', () => {
