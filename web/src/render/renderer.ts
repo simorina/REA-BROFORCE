@@ -100,7 +100,7 @@ export class Renderer {
     this.drawFlames();
     this.drawGrass(w, 'blades');
     for (const p of w.projectiles) this.drawProjectile(p, w.time);
-    for (const s of this.shells) this.drawDoll(s.x, s.y, 1, s.side * s.age * 8, s.side, 1 - s.age / SHELL_LIFE);
+    for (const s of this.shells) this.drawDoll(s.x, s.y + 7, 1, s.side * s.age * 8, s.side, 1 - s.age / SHELL_LIFE);
     for (const e of w.effects) this.drawEffect(e, w);
     for (const e of w.enemies) this.drawBubble(e);
     if (w.state === 'extracting') this.drawHelicopter(w);
@@ -421,10 +421,10 @@ export class Renderer {
         this.sprite(ENEMY_SHEETS[p.body ?? 'mook'], 4, 0, p.x, p.y, p.xI < 0, time * 14 * Math.sign(p.xI || 1));
         break;
       case 'doll':
-        this.drawDoll(p.x, p.y, 1, Math.sin(time * 18) * 0.3);
+        this.drawDoll(p.x, p.y + 7, 1, Math.sin(time * 18) * 0.3); // standing on its point, like the marker
         break;
       case 'dollSmall':
-        this.drawDoll(p.x, p.y, 0.6, time * 10 * Math.sign(p.xI || 1));
+        this.drawDoll(p.x, p.y + 4, 0.6, time * 10 * Math.sign(p.xI || 1));
         break;
     }
   }
