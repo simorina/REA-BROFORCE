@@ -4,6 +4,7 @@ import type { BroDef } from './bro';
 import { FIXED_DT } from './constants';
 import type { LevelData } from './level';
 import { throwBody } from './projectiles';
+import { makeTank } from './tank';
 import { TEST_STATS } from './testStats';
 import { NO_CONTROLS, type Controls } from './types';
 import { damageUnit } from './units';
@@ -509,5 +510,82 @@ describe("Putin's tank special (GrenadeAirstrike with callInTank)", () => {
     expect(w.tanks[0].onGround).toBe(true);
     expect(w.tanks[0].y).toBeCloseTo(24, 3);
     expect(w.projectiles.filter((p) => p.kind === 'bomb')).toHaveLength(0);
+  });
+});
+
+describe('driving the tank (MookArmouredGuy / TankBroTank)', () => {
+  const TANKER: BroDef = { ...BROLUSCONI, id: 'tanker', base: 'bro_lee', special: 'tank' };
+  /** A landed, empty tank `dx` to the right of the bro on EMPTY's floor. */
+  function withTank(dx = 10, lvl = EMPTY, roster: BroDef[] = [TANKER]): World {
+    const w = createWorld(lvl, TEST_STATS, roster, () => 0.5);
+    const k = makeTank(900, w.player.x + dx, 24, 1);
+    k.onGround = true;
+    w.tanks.push(k);
+    return w;
+  }
+
+  it('walking into a landed tank climbs in: the bro is hidden, shielded, and goes where the tank goes', () => {
+    const w = withTank();
+    play(w, {}, 1);
+    expect(w.driving).toBe(w.tanks[0]);
+    expect(w.player.invulnerable).toBeGreaterThan(0);
+    play(w, { right: true }, 60, NO_CONTROLS);
+    expect(w.tanks[0].x).toBeGreaterThan(w.spawn.x + 40);
+    expect(w.player.x).toBe(w.tanks[0].x);
+    expect(w.events).toContainEqual(expect.objectContaining({ type: 'boardTank' }));
+  });
+
+  it('F climbs out of the hatch: at (X, Y + 32) with yI 130 + 100', () => {
+    const w = withTank();
+    let prev = play(w, {}, 1);
+    prev = play(w, { gesture: true }, 1, prev);
+    expect(w.driving).toBeNull();
+    expect(w.tanks[0].driven).toBe(false);
+    expect(w.player.y).toBeGreaterThan(24 + 32 - 5); // one step of flight after appearing at Y + 32
+    expect(w.player.yI).toBeGreaterThan(200);
+  });
+
+  it('after climbing out he stays out until he has stood clear of the tank', () => {
+    const w = withTank(0);
+    let prev = play(w, {}, 1);
+    prev = play(w, { gesture: true }, 1, prev);
+    prev = play(w, {}, 60, prev); // he falls back down inside the tank's box
+    expect(w.player.onGround).toBe(true);
+    expect(w.driving).toBeNull();
+    prev = play(w, { right: true }, 30, prev); // walks clear
+    expect(w.driving).toBeNull();
+    play(w, { left: true }, 40, prev); // and back in
+    expect(w.driving).toBe(w.tanks[0]);
+  });
+
+  it('driving into a mook runs it over (CrushGroundWhileMoving: 5 crush damage)', () => {
+    const w = withTank(10, level([[2, 'P'], [8, 'm'], [27, 'F']]));
+    play(w, { right: true }, 90);
+    expect(w.enemies.every((m) => m.dead)).toBe(true); // its corpse lies there for CORPSE_TIME
+    expect(w.events).toContainEqual(expect.objectContaining({ type: 'kill', kind: 'mook' }));
+  });
+
+  it('driving into a dirt wall grinds through it', () => {
+    const w = withTank(10, level([[2, 'P'], [6, 'd'], [27, 'F']]));
+    play(w, { right: true }, 90);
+    expect(w.map.get(6, 2)).toBeNull();
+  });
+
+  it('a rescue while driving keeps the new bro inside', () => {
+    const w = withTank(10, level([[2, 'P'], [20, 'c'], [27, 'F']]), [TANKER, BROLUSCONI]);
+    play(w, {}, 1);
+    w.prisoners[0].x = w.player.x;
+    play(w, {}, 1);
+    expect(w.bro).toBe(BROLUSCONI);
+    expect(w.driving).toBe(w.tanks[0]);
+  });
+
+  it('reaching the flag while driving climbs out and extracts', () => {
+    const w = withTank();
+    play(w, {}, 1);
+    w.tanks[0].x = w.flag.x - 4;
+    play(w, {}, 2);
+    expect(w.state).toBe('extracting');
+    expect(w.driving).toBeNull();
   });
 });

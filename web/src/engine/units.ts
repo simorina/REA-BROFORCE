@@ -1,5 +1,5 @@
 import { makeAiState } from './ai';
-import { FIRE_START_LIMIT, GIB_THRESHOLD } from './constants';
+import { FIRE_START_LIMIT, GIB_THRESHOLD, UNIT_BOX_HEIGHT, UNIT_WIDTH } from './constants';
 import type { Team, Unit, UnitKind, UnitStats } from './types';
 
 export function makeUnit(id: number, kind: UnitKind, team: Team, x: number, y: number, stats: UnitStats): Unit {
@@ -49,4 +49,9 @@ export function runFiring(u: Unit, fire: boolean, t: number): boolean {
   if (u.fireCounter < u.stats.fireRate) return false;
   u.fireCounter -= u.stats.fireRate;
   return true;
+}
+
+/** Map.HitUnits' box test (the one Map.AlertNearbyMooks uses too). */
+export function inHitBox(u: Unit, x: number, y: number, range: number): boolean {
+  return Math.abs(u.x - x) - range < UNIT_WIDTH && Math.abs(u.y + UNIT_BOX_HEIGHT / 2 + 3 - y) - range < UNIT_BOX_HEIGHT;
 }

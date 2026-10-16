@@ -39,4 +39,26 @@ describe('the tank body', () => {
     expect(k.y).toBeCloseTo(8, 3);
     expect(minYI).toBeGreaterThanOrEqual(-600);
   });
+
+  it('drives at up to its speed of 60, faces the way it drives, and jumps at 290', () => {
+    const k = makeTank(1, 160, 8, 1);
+    let maxSpeed = 0;
+    for (let i = 0; i < 60; i++) {
+      stepTankBody(k, { dir: -1, jump: false }, ground(), TEST_STATS.tank, FIXED_DT);
+      maxSpeed = Math.max(maxSpeed, Math.abs(k.xI));
+    }
+    expect(k.facing).toBe(-1);
+    expect(maxSpeed).toBeCloseTo(60, 5);
+    expect(k.x).toBeLessThan(130);
+    stepTankBody(k, { dir: 0, jump: true }, ground(), TEST_STATS.tank, FIXED_DT);
+    expect(k.yI).toBeGreaterThan(270); // 290 less one step of gravity
+  });
+
+  it('crushes on every other pair of running frames while driving on the ground', () => {
+    const k = makeTank(1, 160, 8, 1);
+    let crushes = 0;
+    for (let i = 0; i < 60; i++) crushes += stepTankBody(k, { dir: 1, jump: false }, ground(), TEST_STATS.tank, FIXED_DT);
+    expect(crushes).toBeGreaterThanOrEqual(14); // 1 s = 29.9 running frames, half of them crush
+    expect(crushes).toBeLessThanOrEqual(16);
+  });
 });

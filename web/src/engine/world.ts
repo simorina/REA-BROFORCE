@@ -11,7 +11,7 @@ import {
   LIVES_START, PRISONER_RESCUE_DIST, RESCUE_INVULNERABLE, RESPAWN_DELAY, SPAWN_INVULNERABLE, SPECIAL2_TIME,
   SPEECH_DURATION, TILE, UNIT_BOX_HEIGHT, UNIT_WIDTH, BAZOOKA_RECOIL, DOOR_EXIT_INVULNERABLE, DOOR_FIRE_DAMAGE, SCOUT_WAVE_TIME,
   BOMB_FIRE_RANGE_M, SUICIDE_BURN_EXTRA, ALLURE_RANGE, FLEX_EVENT_FRAMES, FLEX_FRAME_RATE, FLEX_FRAMES, FLEX_HOLD,
-  FLEX_RESTART_FRAME, FLEX_SLOW_FRAMES, FLEX_SLOW_RATE,
+  FLEX_RESTART_FRAME, FLEX_SLOW_FRAMES, FLEX_SLOW_RATE, TANK_EXIT_YI,
 } from './constants';
 import { alarmDoor, collapseDoor, doorLostSupport, makeDoor, stepDoor, type DoorSpawn, type MookDoor } from './doors';
 import { applyBlast, barrelBlast, suicideBlast, type Blast } from './explosions';
@@ -21,7 +21,7 @@ import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
   fireBazookaRocket, fireMookBullet, spawnAirstrike, stepProjectile,
 } from './projectiles';
-import { callTank, stepTanks } from './driving';
+import { boardTanks, callTank, driveTank, exitTank, stepTanks } from './driving';
 import { stepJudo } from './judo';
 import { SPECIAL_KITS, WEAPON_KITS } from './kits';
 import { damageUnit, makeUnit, runFiring } from './units';
@@ -79,7 +79,9 @@ export type GameEvent =
   | { type: 'wave'; x: number; y: number } // ScoutMook.FireWeapon: a wave and a whistle instead of a shot
   | { type: 'doorCollapse'; x: number; y: number } // MookDoor.Collapse
   | { type: 'doorBlast'; x: number; y: number } // MookDoor.DestroyDoor with explodeAtEnd
-  | { type: 'flex'; x: number; y: number }; // TestVanDammeAnim.PlayFlexSound / TriggerFlexEvent
+  | { type: 'flex'; x: number; y: number } // TestVanDammeAnim.PlayFlexSound / TriggerFlexEvent
+  | { type: 'boardTank'; x: number; y: number }
+  | { type: 'exitTank'; x: number; y: number };
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
 
 export interface World {
@@ -301,27 +303,31 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
     return;
   }
   if (p.invulnerable > 0) p.invulnerable = p.invulnerable - t > 1e-9 ? p.invulnerable - t : 0;
-  if (!p.attack) startOrStopFlex(p, controls, prev);
-  stepUnit(p, p.attack ? NO_INTENT : intentFrom(controls, prev), w.map, t, w.time); // BroLee holds still to strike
-  animateFlex(w, p, controls, t);
-  p.fireCooldown -= t;
-  const weapon = WEAPON_KITS[w.bro.weapon];
-  if (controls.fire && (weapon.repeat || !prev.fire) && !p.attack && p.fireCooldown <= 0) {
-    weapon.fire(w, p);
-    p.fireCooldown = p.stats.fireRate;
+  if (w.driving) {
+    driveTank(w, controls, prev);
+  } else {
+    if (!p.attack) startOrStopFlex(p, controls, prev);
+    stepUnit(p, p.attack ? NO_INTENT : intentFrom(controls, prev), w.map, t, w.time); // BroLee holds still to strike
+    animateFlex(w, p, controls, t);
+    p.fireCooldown -= t;
+    const weapon = WEAPON_KITS[w.bro.weapon];
+    if (controls.fire && (weapon.repeat || !prev.fire) && !p.attack && p.fireCooldown <= 0) {
+      weapon.fire(w, p);
+      p.fireCooldown = p.stats.fireRate;
+    }
+    stepJudo(w, p, t, blasts);
+    if (controls.special && !prev.special && w.specialAmmo > 0) {
+      w.specialAmmo -= 1;
+      const thrown = SPECIAL_KITS[w.bro.special](w.nextId++, p, controls.down);
+      w.projectiles.push(thrown);
+      w.effects.push({ kind: 'speech', x: p.x, y: p.y + 40, age: 0, duration: SPEECH_DURATION, text: w.bro.voiceLine });
+      w.events.push(
+        { type: 'voice', text: w.bro.voiceLine, lang: w.bro.voiceLang },
+        { type: 'shot', weapon: thrown.kind, x: p.x, y: p.y, facing: p.facing },
+      );
+    }
   }
-  stepJudo(w, p, t, blasts);
-  if (controls.special && !prev.special && w.specialAmmo > 0) {
-    w.specialAmmo -= 1;
-    const thrown = SPECIAL_KITS[w.bro.special](w.nextId++, p, controls.down);
-    w.projectiles.push(thrown);
-    w.effects.push({ kind: 'speech', x: p.x, y: p.y + 40, age: 0, duration: SPEECH_DURATION, text: w.bro.voiceLine });
-    w.events.push(
-      { type: 'voice', text: w.bro.voiceLine, lang: w.bro.voiceLang },
-      { type: 'shot', weapon: thrown.kind, x: p.x, y: p.y, facing: p.facing },
-    );
-  }
-  if (p.y < -64) {
+  if (p.y < -64 && !w.driving) {
     p.invulnerable = 0;
     damageUnit(p, p.health);
   }
@@ -335,9 +341,11 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
     }
   }
   if (p.dead) return;
+  boardTanks(w);
   checkCheckpoints(w);
   alertMooks(w, p.x, p.y, ALERT_TOUCH, ALERT_TOUCH); // TestVanDammeAnim.AlertNearbyMooks, every frame
   if (Math.abs(p.x - w.flag.x) < FLAG_REACH && Math.abs(p.y - w.flag.y) < FLAG_REACH * 2) {
+    if (w.driving) exitTank(w, TANK_EXIT_YI);
     w.state = 'extracting';
     w.extractionTime = 0;
     w.projectiles = [];

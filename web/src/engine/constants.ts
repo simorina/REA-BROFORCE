@@ -100,9 +100,14 @@ export const JUDO_COL = 24; // AnimateAttackForwards: column 24 + attackFrames .
 export const TANK_BOX = { halfWidth: 15, height: 28 }; // MookArmouredGuy.Awake: halfWidth 15; TankBroTank.Start: height 28
 export const TANK_RUN_FRAME_RATE = 0.0334; // TankBroTank prefab runningFrameRate
 export const TANK_DROP_HEIGHT = 200; // GrenadeAirstrike.SpawnTank: screenMaxY + 200
+export const TANK_CRUSH = { units: 5, unitsRange: 10, offset: 8, ground: 4, top: 1, groundRange: 11 }; // TankBroTank.AnimateRunning: CrushGroundWhileMoving(4, 5, 10, 8)
+export const TANK_EXIT_YI = 130; // MookArmouredGuy.PressHighFiveMelee: DisChargePilot(130)
+export const TANK_EXIT_Y = 32; // MookArmouredGuy.DisChargePilotRPC: the pilot appears at Y + 32 ...
+export const TANK_EXIT_BOOST = 100; // ... with yI = disChargeYI + 100
 export const JUDO_ROW = 7; // ... lowerLeftPixel y = 32 * (8 + attackSpriteRow): sheet rows 7 and 8 from the top
 
 // Design values (not in the original game). Tuned in playtesting; listed in docs/findings.md.
+export const TANK_DRIVER_SHIELD = 0.1; // the hidden driver can't be hit (renewed every step he is inside)
 export const FOOTBALL = {
   kickX: 220, kickY: 160, bounceM: 0.7, frictionM: 0.85, maxBounces: 3, fuse: 1.6,
   damage: 5, range: 32, blastForce: 20, blastForceExtraY: 300,

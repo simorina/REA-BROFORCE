@@ -1,10 +1,10 @@
 import {
   JUDO_FRAME_RATE, JUDO_FRAMES, JUDO_GROUND, JUDO_HIT, JUDO_STRIKE_FRAME, JUDO_STRIKE_LAST, JUDO_THROW, TILE,
-  UNIT_BOX_HEIGHT, UNIT_WIDTH,
 } from './constants';
 import { barrelBlast, type Blast } from './explosions';
 import { getColumn, getRow } from './map';
 import { throwBody } from './projectiles';
+import { inHitBox } from './units';
 import type { EnemyKind, Unit } from './types';
 import type { World } from './world';
 
@@ -13,11 +13,6 @@ export function startJudo(p: Unit): void {
   p.attackRow = p.attackRow === 0 ? 1 : 0;
   p.attack = { frame: 0, counter: 0, row: p.attackRow, hit: false, struck: false };
   p.flex = null;
-}
-
-/** Map.HitUnits' box test (the one Map.AlertNearbyMooks uses too). */
-function inHitBox(u: Unit, x: number, y: number, range: number): boolean {
-  return Math.abs(u.x - x) - range < UNIT_WIDTH && Math.abs(u.y + UNIT_BOX_HEIGHT / 2 + 3 - y) - range < UNIT_BOX_HEIGHT;
 }
 
 /** The first live enemy in BroLee's strike box. */
