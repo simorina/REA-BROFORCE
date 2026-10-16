@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BROLUSCONI, BROS, PUTIN, rosterStartingWith } from '../bros';
+import { BROLUSCONI, BROS, PUTIN, TRUMP, rosterStartingWith } from '../bros';
 import { parseBro } from './bro';
 
 const valid = {
@@ -22,14 +22,21 @@ describe('bro definitions', () => {
     });
   });
 
+  it('Trump fires a rifle and calls in a jet, in English', () => {
+    expect(TRUMP).toEqual({
+      id: 'trump', name: 'Donald Trump', sheet: 'trump', base: 'bro_soldier', weapon: 'rifle', special: 'jet',
+      voiceLine: 'Make America Great Again!', voiceLang: 'en-US',
+    });
+  });
+
   it('rosterStartingWith puts the chosen bro first and keeps the cycle order', () => {
-    expect(BROS).toEqual([BROLUSCONI, PUTIN]);
-    expect(rosterStartingWith('putin')).toEqual([PUTIN, BROLUSCONI]);
-    expect(rosterStartingWith('brolusconi')).toEqual([BROLUSCONI, PUTIN]);
+    expect(BROS).toEqual([BROLUSCONI, PUTIN, TRUMP]);
+    expect(rosterStartingWith('putin')).toEqual([PUTIN, TRUMP, BROLUSCONI]);
+    expect(rosterStartingWith('brolusconi')).toEqual([BROLUSCONI, PUTIN, TRUMP]);
   });
 
   it('rosterStartingWith falls back to the first bro for an unknown id', () => {
-    expect(rosterStartingWith('ghost')).toEqual([BROLUSCONI, PUTIN]);
+    expect(rosterStartingWith('ghost')).toEqual([BROLUSCONI, PUTIN, TRUMP]);
   });
 
   it('rejects unknown weapons and specials', () => {

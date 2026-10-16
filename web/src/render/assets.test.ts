@@ -30,6 +30,12 @@ describe('loadData', () => {
     expect(() => broSheet({ id: 'x', sheet: 'rambro' })).toThrow("sheet 'rambro' is not extracted");
   });
 
+  it("Trump's sheet is required", () => {
+    const old: Record<string, unknown> = { ...sheets };
+    delete old.trump;
+    expect(missingSheets(old)).toEqual(['trump']);
+  });
+
   it('the tank sheets are required', () => {
     const old: Record<string, unknown> = { ...sheets };
     delete old.tank_ru;

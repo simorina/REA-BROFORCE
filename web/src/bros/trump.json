@@ -1,0 +1,10 @@
+{
+  "id": "trump",
+  "name": "Donald Trump",
+  "sheet": "trump",
+  "base": "bro_soldier",
+  "weapon": "rifle",
+  "special": "jet",
+  "voiceLine": "Make America Great Again!",
+  "voiceLang": "en-US"
+}
