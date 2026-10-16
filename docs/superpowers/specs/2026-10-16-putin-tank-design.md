@@ -93,9 +93,10 @@ the gun index (0 mortar, 1 cannon), the turret's animation state, and whether th
   0.0334 s a frame, with the original holds on its wind-up frames.
   - The **mortar** fires on frame 6: a `HeavyShell` from (X + dir·17, Y + 33) at (dir·150·0.9, 150·0.9). It flies
     straight for 0.1 s, slows from 0.1 to 0.35 s, then falls under 600 gravity as it slows (`HeavyShell.RunProjectile`).
-  - The **cannon** fires on its fire frame: a `RocketMassive` from (X + dir·24, Y + 22) at dir·`cannonFireSpeed`. It
-    gains 60 u/s² of horizontal speed and crushes through up to 4 blocks before bouncing (`RocketMassive`), then blows
-    up with its extracted damage and range.
+  - The **cannon** winds up longer (holds of 2, 3, 4 and 5 frames on frames 3–6) and fires on frame 7: a
+    `RocketMassive` from (X + dir·24, Y + 22) at dir·`cannonFireSpeed`. It gains 60 u/s² of horizontal speed and
+    crushes through up to 4 blocks before bouncing (`RocketMassive`), then blows up with its extracted damage and
+    range. Its firing frames are on turret row 2, the mortar's on row 0.
   - Holding fire queues the next shot as the original does.
 - **Special inside** switches gun with the turret's transform animation (frames 0–20 on row 1). It costs no special.
 - **Gesture (F) inside** climbs out, ported from `PressHighFiveMelee` → `DisChargePilot(130)`. The bro reappears at
