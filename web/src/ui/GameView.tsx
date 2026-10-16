@@ -25,7 +25,7 @@ interface Props {
   broId: string;
   voice: boolean;
   sound: boolean;
-  onEnd: (result: 'won' | 'lost') => void;
+  onEnd: (result: 'won' | 'lost', broName: string) => void;
   onMenu: () => void;
 }
 
@@ -94,7 +94,8 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
         if (!ended && (world.state === 'won' || world.state === 'lost')) {
           ended = true;
           const result = world.state;
-          endTimer = window.setTimeout(() => onEnd(result), 800);
+          const broName = world.bro.name;
+          endTimer = window.setTimeout(() => onEnd(result, broName), 800);
         }
       },
       (frameTime) => renderer.render(world, pause.get() ? 0 : frameTime),

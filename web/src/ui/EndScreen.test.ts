@@ -1,0 +1,10 @@
+import { describe, expect, it } from 'vitest';
+import { endMessage } from './EndScreen';
+
+describe('the end screen', () => {
+  it('names the bro who boarded the helicopter', () => {
+    expect(endMessage('won', 'Vladimir Putin')).toBe("Vladimir Putin è salito sull'elicottero.");
+    expect(endMessage('won', 'Silvio Brolusconi')).toBe("Silvio Brolusconi è salito sull'elicottero.");
+    expect(endMessage('lost', 'Vladimir Putin')).toBe('Hai finito le vite.');
+  });
+});

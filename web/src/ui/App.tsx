@@ -14,7 +14,7 @@ type Screen =
   | { name: 'missing'; reason: string }
   | { name: 'menu' }
   | { name: 'playing' }
-  | { name: 'end'; result: 'won' | 'lost' };
+  | { name: 'end'; result: 'won' | 'lost'; broName: string };
 
 export function App() {
   const [assets, setAssets] = useState<Assets | null>(null);
@@ -40,7 +40,7 @@ export function App() {
     };
   }, []);
 
-  const onEnd = useCallback((result: 'won' | 'lost') => setScreen({ name: 'end', result }), []);
+  const onEnd = useCallback((result: 'won' | 'lost', broName: string) => setScreen({ name: 'end', result, broName }), []);
   const start = useCallback(() => {
     setRun((r) => r + 1);
     setScreen({ name: 'playing' });
@@ -80,5 +80,5 @@ export function App() {
       <GameView key={run} assets={assets} broId={broId} voice={voice} sound={sound} onEnd={onEnd} onMenu={() => setScreen({ name: 'menu' })} />
     );
   }
-  return <EndScreen result={screen.result} onRestart={start} onMenu={() => setScreen({ name: 'menu' })} />;
+  return <EndScreen result={screen.result} broName={screen.broName} onRestart={start} onMenu={() => setScreen({ name: 'menu' })} />;
 }
