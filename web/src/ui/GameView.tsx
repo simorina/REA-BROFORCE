@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { createHudStore } from '../app/hudStore';
 import { Keyboard } from '../app/input';
 import { createLoop } from '../app/loop';
+import { Music, anthemShouldPlay } from '../app/music';
 import { createPause, isPauseKey } from '../app/pause';
 import { Sfx, sfxFor } from '../app/sfx';
 import { speak } from '../app/speech';
@@ -56,6 +57,7 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
     const keyboard = new Keyboard();
     keyboard.attach(window);
     const sfx = new Sfx(sound);
+    const music = new Music(sound ? new Audio('/audio/anthem_ru.ogg') : null);
     const unsubscribePause = pause.subscribe(() => sfx.setPaused(pause.get()));
     const onPauseKey = (e: KeyboardEvent) => {
       if (!isPauseKey(e.code)) return;
@@ -98,7 +100,11 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
           endTimer = window.setTimeout(() => onEnd(result, broName), 800);
         }
       },
-      (frameTime) => renderer.render(world, pause.get() ? 0 : frameTime),
+      (frameTime) => {
+        const paused = pause.get();
+        renderer.render(world, paused ? 0 : frameTime);
+        music.update(anthemShouldPlay(world.driving !== null, world.state, paused, sound), paused ? 1 : frameTime);
+      },
     );
     loop.start();
     return () => {
@@ -106,6 +112,7 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
       keyboard.detach();
       unsubscribePause();
       sfx.dispose();
+      music.dispose();
       window.removeEventListener('keydown', onPauseKey);
       window.removeEventListener('blur', onBlur);
       document.removeEventListener('visibilitychange', onVisibility);

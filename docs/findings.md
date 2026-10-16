@@ -43,6 +43,12 @@ with UnityPy 1.25.4 from `networkobjects`, `sharedtextures` and `sharedassets` b
 | Respawn after 1.8 s, invulnerable 0.5 s (flash: tint 0.5 + sin(t·25)·0.23); a freed prisoner is invulnerable 0.75 s | `HeroController.broRespawnDelay`, `Player.SpawnHero`, `InvulnerabilityFlash`, `RescueBro.Free` |
 | Airstrike height h = screen top − Y | `GrenadeAirstrike.Death`, `SortOfFollow.GetScreenMaxY` |
 | Judo throw = BroLee's forward strike: 8 frames of 0.045 s, units hit on frames 2–5 in the box range 13 around (X + dir·7, Y + 7); on frame 2 with nothing grabbed, the first block 9–17 px ahead at Y + 6 takes 5; frames column 24+, rows 7/8 alternating | `BroLee.Awake`, `StartFiring`, `RunFiring`, `AnimateAttackForwards`, `BrocSnipes.FireWeaponGround`, `Map.HitUnits` |
+| Tank drop: the five columns around the signal grenade (snapped), lowest pair of equal heights (last wins), falls from screen top + 200 over its middle; ground near the screen top drops it at the left edge | `GrenadeAirstrike.SpawnTank` |
+| Tank: speed 60, jump 290, max fall −600, box half-width 15 × 28; treads tick every 0.0334 s and every other pair crushes ahead (units 5 in range 10 at X±8, Y+2; the block ahead 4 at Y+12, 1 at Y+21) | `TankBroTank` prefab, `MookArmouredGuy.Awake`, `TankBroTank.Start`, `AnimateRunning`, `CrushGroundWhileMoving` |
+| Turret at 0.0334 s a frame: mortar holds after frames 4 and 5 and fires on 6, a HeavyShell from (X+17, Y+33) at (135, 135); cannon holds 2–5 frames after 3–6 and fires on 7, a RocketMassive from (X+24, Y+22) at 44; a press past the fire frame queues the next; C switches gun over 20 frames | `TankBroTankTurret.FireWeapon`, `Update`, `FireShell`, `FireCannon`, `SwitchGun` |
+| Mortar shell: coasts 0.1 s, drags to 0.35 s, then falls under 600 as the drag eases; damage 10, range 36, force 350/300 | `HeavyShell.RunProjectile`, `MakeEffects`, prefab |
+| Big rocket: +120 u/s², crushes 3 blocks (15 at X±9) instead of bouncing, damage 15, range 56, life 1 s | `RocketMassive`, prefab |
+| Tank damage: past 25 (driven) the death countdown ticks every 0.2667 s after 0.4667, up to 5× faster, gibbing at 45; the gib throws the driver out (yI 180 + 100) and blows (20 damage, 72 × 32, everyone); F climbs out at (X, Y+32) with yI 130 + 100 | `MookArmouredGuy.Damage`, `Update`, `Gib`, `DisChargePilotRPC`, `PressHighFiveMelee`, `TankBroTank.Damage` |
 
 ## Read from prefabs (game-data/values.json)
 
@@ -69,6 +75,7 @@ Football: kick (220, 160), bounce 0.7, friction 0.85, explodes on contact / afte
 damage 5, range 32. Airstrike fuse 1.0 s (the prefab's `life` is 0; the real fuse is set elsewhere). Coyote time 0.1 s after
 walking off a ledge.
 Judo: the grabbed mook (instead of BroLee's back somersault) is thrown at (180, 240) from 10 px ahead and 10 up, and blows up on a block, an enemy or after 2 s with the football's blast (a suicide mook with its own, on the bro's side).
+Tank: the one just left can't be boarded until he stands clear of it (climbing out drops him back inside its box); the hidden driver has a 0.1 s shield renewed every step, and 0.5 s of invulnerability when the gib throws him clear; the tank faces the way the grenade flew. Our own cannon and mortar sounds. The Russian anthem (National Anthem of Russia (2000), instrumental, one verse, Presidential Orchestra of the Russian Federation, Wikimedia Commons from kremlin.ru) is downloaded by the extractor, pinned by SHA-256, and plays while someone is inside.
 Lives 3, extraction 3 s; a checkpoint flag takes 0.6 s to climb. Freeing a prisoner gives the bro the freed
 prisoner's 0.75 s of invulnerability and swaps to the next bro (HeroController.SwapBro respawns a new bro; ours takes over in place). The suicide mook's warning flash speeds up as its fuse
 runs down. The pathfinder's budget is 60 expanded points per millisecond of the C#'s time limit. Our own art and sound:
@@ -82,7 +89,7 @@ spreading fire (only mooks escaping a collapsing door burn), homing rockets or c
 AddAction is a one-frame no-op and is dropped. Only MookGeneral/Satan ("evil" units) can block a checkpoint, so ours
 never are. `Map.ExplodeUnits` multiplies its `yI` argument for every unit it visits after a close one; the port keeps
 that boost per unit. Bullets skip corpses: every `Map.HitUnits` variant requires `health > 0`, whatever
-`Demonstration.projectilesHitWalls` says. A respawn keeps the current bro (Broforce brings in another one).
+`Demonstration.projectilesHitWalls` says. A respawn keeps the current bro (Broforce brings in another one). The tank has no boost dash, hatch, flag or driver's head; there is no landing crush (its −600 fall cap never reaches FallDamage's −2000); an empty tank gibs past 60 damage instead of staying a husk; only enemy and neutral blasts hurt tanks.
 
 ## Effects, background and more AI (second pass)
 

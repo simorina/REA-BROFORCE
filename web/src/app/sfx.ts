@@ -4,7 +4,7 @@ import type { GameEvent } from '../engine/world';
 /** Our own synthesized sound effects (WebAudio); no Broforce audio is extracted or played. */
 export type SfxName =
   | 'kick' | 'throw' | 'shot' | 'rocket' | 'boom' | 'pop' | 'crumble' | 'splat' | 'grunt' | 'death' | 'alert'
-  | 'rescue' | 'checkpoint' | 'whistle' | 'flex' | 'swish';
+  | 'rescue' | 'checkpoint' | 'whistle' | 'flex' | 'swish' | 'mortar' | 'cannon';
 
 export function sfxFor(e: GameEvent): SfxName | null {
   switch (e.type) {
@@ -19,6 +19,10 @@ export function sfxFor(e: GameEvent): SfxName | null {
           return 'throw';
         case 'rocket':
           return 'rocket';
+        case 'shell':
+          return 'mortar';
+        case 'bigRocket':
+          return 'cannon';
         default:
           return 'shot';
       }
@@ -40,6 +44,8 @@ export function sfxFor(e: GameEvent): SfxName | null {
       return 'checkpoint';
     case 'wave':
       return 'whistle';
+    case 'gunSwitch':
+      return 'throw';
     case 'flex':
       return 'flex';
     case 'doorCollapse':
@@ -193,6 +199,14 @@ const RECIPES: Record<SfxName, (s: Sfx, out: AudioNode, t: number) => void> = {
   swish: (s, o, t) => {
     s.hiss(o, t, 'bandpass', 700, 2600, 0.14, 0.4);
     s.tone(o, t, 'triangle', 300, 900, 0.08, 0.06);
+  },
+  mortar: (s, o, t) => {
+    s.tone(o, t, 'sine', 110, 45, 0.25, 0.7);
+    s.hiss(o, t, 'lowpass', 900, 200, 0.2, 0.4);
+  },
+  cannon: (s, o, t) => {
+    s.hiss(o, t, 'lowpass', 1600, 150, 0.6, 0.8);
+    s.tone(o, t, 'sawtooth', 70, 30, 0.45, 0.5);
   },
   whistle: (s, o, t) => {
     s.tone(o, t, 'sine', 1900, 2600, 0.12, 0.12);

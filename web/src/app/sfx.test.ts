@@ -5,6 +5,9 @@ describe('sfx', () => {
   it('maps game events to sounds', () => {
     expect(sfxFor({ type: 'shot', weapon: 'football', x: 0, y: 0, facing: 1 })).toBe('kick');
     expect(sfxFor({ type: 'shot', weapon: 'rocket', x: 0, y: 0, facing: 1 })).toBe('rocket');
+    expect(sfxFor({ type: 'shot', weapon: 'shell', x: 0, y: 0, facing: 1 })).toBe('mortar');
+    expect(sfxFor({ type: 'shot', weapon: 'bigRocket', x: 0, y: 0, facing: 1 })).toBe('cannon');
+    expect(sfxFor({ type: 'gunSwitch', x: 0, y: 0 })).toBe('throw');
     expect(sfxFor({ type: 'shot', weapon: 'judo', x: 0, y: 0, facing: 1 })).toBe('swish');
     expect(sfxFor({ type: 'shot', weapon: 'body', x: 0, y: 0, facing: 1 })).toBe('throw');
     expect(sfxFor({ type: 'explosion', x: 0, y: 0, big: true, source: 'rocket', range: 28 })).toBe('boom');

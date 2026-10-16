@@ -84,6 +84,7 @@ export function Menu({ bros, selected, portraits, voice, sound, onSelect, onTogg
         Inizia (Invio)
       </button>
       <p className="note">Uso personale: sprite e valori estratti dalla tua copia di Broforce (© Free Lives).</p>
+      <p className="note">Inno russo: Orchestra presidenziale della Federazione Russa (kremlin.ru, via Wikimedia Commons).</p>
     </div>
   );
 }
