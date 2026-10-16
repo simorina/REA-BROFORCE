@@ -104,6 +104,12 @@ export const TANK_CRUSH = { units: 5, unitsRange: 10, offset: 8, ground: 4, top:
 export const TANK_EXIT_YI = 130; // MookArmouredGuy.PressHighFiveMelee: DisChargePilot(130)
 export const TANK_EXIT_Y = 32; // MookArmouredGuy.DisChargePilotRPC: the pilot appears at Y + 32 ...
 export const TANK_EXIT_BOOST = 100; // ... with yI = disChargeYI + 100
+export const TURRET_FRAME_RATE = 0.0334; // TankBroTankTurret.frameRate
+export const TANK_SHELL = { ox: 17, oy: 33, speed: 150, m: 0.9 }; // TankBroTankTurret.FireShell: (X + dir*17, Y + 33) at (dir*150, 150) * 0.9
+export const TANK_CANNON = { ox: 24, oy: 22 }; // TankBroTankTurret.FireCannon: (X + dir*24, Y + 22) at dir*cannonFireSpeed
+export const HEAVY_SHELL_DIP = { coast: 0.1, slow: 0.35, fall: 0.4, drag: 1.5, gravity: 600 }; // HeavyShell.RunProjectile
+export const SHELL_BLAST = { force: 350, extraY: 300 }; // HeavyShell.MakeEffects: ExplodeUnits(..., 350, 300)
+export const TANK_ROCKET_CRUSH = { damage: 15, range: 16, ox: 9 }; // RocketMassive.Bounce: DamageGround(15, Crush, 16, X + dir*9, Y)
 export const JUDO_ROW = 7; // ... lowerLeftPixel y = 32 * (8 + attackSpriteRow): sheet rows 7 and 8 from the top
 
 // Design values (not in the original game). Tuned in playtesting; listed in docs/findings.md.

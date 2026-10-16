@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FIXED_DT } from './constants';
 import { TileMap, makeBlock } from './map';
 import {
-  fireMookBullet, kickFootball, spawnAirstrike, stepProjectile, throwBody, throwMarker,
+  fireBigRocket, fireMookBullet, fireShell, kickFootball, spawnAirstrike, stepProjectile, throwBody, throwMarker,
   type ProjectileEvent, type ProjectileWorld,
 } from './projectiles';
 import { TEST_STATS } from './testStats';
@@ -166,5 +166,43 @@ describe('thrown bodies (the judo throw)', () => {
     const p = throwBody(1, bro(80, 8), 'mook_suicide');
     const e = steps(p, world(floorMap()), 120).find((x) => x.type === 'explode');
     expect(e?.type === 'explode' && [e.blast.source, e.blast.team, e.blast.big]).toEqual(['suicide', 'player', true]);
+  });
+});
+
+describe("the tank's projectiles", () => {
+  const tank = { x: 80, y: 8, facing: 1 as const };
+
+  it('the mortar shell leaves at (X + 17, Y + 33) at (135, 135), coasts, slows, then falls and blows up', () => {
+    const p = fireShell(1, tank, TEST_STATS);
+    expect([p.kind, p.x, p.y, p.xI, p.yI]).toEqual(['shell', 97, 41, 135, 135]);
+    steps(p, world(floorMap()), 6); // 0.1 s: no drag yet
+    expect(p.xI).toBeCloseTo(135, 5);
+    steps(p, world(floorMap()), 15); // 0.35 s: slowed
+    expect(p.xI).toBeLessThan(130);
+    const e = steps(p, world(floorMap()), 400).find((x) => x.type === 'explode');
+    expect(e?.type === 'explode' && [e.blast.source, e.blast.groundDamage, e.blast.unitRange, e.blast.force]).toEqual(['shell', 10, 36, 350]);
+  });
+
+  it('the big rocket leaves at (X + 24, Y + 22) at 44 and gains 120 u/s² of speed', () => {
+    const p = fireBigRocket(1, tank, TEST_STATS);
+    expect([p.kind, p.x, p.y, p.xI, p.crush]).toEqual(['bigRocket', 104, 30, 44, 3]);
+    steps(p, world(new TileMap(60, 10)), 30);
+    expect(p.xI).toBeCloseTo(44 + 120 * 0.5, 0);
+  });
+
+  it('the big rocket crushes through a wall layer instead of bouncing', () => {
+    const map = new TileMap(60, 10);
+    for (let r = 1; r <= 3; r++) map.set(8, r, makeBlock('dirt', TEST_STATS)); // x 120..136
+    const p = fireBigRocket(1, { x: 70, y: 10, facing: 1 }, TEST_STATS);
+    steps(p, world(map), 40);
+    expect(map.get(8, 2)).toBeNull();
+    expect(p.crush).toBe(2);
+    expect(p.x).toBeGreaterThan(136);
+  });
+
+  it('the big rocket blows up after its 1 s life with its own blast', () => {
+    const p = fireBigRocket(1, tank, TEST_STATS);
+    const e = steps(p, world(new TileMap(60, 10)), 70).find((x) => x.type === 'explode');
+    expect(e?.type === 'explode' && [e.blast.source, e.blast.groundDamage, e.blast.killRange]).toEqual(['bigRocket', 15, 56]);
   });
 });

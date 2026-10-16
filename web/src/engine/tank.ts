@@ -1,4 +1,6 @@
-import { ACCEL_M, GRAVITY, GROUND_FRICTION_M, HALF_TILE, TANK_BOX, TANK_DROP_HEIGHT, TANK_RUN_FRAME_RATE, TILE } from './constants';
+import {
+  ACCEL_M, GRAVITY, GROUND_FRICTION_M, HALF_TILE, TANK_BOX, TANK_DROP_HEIGHT, TANK_RUN_FRAME_RATE, TILE, TURRET_FRAME_RATE,
+} from './constants';
 import { cellBottom, cellLeft, getColumn, getRow, type TileMap } from './map';
 import type { TankStats } from './types';
 
@@ -143,4 +145,86 @@ export function stepTankBody(k: Tank, drive: TankDrive, map: TileMap, s: TankSta
     }
   }
   return crushes;
+}
+
+export type TurretShot = 'shell' | 'cannon' | null;
+
+/** TankBroTankTurret.FireWeapon: start firing, or queue another shot once the current one is past its fire frame. */
+export function pressFire(tu: Turret): void {
+  if (!tu.firing) {
+    tu.firing = true;
+    tu.counter = 0;
+    tu.frame = 0;
+  } else if (tu.gun === 0) {
+    if (tu.frame >= 8) {
+      tu.counter = 0;
+      tu.frame = 0;
+    } else if (tu.frame >= 6) {
+      tu.queued = true;
+    }
+  } else if (tu.frame >= 9) {
+    tu.counter = 0;
+    tu.frame = 0;
+  } else if (tu.frame >= 7) {
+    tu.queued = true;
+  }
+}
+
+/** TankBroTank.PressSpecial -> TankBroTankTurret.SwitchGun: the other gun, with the transform animation. */
+export function switchGun(tu: Turret): void {
+  tu.gun = tu.gun === 0 ? 1 : 0;
+  tu.switching = true;
+  tu.firing = false;
+}
+
+/**
+ * TankBroTankTurret.Update for one fixed step (at most one turret frame per step, as in the original). The mortar
+ * holds an extra frame after frame 4 and two after frame 5, and fires on frame 6. The cannon holds 2, 3, 4 and 5
+ * extra frames after frames 3-6, and fires on frame 7. Returns the shot fired this step.
+ */
+export function stepTurret(tu: Turret, t: number): TurretShot {
+  const rate = TURRET_FRAME_RATE;
+  if (tu.switching) {
+    tu.counter += t;
+    if (tu.counter >= rate) {
+      tu.counter -= rate;
+      tu.switchFrame += tu.gun === 1 ? 1 : -1;
+      if (tu.switchFrame >= 20 || tu.switchFrame <= 0) {
+        tu.switchFrame = tu.gun === 1 ? 20 : 0;
+        tu.switching = false;
+      }
+    }
+    return null;
+  }
+  if (!tu.firing) return null;
+  tu.counter += t;
+  if (tu.counter < rate) return null;
+  tu.counter -= rate;
+  tu.frame++;
+  let shot: TurretShot = null;
+  if (tu.gun === 0) {
+    if (tu.frame === 4) tu.counter -= rate;
+    else if (tu.frame === 5) tu.counter -= rate * 2;
+    else if (tu.frame === 6) shot = 'shell';
+    else if (tu.frame === 9 && tu.queued) {
+      tu.frame = 1;
+      tu.queued = false;
+    } else if (tu.frame === 10) {
+      tu.frame = 0;
+      if (tu.queued) tu.queued = false;
+      else tu.firing = false;
+    }
+  } else {
+    if (tu.frame >= 3 && tu.frame <= 6) tu.counter -= rate * (tu.frame - 1);
+    else if (tu.frame === 7) shot = 'cannon';
+    else if (tu.frame === 10 && tu.queued) {
+      tu.frame = 1;
+      tu.queued = false;
+    } else if (tu.frame === 11) {
+      tu.frame = 0;
+      if (tu.queued) tu.queued = false;
+      else tu.firing = false;
+    }
+  }
+  return shot;
 }

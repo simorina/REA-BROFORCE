@@ -1,4 +1,5 @@
 import { BARREL_Y_OFFSET, UNIT_BOX_HEIGHT, UNIT_HEIGHT } from '../../engine/constants';
+import type { Blast } from '../../engine/explosions';
 import type { TileMap } from '../../engine/map';
 import type { Block, Unit, UnitKind } from '../../engine/types';
 import type { GameEvent } from '../../engine/world';
@@ -459,7 +460,7 @@ export class Effects {
   }
 
   /** The MakeEffects of whatever blew up. */
-  private explosion(source: 'rocket' | 'bomb' | 'football' | 'barrel' | 'suicide', x: number, y: number, range: number): void {
+  private explosion(source: Blast['source'], x: number, y: number, range: number): void {
     const [ux, uy] = this.insideUnitCircle();
     switch (source) {
       case 'rocket':

@@ -558,6 +558,22 @@ describe('driving the tank (MookArmouredGuy / TankBroTank)', () => {
     expect(w.driving).toBe(w.tanks[0]);
   });
 
+  it('inside, X fires the turret and C switches gun without using a special', () => {
+    const w = withTank();
+    let prev = play(w, {}, 1);
+    prev = play(w, { fire: true }, 1, prev);
+    prev = play(w, {}, 25, prev);
+    expect(w.projectiles.some((p) => p.kind === 'shell')).toBe(true);
+    prev = play(w, { special: true }, 1, prev);
+    expect(w.tanks[0].turret.gun).toBe(1);
+    expect(w.specialAmmo).toBe(2);
+    expect(w.events).toContainEqual(expect.objectContaining({ type: 'gunSwitch' }));
+    prev = play(w, {}, 45, prev);
+    prev = play(w, { fire: true }, 1, prev);
+    play(w, {}, 45, prev);
+    expect(w.events).toContainEqual(expect.objectContaining({ type: 'shot', weapon: 'bigRocket' }));
+  });
+
   it('driving into a mook runs it over (CrushGroundWhileMoving: 5 crush damage)', () => {
     const w = withTank(10, level([[2, 'P'], [8, 'm'], [27, 'F']]));
     play(w, { right: true }, 90);

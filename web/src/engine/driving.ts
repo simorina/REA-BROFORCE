@@ -3,7 +3,8 @@ import {
   TANK_BOX, TANK_CRUSH, TANK_DRIVER_SHIELD, TANK_EXIT_BOOST, TANK_EXIT_Y, TANK_EXIT_YI, TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT,
 } from './constants';
 import { barrelBlast, type Blast } from './explosions';
-import { NO_DRIVE, makeTank, stepTankBody, tankDrop, type Tank } from './tank';
+import { fireBigRocket, fireShell } from './projectiles';
+import { NO_DRIVE, makeTank, pressFire, stepTankBody, stepTurret, switchGun, tankDrop, type Tank } from './tank';
 import { damageUnit, inHitBox, knock } from './units';
 import type { Controls } from './types';
 import type { World } from './world';
@@ -57,6 +58,11 @@ export function driveTank(w: World, controls: Controls, prev: Controls): void {
   const k = w.driving;
   if (!k) return;
   k.drive = { dir: controls.left === controls.right ? 0 : controls.left ? -1 : 1, jump: controls.jump && !prev.jump };
+  if (controls.fire && !prev.fire) pressFire(k.turret); // TankBroTank.StartFiring -> turret.FireWeapon
+  if (controls.special && !prev.special) {
+    switchGun(k.turret); // TankBroTank.PressSpecial
+    w.events.push({ type: 'gunSwitch', x: k.x, y: k.y });
+  }
   if (controls.gesture && !prev.gesture) exitTank(w, TANK_EXIT_YI);
 }
 
@@ -84,6 +90,14 @@ export function stepTanks(w: World, t: number, blasts: Blast[]): void {
     if (k.exploded) continue;
     const crushes = stepTankBody(k, k.driven ? k.drive : NO_DRIVE, w.map, w.stats.tank, t);
     for (let i = 0; i < crushes; i++) crushAhead(w, k, blasts);
+    const shot = stepTurret(k.turret, t);
+    if (shot === 'shell') {
+      w.projectiles.push(fireShell(w.nextId++, k, w.stats));
+      w.events.push({ type: 'shot', weapon: 'shell', x: k.x, y: k.y, facing: k.facing });
+    } else if (shot === 'cannon') {
+      w.projectiles.push(fireBigRocket(w.nextId++, k, w.stats));
+      w.events.push({ type: 'shot', weapon: 'bigRocket', x: k.x, y: k.y, facing: k.facing });
+    }
   }
   const k = w.driving;
   if (k) {

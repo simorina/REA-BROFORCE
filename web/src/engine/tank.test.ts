@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FIXED_DT } from './constants';
 import { TileMap, makeBlock } from './map';
-import { NO_DRIVE, makeTank, stepTankBody, tankDrop } from './tank';
+import { NO_DRIVE, makeTank, pressFire, stepTankBody, stepTurret, switchGun, tankDrop } from './tank';
 import { TEST_STATS } from './testStats';
 
 /** Floor on row 0 (top at y 8); `heights` raises columns to that many extra blocks. */
@@ -60,5 +60,57 @@ describe('the tank body', () => {
     for (let i = 0; i < 60; i++) crushes += stepTankBody(k, { dir: 1, jump: false }, ground(), TEST_STATS.tank, FIXED_DT);
     expect(crushes).toBeGreaterThanOrEqual(14); // 1 s = 29.9 running frames, half of them crush
     expect(crushes).toBeLessThanOrEqual(16);
+  });
+});
+
+/** Steps the turret until it fires (at most `max` steps); returns [the step it fired on, the shot]. */
+function fireAfterPress(gun: 0 | 1, max = 80): [number, string | null] {
+  const k = makeTank(1, 0, 0, 1);
+  k.turret.gun = gun;
+  pressFire(k.turret);
+  for (let i = 1; i <= max; i++) {
+    const shot = stepTurret(k.turret, FIXED_DT);
+    if (shot) return [i, shot];
+  }
+  return [-1, null];
+}
+
+describe('the turret (TankBroTankTurret.FireWeapon / Update)', () => {
+  it('the mortar fires on frame 6: 9 turret frames of 0.0334 s after the press', () => {
+    const [step, shot] = fireAfterPress(0);
+    expect(shot).toBe('shell');
+    expect(step).toBeGreaterThanOrEqual(18);
+    expect(step).toBeLessThanOrEqual(20);
+  });
+
+  it('the cannon winds up longer and fires on frame 7: 21 turret frames', () => {
+    const [step, shot] = fireAfterPress(1);
+    expect(shot).toBe('cannon');
+    expect(step).toBeGreaterThanOrEqual(41);
+    expect(step).toBeLessThanOrEqual(44);
+  });
+
+  it('a press from frame 6 on queues the next shot', () => {
+    const k = makeTank(1, 0, 0, 1);
+    pressFire(k.turret);
+    let shots = 0;
+    for (let i = 0; i < 70; i++) {
+      if (k.turret.frame === 7 && shots === 1 && !k.turret.queued) pressFire(k.turret);
+      if (stepTurret(k.turret, FIXED_DT)) shots++;
+    }
+    expect(shots).toBe(2);
+  });
+
+  it('switching gun plays the 20-frame transform and fires nothing meanwhile', () => {
+    const k = makeTank(1, 0, 0, 1);
+    switchGun(k.turret);
+    expect(k.turret.gun).toBe(1);
+    let shots = 0;
+    for (let i = 0; i < 30; i++) if (stepTurret(k.turret, FIXED_DT)) shots++;
+    expect(k.turret.switching).toBe(true);
+    for (let i = 0; i < 20; i++) stepTurret(k.turret, FIXED_DT);
+    expect(k.turret.switching).toBe(false);
+    expect(k.turret.switchFrame).toBe(20);
+    expect(shots).toBe(0);
   });
 });

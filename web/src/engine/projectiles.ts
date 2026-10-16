@@ -1,9 +1,9 @@
 import {
   AIRSTRIKE_FUSE, AIRSTRIKE_ROCKETS, AIRSTRIKE_SPEED_MIN, AIRSTRIKE_SPEED_RAND, AIRSTRIKE_THROW,
-  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, FOOTBALL, GRAVITY, JUDO_THROW, MOOK_BULLET_SPEED,
+  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, FOOTBALL, GRAVITY, HEAVY_SHELL_DIP, JUDO_THROW, MOOK_BULLET_SPEED, TANK_CANNON, TANK_ROCKET_CRUSH, TANK_SHELL,
   TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT,
 } from './constants';
-import { barrelBlast, rocketBlast, suicideBlast, type Blast } from './explosions';
+import { barrelBlast, rocketBlast, shellBlast, suicideBlast, type Blast } from './explosions';
 import { TileMap, getColumn, getRow } from './map';
 import { damageUnit } from './units';
 import type { BlockKind, EnemyKind, GameStats, Projectile, ProjectileKind, RocketStats, Team, Unit } from './types';
@@ -59,6 +59,35 @@ export function throwTankMarker(id: number, u: Unit, ducking: boolean): Projecti
   const p = throwMarker(id, u, ducking);
   p.call = 'tank';
   return p;
+}
+
+interface Gun {
+  x: number;
+  y: number;
+  facing: 1 | -1;
+}
+
+/** TankBroTankTurret.FireShell: a HeavyShell from (X + dir*17, Y + 33) at (dir*150, 150) * 0.9. */
+export function fireShell(id: number, k: Gun, stats: GameStats): Projectile {
+  const v = TANK_SHELL.speed * TANK_SHELL.m;
+  return make(id, 'shell', 'player', k.x + k.facing * TANK_SHELL.ox, k.y + TANK_SHELL.oy, k.facing * v, v, stats.tankShell.life);
+}
+
+/** TankBroTankTurret.FireCannon: a RocketMassive from (X + dir*24, Y + 22) at dir*cannonFireSpeed. */
+export function fireBigRocket(id: number, k: Gun, stats: GameStats): Projectile {
+  const p = make(id, 'bigRocket', 'player', k.x + k.facing * TANK_CANNON.ox, k.y + TANK_CANNON.oy,
+    k.facing * stats.tank.cannonFireSpeed, 0, stats.tankRocket.life);
+  p.crush = stats.tankRocket.crushLayers;
+  return p;
+}
+
+/** RocketMassive.Bounce: instead of bouncing off the wall, crush it (while it has layers left). */
+function crushWall(p: Projectile, w: ProjectileWorld, dir: 1 | -1, events: ProjectileEvent[]): void {
+  for (const [c, r] of w.map.cellsInCircle(p.x + dir * TANK_ROCKET_CRUSH.ox, p.y, TANK_ROCKET_CRUSH.range / 2)) {
+    const kind = w.map.damage(c, r, TANK_ROCKET_CRUSH.damage);
+    if (kind) events.push({ type: 'block', c, r, kind, damage: TANK_ROCKET_CRUSH.damage });
+    if (kind === 'barrel') events.push({ type: 'explode', blast: barrelBlast(c * TILE, r * TILE, w.stats.barrelRange) });
+  }
 }
 
 /** The judo throw: the grabbed mook flies ahead as a body and blows up where it lands (our mechanic). */
@@ -179,6 +208,50 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
       p.x += p.xI * t;
       p.y += p.yI * t;
       if (w.map.blockAt(p.x, p.y) || unitAt(w.units, p.x, p.y, p.team) || p.life <= 0) explodeBody(p, w, events);
+      break;
+    }
+    case 'shell': {
+      // HeavyShell.RunProjectile: coast for 0.1 s, drag in from 0.1 to 0.35 s, then fall as the drag eases off
+      const d = (p.dip = (p.dip ?? 0) + t);
+      const s = HEAVY_SHELL_DIP;
+      if (d >= s.coast && d < s.slow) {
+        const n = (d - s.coast) / (s.slow - s.coast);
+        p.xI *= 1 - t * s.drag * n;
+        p.yI *= 1 - t * s.drag * n;
+      } else if (d >= s.slow) {
+        const n = Math.min(1, Math.max(0, 1 - (d - s.slow) / s.fall));
+        p.xI *= 1 - t * s.drag * n;
+        p.yI *= 1 - t * s.drag * n;
+        p.yI -= s.gravity * t * (1 - n);
+      }
+      p.x += p.xI * t;
+      p.y += p.yI * t;
+      if (w.map.blockAt(p.x, p.y) || unitAt(w.units, p.x, p.y, p.team) || p.life <= 0) {
+        p.dead = true;
+        events.push({ type: 'explode', blast: shellBlast(p.x, p.y, w.stats.tankShell, p.team) });
+      }
+      break;
+    }
+    case 'bigRocket': {
+      const dir = p.xI < 0 ? -1 : 1;
+      p.xI += dir * w.stats.tankRocket.acceleration * t; // RocketMassive.RunProjectile
+      const nx = p.x + p.xI * t;
+      if (w.map.blockAt(nx, p.y)) {
+        if ((p.crush ?? 0) <= 0) {
+          p.dead = true;
+          events.push({ type: 'explode', blast: rocketBlast(p.x, p.y, w.stats.tankRocket, p.team, true, 'bigRocket') });
+          break;
+        }
+        p.crush = (p.crush ?? 0) - 1;
+        crushWall(p, w, dir, events);
+      } else {
+        p.x = nx;
+      }
+      p.y += p.yI * t;
+      if (unitAt(w.units, p.x, p.y, p.team) || p.life <= 0) {
+        p.dead = true;
+        events.push({ type: 'explode', blast: rocketBlast(p.x, p.y, w.stats.tankRocket, p.team, true, 'bigRocket') });
+      }
       break;
     }
     case 'marker': {

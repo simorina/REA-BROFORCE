@@ -81,7 +81,8 @@ export type GameEvent =
   | { type: 'doorBlast'; x: number; y: number } // MookDoor.DestroyDoor with explodeAtEnd
   | { type: 'flex'; x: number; y: number } // TestVanDammeAnim.PlayFlexSound / TriggerFlexEvent
   | { type: 'boardTank'; x: number; y: number }
-  | { type: 'exitTank'; x: number; y: number };
+  | { type: 'exitTank'; x: number; y: number }
+  | { type: 'gunSwitch'; x: number; y: number };
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
 
 export interface World {
