@@ -501,3 +501,13 @@ describe('the matryoshka in the world', () => {
     expect(w.player.dead).toBe(false);
   });
 });
+
+describe('extraction', () => {
+  it('reaching the flag mid-strike ends the judo, so the bro does not board frozen in the punch', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [{ ...BROLUSCONI, base: 'bro_lee', weapon: 'judo' }], () => 0.5);
+    w.player.x = w.flag.x - 4;
+    play(w, { fire: true }, 1);
+    expect(w.state).toBe('extracting');
+    expect(w.player.attack).toBeNull();
+  });
+});

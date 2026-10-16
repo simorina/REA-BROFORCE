@@ -338,6 +338,8 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
     w.extractionTime = 0;
     w.projectiles = [];
     p.xI = 0;
+    p.attack = null; // he boards in his own pose, not frozen mid-strike
+    p.flex = null;
   }
 }
 
