@@ -73,3 +73,38 @@ describe('the anthem when the game is paused or interrupted', () => {
     expect(m.level).toBeGreaterThan(0);
   });
 });
+
+describe('music sources', () => {
+  it('falls back to the next source, and stays silent after the last', () => {
+    const a = Object.assign(fakeAudio(), { src: '' });
+    const m = new Music(a, ['/audio/trump_custom.mp3', '/audio/anthem_us.ogg']);
+    expect(a.src).toBe('/audio/trump_custom.mp3');
+    m.update(true, 0.25);
+    a.onerror?.('error');
+    expect(a.src).toBe('/audio/anthem_us.ogg');
+    expect(a.plays).toBe(2); // it keeps playing on the next source
+    a.onerror?.('error');
+    a.paused = true; // a failed element stops
+    expect(() => m.update(true, 0.25)).not.toThrow();
+    expect(a.plays).toBe(2); // silent after the last
+  });
+
+  it("a play() rejected for a source it already left doesn't mute the next one", async () => {
+    const a = Object.assign(fakeAudio(), { src: '' });
+    let reject: Error | null = Object.assign(new Error('no supported source'), { name: 'NotSupportedError' });
+    a.play = () => {
+      a.plays++;
+      a.paused = false;
+      const e = reject;
+      reject = null;
+      return e ? Promise.reject(e) : Promise.resolve();
+    };
+    const m = new Music(a, ['/audio/trump_custom.mp3', '/audio/anthem_us.ogg']);
+    m.update(true, 0.25); // play() on the mp3, to be rejected...
+    a.onerror?.('error'); // ...after the element's error event moved on to the anthem (HTML fires error first)
+    await Promise.resolve();
+    await Promise.resolve();
+    m.update(false, 1);
+    expect(a.paused).toBe(true); // still in control: faded out and paused, not stuck playing
+  });
+});

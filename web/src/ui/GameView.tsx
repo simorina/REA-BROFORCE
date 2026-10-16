@@ -58,10 +58,15 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
     const keyboard = new Keyboard();
     keyboard.attach(window);
     const sfx = new Sfx(sound);
-    const music = new Music(sound ? new Audio('/audio/anthem_ru.ogg') : null);
+    // one player per vehicle: the tank's anthem, and the jet's sound (the user's own, else the US anthem)
+    const tankAnthem = new Music(sound ? new Audio() : null, ['/audio/anthem_ru.ogg']);
+    const jetMusic = new Music(sound ? new Audio() : null, ['/audio/trump_custom.mp3', '/audio/anthem_us.ogg']);
     const unsubscribePause = pause.subscribe(() => {
       sfx.setPaused(pause.get());
-      if (pause.get()) music.silence(); // a hidden tab pauses without rendering frames, so don't wait for a fade
+      if (pause.get()) { // a hidden tab pauses without rendering frames, so don't wait for a fade
+        tankAnthem.silence();
+        jetMusic.silence();
+      }
     });
     const onPauseKey = (e: KeyboardEvent) => {
       if (!isPauseKey(e.code)) return;
@@ -110,7 +115,9 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
       (frameTime) => {
         const paused = pause.get();
         renderer.render(world, paused ? 0 : frameTime);
-        music.update(anthemShouldPlay(world.driving !== null, world.state, paused, sound), paused ? 1 : frameTime);
+        const musicDt = paused ? 1 : frameTime;
+        tankAnthem.update(anthemShouldPlay(world.driving?.kind === 'tank', world.state, paused, sound), musicDt);
+        jetMusic.update(anthemShouldPlay(world.driving?.kind === 'jet', world.state, paused, sound), musicDt);
       },
     );
     loop.start();
@@ -119,7 +126,8 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
       keyboard.detach();
       unsubscribePause();
       sfx.dispose();
-      music.dispose();
+      tankAnthem.dispose();
+      jetMusic.dispose();
       window.removeEventListener('keydown', onPauseKey);
       window.removeEventListener('blur', onBlur);
       document.removeEventListener('visibilitychange', onVisibility);
