@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FIXED_DT } from './constants';
 import { TileMap, makeBlock } from './map';
 import {
-  fireMookBullet, kickFootball, spawnAirstrike, stepProjectile, throwBody, throwMarker,
+  fireMookBullet, kickFootball, openDoll, spawnAirstrike, stepProjectile, throwBody, throwDoll, throwMarker,
   type ProjectileEvent, type ProjectileWorld,
 } from './projectiles';
 import { TEST_STATS } from './testStats';
@@ -166,5 +166,41 @@ describe('thrown bodies (the judo throw)', () => {
     const p = throwBody(1, bro(80, 8), 'mook_suicide');
     const e = steps(p, world(floorMap()), 120).find((x) => x.type === 'explode');
     expect(e?.type === 'explode' && [e.blast.source, e.blast.team, e.blast.big]).toEqual(['suicide', 'player', true]);
+  });
+});
+
+describe("the matryoshka (Putin's special)", () => {
+  it('is thrown like the airstrike grenade, short when ducking (BroBase.UseSpecial)', () => {
+    const u = bro(80, 8);
+    expect(throwDoll(1, u, false)).toMatchObject({ kind: 'doll', x: 88, y: 16, xI: 200, yI: 150, life: 1 });
+    expect(throwDoll(1, u, true)).toMatchObject({ kind: 'doll', x: 86, y: 11, xI: 30, yI: 70 });
+  });
+
+  it('opens after its 1 s fuse, along the throw', () => {
+    const p = throwDoll(1, bro(80, 8), false);
+    const events = steps(p, world(floorMap()), 70);
+    expect(p.dead).toBe(true);
+    expect(events.find((e) => e.type === 'dollOpen')).toMatchObject({ dir: 1, team: 'player' });
+  });
+
+  it('opens early on touching an enemy', () => {
+    const p = throwDoll(1, bro(80, 8), false);
+    const events = steps(p, world(floorMap(), [mook(100, 8)]), 10);
+    expect(events.some((e) => e.type === 'dollOpen')).toBe(true);
+  });
+
+  it('three small dolls burst out in a fan along the throw', () => {
+    let id = 10;
+    const dolls = openDoll(() => id++, 0, 20, -1, 'player');
+    expect(dolls.map((d) => [d.kind, d.id, d.xI, d.yI])).toEqual([
+      ['dollSmall', 10, 60, 220], ['dollSmall', 11, -40, 260], ['dollSmall', 12, -140, 220],
+    ]);
+  });
+
+  it("a small doll blows up with the airstrike bomb's blast", () => {
+    let id = 1;
+    const [d] = openDoll(() => id++, 80, 20, 1, 'player');
+    const e = steps(d, world(floorMap()), 120).find((x) => x.type === 'explode');
+    expect(e?.type === 'explode' && [e.blast.source, e.blast.groundDamage, e.blast.groundRange]).toEqual(['bomb', 10, 28]);
   });
 });

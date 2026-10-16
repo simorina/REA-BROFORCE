@@ -106,6 +106,8 @@ export const FOOTBALL = {
 };
 export const AIRSTRIKE_FUSE = 1.0;
 export const JUDO_THROW = { x: 180, y: 240, ox: 10, oy: 10, fuse: 2 }; // the grabbed mook, thrown ahead in an arc
+// The matryoshka opens (after the airstrike grenade's fuse, or on an enemy) into three small dolls, fanned along the throw
+export const MATRYOSHKA = { fan: [[-60, 220], [40, 260], [140, 220]] as const, smallFuse: 1.2, smallMaxBounces: 2 };
 export const JUMP_GRACE = 0.1; // coyote time after walking off a ledge (not in TestVanDammeAnim)
 export const LIVES_START = 3;
 export const PRISONER_RESCUE_DIST = 16;

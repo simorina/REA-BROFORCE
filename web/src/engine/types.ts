@@ -6,7 +6,7 @@ export type EnemyKind = Exclude<UnitKind, 'bro'>;
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
 export const BRO_BASES = ['bro_base', 'bro_lee'] as const;
 export type BroBase = (typeof BRO_BASES)[number];
-export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body';
+export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'doll' | 'dollSmall';
 
 export interface Block {
   kind: BlockKind;

@@ -19,7 +19,7 @@ import { parseLevel, type LevelData } from './level';
 import { makeBlock, type TileMap } from './map';
 import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
-  fireBazookaRocket, fireMookBullet, spawnAirstrike, stepProjectile,
+  fireBazookaRocket, fireMookBullet, openDoll, spawnAirstrike, stepProjectile,
 } from './projectiles';
 import { stepJudo } from './judo';
 import { SPECIAL_KITS, WEAPON_KITS } from './kits';
@@ -77,7 +77,8 @@ export type GameEvent =
   | { type: 'wave'; x: number; y: number } // ScoutMook.FireWeapon: a wave and a whistle instead of a shot
   | { type: 'doorCollapse'; x: number; y: number } // MookDoor.Collapse
   | { type: 'doorBlast'; x: number; y: number } // MookDoor.DestroyDoor with explodeAtEnd
-  | { type: 'flex'; x: number; y: number }; // TestVanDammeAnim.PlayFlexSound / TriggerFlexEvent
+  | { type: 'flex'; x: number; y: number } // TestVanDammeAnim.PlayFlexSound / TriggerFlexEvent
+  | { type: 'dollOpen'; x: number; y: number }; // the matryoshka opens
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
 
 export interface World {
@@ -539,7 +540,10 @@ function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
       else if (ev.type === 'block') w.events.push({ type: 'block', x: cellX(ev.c), y: ev.r * TILE, kind: ev.kind, damage: ev.damage });
       else if (ev.type === 'hit') w.events.push({ type: 'hit', x: ev.unit.x, y: ev.unit.y, hitY: ev.y, xI: ev.xI, yI: ev.yI });
       else if (ev.type === 'gib') w.events.push({ type: 'gib', x: ev.x, y: ev.y, team: 'enemy', kind: ev.kind, xI: ev.xI, yI: ev.yI });
-      else {
+      else if (ev.type === 'dollOpen') {
+        w.events.push({ type: 'dollOpen', x: ev.x, y: ev.y });
+        w.projectiles.push(...openDoll(() => w.nextId++, ev.x, ev.y, ev.dir, ev.team));
+      } else {
         w.events.push({ type: 'airstrike', x: ev.x, y: ev.y });
         w.projectiles.push(...spawnAirstrike(() => w.nextId++, ev.x, ev.y, screenMaxY(w.camera), w.stats, w.rng));
       }

@@ -1,6 +1,6 @@
 import {
   AIRSTRIKE_FUSE, AIRSTRIKE_ROCKETS, AIRSTRIKE_SPEED_MIN, AIRSTRIKE_SPEED_RAND, AIRSTRIKE_THROW,
-  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, FOOTBALL, GRAVITY, JUDO_THROW, MOOK_BULLET_SPEED,
+  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, FOOTBALL, GRAVITY, JUDO_THROW, MATRYOSHKA, MOOK_BULLET_SPEED,
   TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT,
 } from './constants';
 import { barrelBlast, rocketBlast, suicideBlast, type Blast } from './explosions';
@@ -13,7 +13,8 @@ export type ProjectileEvent =
   | { type: 'airstrike'; x: number; y: number }
   | { type: 'block'; c: number; r: number; kind: BlockKind; damage: number }
   | { type: 'hit'; unit: Unit; x: number; y: number; xI: number; yI: number }
-  | { type: 'gib'; kind: EnemyKind; x: number; y: number; xI: number; yI: number };
+  | { type: 'gib'; kind: EnemyKind; x: number; y: number; xI: number; yI: number }
+  | { type: 'dollOpen'; x: number; y: number; dir: 1 | -1; team: Team };
 
 export interface ProjectileWorld {
   map: TileMap;
@@ -59,6 +60,17 @@ export function throwBody(id: number, p: Unit, kind: EnemyKind): Projectile {
     JUDO_THROW.y, JUDO_THROW.fuse);
   b.body = kind;
   return b;
+}
+
+/** Putin's special: thrown like the airstrike grenade (BroBase.UseSpecial), with the grenade's fuse. */
+export function throwDoll(id: number, u: Unit, ducking: boolean): Projectile {
+  const p = ducking ? AIRSTRIKE_THROW_DUCK : AIRSTRIKE_THROW;
+  return make(id, 'doll', u.team, u.x + u.facing * p.ox, u.y + p.oy, u.facing * p.x, p.y, AIRSTRIKE_FUSE);
+}
+
+/** The opened matryoshka's three small dolls, fanned out along the throw. */
+export function openDoll(nextId: () => number, x: number, y: number, dir: 1 | -1, team: Team): Projectile[] {
+  return MATRYOSHKA.fan.map(([fx, fy]) => make(nextId(), 'dollSmall', team, x, y, dir * fx, fy, MATRYOSHKA.smallFuse));
 }
 
 /** GrenadeAirstrike.Death: five bombs from the upper left at 45°, landing from x - 60 to x + 100. */
@@ -171,6 +183,22 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
       p.x += p.xI * t;
       p.y += p.yI * t;
       if (w.map.blockAt(p.x, p.y) || unitAt(w.units, p.x, p.y, p.team) || p.life <= 0) explodeBody(p, w, events);
+      break;
+    }
+    case 'doll': {
+      bounce(p, w.map, t, w.stats.marker.bounceM, w.stats.marker.frictionM);
+      if (unitAt(w.units, p.x, p.y, p.team) || p.life <= 0) {
+        p.dead = true;
+        events.push({ type: 'dollOpen', x: p.x, y: p.y, dir: p.xI < 0 ? -1 : 1, team: p.team });
+      }
+      break;
+    }
+    case 'dollSmall': {
+      bounce(p, w.map, t, w.stats.marker.bounceM, w.stats.marker.frictionM);
+      if (unitAt(w.units, p.x, p.y, p.team) || p.bounces > MATRYOSHKA.smallMaxBounces || p.life <= 0) {
+        p.dead = true;
+        events.push({ type: 'explode', blast: rocketBlast(p.x, p.y, w.stats.bomb, p.team, true, 'bomb') });
+      }
       break;
     }
     case 'marker': {

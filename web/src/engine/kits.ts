@@ -1,6 +1,6 @@
 import type { SpecialId, WeaponId } from './bro';
 import { startJudo } from './judo';
-import { kickFootball, throwMarker } from './projectiles';
+import { kickFootball, throwDoll, throwMarker } from './projectiles';
 import type { Projectile, Unit } from './types';
 import type { World } from './world';
 
@@ -30,4 +30,5 @@ export const WEAPON_KITS: Record<WeaponId, WeaponKit> = {
 /** A bro's special: what BroBase.UseSpecial throws. Ammo, the speech bubble and the voice are the same for all. */
 export const SPECIAL_KITS: Record<SpecialId, (id: number, p: Unit, ducking: boolean) => Projectile> = {
   airstrike: throwMarker,
+  matryoshka: throwDoll,
 };

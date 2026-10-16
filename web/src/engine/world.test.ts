@@ -483,3 +483,21 @@ describe('the judo throw (BroLee.AnimateAttackForwards / RunFiring)', () => {
     expect(w.player.attack).toBeNull();
   });
 });
+
+describe('the matryoshka in the world', () => {
+  const DOLLER: BroDef = { ...BROLUSCONI, id: 'doller', base: 'bro_lee', special: 'matryoshka', voiceLine: 'Если драка неизбежна, бей первым!', voiceLang: 'ru-RU' };
+
+  it('speaks Russian, opens into three small dolls, and all three go off', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [DOLLER], () => 0.5);
+    const prev = play(w, { special: true }, 1);
+    expect(w.specialAmmo).toBe(1);
+    expect(w.events).toContainEqual({ type: 'voice', text: DOLLER.voiceLine, lang: 'ru-RU' });
+    play(w, {}, 62, prev);
+    expect(w.events.some((e) => e.type === 'dollOpen')).toBe(true);
+    expect(w.projectiles.filter((p) => p.kind === 'dollSmall')).toHaveLength(3);
+    play(w, {}, 120);
+    expect(w.projectiles).toHaveLength(0);
+    expect(w.events.filter((e) => e.type === 'explosion' && e.source === 'bomb')).toHaveLength(3);
+    expect(w.player.dead).toBe(false);
+  });
+});
