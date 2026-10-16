@@ -21,6 +21,7 @@ import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
   fireBazookaRocket, fireMookBullet, spawnAirstrike, stepProjectile,
 } from './projectiles';
+import { stepJudo } from './judo';
 import { SPECIAL_KITS, WEAPON_KITS } from './kits';
 import { damageUnit, makeUnit, runFiring } from './units';
 import type { BlockKind, Controls, EnemyKind, GameStats, Projectile, ProjectileKind, Team, Unit, UnitKind } from './types';
@@ -60,7 +61,7 @@ export interface Grass {
 /** What happened during a step, for sound, particles and the voice line. Positions are world units. */
 export type GameEvent =
   | { type: 'voice'; text: string; lang: string }
-  | { type: 'shot'; weapon: ProjectileKind; x: number; y: number; facing: 1 | -1 }
+  | { type: 'shot'; weapon: ProjectileKind | 'judo'; x: number; y: number; facing: 1 | -1 }
   | { type: 'explosion'; x: number; y: number; big: boolean; source: Blast['source']; range: number }
   | { type: 'airstrike'; x: number; y: number } // GrenadeAirstrike.Death: the marker calls the strike in
   | { type: 'block'; x: number; y: number; kind: BlockKind; damage: number }
@@ -239,6 +240,7 @@ function swapBro(w: World): void {
   w.player.stats = stats;
   w.player.health = stats.health;
   w.player.flex = null;
+  w.player.attack = null;
   w.specialAmmo = stats.specialAmmo;
 }
 
@@ -281,7 +283,7 @@ function flexEvent(w: World, p: Unit): void {
   if (w.flexPower === 'allure') attractMooks(w, p.x, p.y, ALLURE_RANGE.x, ALLURE_RANGE.y);
 }
 
-function stepPlayer(w: World, controls: Controls, prev: Controls, t: number): void {
+function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, blasts: Blast[]): void {
   const p = w.player;
   if (p.dead) {
     p.deadTime += t;
@@ -294,15 +296,16 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number): vo
     return;
   }
   if (p.invulnerable > 0) p.invulnerable = p.invulnerable - t > 1e-9 ? p.invulnerable - t : 0;
-  startOrStopFlex(p, controls, prev);
-  stepUnit(p, intentFrom(controls, prev), w.map, t, w.time);
+  if (!p.attack) startOrStopFlex(p, controls, prev);
+  stepUnit(p, p.attack ? NO_INTENT : intentFrom(controls, prev), w.map, t, w.time); // BroLee holds still to strike
   animateFlex(w, p, controls, t);
   p.fireCooldown -= t;
   const weapon = WEAPON_KITS[w.bro.weapon];
-  if (controls.fire && (weapon.repeat || !prev.fire) && p.fireCooldown <= 0) {
+  if (controls.fire && (weapon.repeat || !prev.fire) && !p.attack && p.fireCooldown <= 0) {
     weapon.fire(w, p);
     p.fireCooldown = p.stats.fireRate;
   }
+  stepJudo(w, p, t, blasts);
   if (controls.special && !prev.special && w.specialAmmo > 0) {
     w.specialAmmo -= 1;
     const thrown = SPECIAL_KITS[w.bro.special](w.nextId++, p, controls.down);
@@ -626,7 +629,7 @@ export function stepWorld(w: World, controls: Controls, prev: Controls, t: numbe
   }
   const blasts: Blast[] = [];
   reportUnits(w); // deaths caused outside a step still start the respawn timer
-  stepPlayer(w, controls, prev, t);
+  stepPlayer(w, controls, prev, t, blasts);
   stepEnemies(w, t, blasts);
   stepDoors(w, t);
   stepProjectiles(w, t, blasts);

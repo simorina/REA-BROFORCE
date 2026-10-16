@@ -10,7 +10,7 @@ export function makeUnit(id: number, kind: UnitKind, team: Team, x: number, y: n
     onGround: false, lastGroundedTime: -Infinity,
     wallClimbing: false, climbTimer: 0, jumpTime: 0, jumpBuffer: 0, dashing: false,
     fireCooldown: 0, fireCounter: 0, fireDelay: 0, wasFire: false, invulnerable: 0, ducking: false, special2: -1, blindTime: 0,
-    burnTime: 0, burnDamage: 0, burnCounter: 0, waveTime: 0, exitDoor: null, originDoor: -1, flex: null,
+    burnTime: 0, burnDamage: 0, burnCounter: 0, waveTime: 0, exitDoor: null, originDoor: -1, flex: null, attack: null, attackRow: 0,
     dead: false, deadTime: 0, gibbed: false, reported: { death: false, gib: false }, animTime: 0,
     ai: team === 'enemy' ? makeAiState(id) : null,
   };

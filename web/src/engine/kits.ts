@@ -1,4 +1,5 @@
 import type { SpecialId, WeaponId } from './bro';
+import { startJudo } from './judo';
 import { kickFootball, throwMarker } from './projectiles';
 import type { Projectile, Unit } from './types';
 import type { World } from './world';
@@ -15,6 +16,13 @@ export const WEAPON_KITS: Record<WeaponId, WeaponKit> = {
     fire(w, p) {
       w.projectiles.push(kickFootball(w.nextId++, p));
       w.events.push({ type: 'shot', weapon: 'football', x: p.x, y: p.y, facing: p.facing });
+    },
+  },
+  judo: {
+    repeat: false,
+    fire(w, p) {
+      startJudo(p);
+      w.events.push({ type: 'shot', weapon: 'judo', x: p.x, y: p.y, facing: p.facing });
     },
   },
 };

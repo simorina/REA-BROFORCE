@@ -411,3 +411,75 @@ describe('the roster (HeroController.SwapBro)', () => {
     expect(w.player.stats).toBe(TEST_STATS.bros.bro_lee);
   });
 });
+
+const JUDOKA: BroDef = { ...BROLUSCONI, id: 'judoka', base: 'bro_lee', weapon: 'judo' };
+const judoShots = (w: World) => w.events.filter((e) => e.type === 'shot' && e.weapon === 'judo').length;
+
+describe('the judo throw (BroLee.AnimateAttackForwards / RunFiring)', () => {
+  it('grabs a mook only from the strike frame (frame 2 at 0.045 s a frame) and throws it', () => {
+    const w = createWorld(level([[2, 'P'], [3, 'm'], [27, 'F']]), TEST_STATS, [JUDOKA], () => 0.5);
+    const prev = play(w, { fire: true }, 5);
+    expect(w.player.attack?.frame).toBe(1);
+    expect(w.enemies[0].dead).toBe(false);
+    play(w, { fire: true }, 1, prev);
+    expect(w.enemies).toHaveLength(0);
+    expect(w.projectiles.find((p) => p.kind === 'body')?.body).toBe('mook');
+    expect(w.events).toContainEqual(expect.objectContaining({ type: 'kill', kind: 'mook' }));
+  });
+
+  it('lasts 8 frames, holding the bro still and facing ahead', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [JUDOKA], () => 0.5);
+    const x0 = w.player.x;
+    let prev = play(w, { fire: true }, 1);
+    prev = play(w, { fire: true, left: true }, 20, prev); // 21 steps = 0.35 s < 0.36 s
+    expect(w.player.attack).not.toBeNull();
+    expect(w.player.x).toBeCloseTo(x0, 5);
+    expect(w.player.facing).toBe(1);
+    play(w, { left: true }, 1, prev);
+    expect(w.player.attack).toBeNull();
+  });
+
+  it('held fire does not repeat; a new press strikes again, with the other animation', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [JUDOKA], () => 0.5);
+    let prev = play(w, { fire: true }, 30);
+    expect(judoShots(w)).toBe(1);
+    expect(w.player.attack).toBeNull();
+    prev = play(w, {}, 1, prev);
+    play(w, { fire: true }, 1, prev);
+    expect(judoShots(w)).toBe(2);
+    expect(w.player.attack?.row).toBe(0); // the first strike used row 1 (attackSpriteRow toggles first)
+  });
+
+  it('a whiff strikes the block ahead (FireWeaponGround, groundSwordDamage 5)', () => {
+    const w = createWorld(level([[2, 'P'], [3, 'd'], [27, 'F']]), TEST_STATS, [JUDOKA], () => 0.5);
+    play(w, { fire: true }, 6);
+    expect(w.map.get(3, 2)).toBeNull();
+    expect(w.events).toContainEqual({ type: 'block', x: 48, y: 32, kind: 'dirt', damage: 5 });
+  });
+
+  it('a whiff that breaks a barrel blows it up', () => {
+    const w = createWorld(level([[2, 'P'], [3, 'x'], [27, 'F']]), TEST_STATS, [JUDOKA], () => 0.5);
+    play(w, { fire: true }, 6);
+    expect(w.events).toContainEqual(expect.objectContaining({ type: 'explosion', source: 'barrel' }));
+  });
+
+  it('a grabbed suicide mook does not go off in his hands; its body does, with the big blast', () => {
+    const w = createWorld(level([[2, 'P'], [3, 'k'], [27, 'F']]), TEST_STATS, [JUDOKA], () => 0.5);
+    play(w, { fire: true }, 6);
+    expect(w.projectiles.find((p) => p.kind === 'body')?.body).toBe('mook_suicide');
+    expect(w.events.some((e) => e.type === 'explosion')).toBe(false);
+    play(w, {}, 60);
+    expect(w.events).toContainEqual(expect.objectContaining({ type: 'explosion', source: 'suicide' }));
+    expect(w.player.dead).toBe(false);
+  });
+
+  it('a rescue mid-strike cancels the judo', () => {
+    const w = createWorld(level([[2, 'P'], [20, 'c'], [27, 'F']]), TEST_STATS, [JUDOKA, BROLUSCONI], () => 0.5);
+    const prev = play(w, { fire: true }, 3);
+    expect(w.player.attack).not.toBeNull();
+    w.prisoners[0].x = w.player.x;
+    play(w, { fire: true }, 1, prev);
+    expect(w.bro).toBe(BROLUSCONI);
+    expect(w.player.attack).toBeNull();
+  });
+});

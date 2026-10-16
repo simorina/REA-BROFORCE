@@ -183,6 +183,15 @@ export interface AiState {
   exploded: boolean;
 }
 
+/** BroLee's forward strike in progress: Putin's judo throw. */
+export interface JudoAttack {
+  frame: number; // attackFrames
+  counter: number;
+  row: 0 | 1; // attackSpriteRow: which of the two strike animations
+  hit: boolean; // attackHasHit: a mook was grabbed or a block struck
+  struck: boolean; // the strike frame's FireWeaponGround has been tried
+}
+
 export interface Unit {
   id: number;
   kind: UnitKind;
@@ -217,6 +226,8 @@ export interface Unit {
   exitDoor: { x: number; dir: number } | null; // Mook.exitingDoor: walking out of a mook door to exitDoorX
   originDoor: number; // index of the MookDoor it counts towards (-1: none)
   flex: { frame: number; counter: number; block: boolean } | null; // GestureElement.Gestures.Flex in progress
+  attack: JudoAttack | null; // the judo throw in progress
+  attackRow: 0 | 1; // BroLee.attackSpriteRow, kept between strikes
   dead: boolean;
   deadTime: number;
   gibbed: boolean; // blown to pieces: no corpse is left

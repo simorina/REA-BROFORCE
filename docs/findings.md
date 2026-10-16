@@ -42,6 +42,7 @@ with UnityPy 1.25.4 from `networkobjects`, `sharedtextures` and `sharedassets` b
 | Checkpoint: \|dx\| < 48 (10 when running at it faster than 30), \|cp.Y + 20 − y\| < 40; respawn at (x, y + 16); the blocks under the pole turn to steel when destroyed | `Map.CheckCheckPoint`, `CheckPoint.ActivateInternal/Update` |
 | Respawn after 1.8 s, invulnerable 0.5 s (flash: tint 0.5 + sin(t·25)·0.23); a freed prisoner is invulnerable 0.75 s | `HeroController.broRespawnDelay`, `Player.SpawnHero`, `InvulnerabilityFlash`, `RescueBro.Free` |
 | Airstrike height h = screen top − Y | `GrenadeAirstrike.Death`, `SortOfFollow.GetScreenMaxY` |
+| Judo throw = BroLee's forward strike: 8 frames of 0.045 s, units hit on frames 2–5 in the box range 13 around (X + dir·7, Y + 7); on frame 2 with nothing grabbed, the first block 9–17 px ahead at Y + 6 takes 5; frames column 24+, rows 7/8 alternating | `BroLee.Awake`, `StartFiring`, `RunFiring`, `AnimateAttackForwards`, `BrocSnipes.FireWeaponGround`, `Map.HitUnits` |
 
 ## Read from prefabs (game-data/values.json)
 
@@ -67,6 +68,7 @@ trousers (olive), any other is hair (ash-brown, darker sides). Right on every fr
 Football: kick (220, 160), bounce 0.7, friction 0.85, explodes on contact / after 3 bounces / 1.6 s,
 damage 5, range 32. Airstrike fuse 1.0 s (the prefab's `life` is 0; the real fuse is set elsewhere). Coyote time 0.1 s after
 walking off a ledge.
+Judo: the grabbed mook (instead of BroLee's back somersault) is thrown at (180, 240) from 10 px ahead and 10 up, and blows up on a block, an enemy or after 2 s with the football's blast (a suicide mook with its own, on the bro's side).
 Lives 3, extraction 3 s; a checkpoint flag takes 0.6 s to climb. Freeing a prisoner gives the bro the freed
 prisoner's 0.75 s of invulnerability and swaps to the next bro (HeroController.SwapBro respawns a new bro; ours takes over in place). The suicide mook's warning flash speeds up as its fuse
 runs down. The pathfinder's budget is 60 expanded points per millisecond of the C#'s time limit. Our own art and sound:

@@ -90,6 +90,14 @@ export const BARREL_Y_OFFSET = -6; // BarrelBlock: ExplodeUnits at Y - 6
 export const RUN_FRAME_RATE = 0.025; // TestVanDammeAnim.runningFrameRate
 export const JUMP_FRAME_RATE = 0.0334; // TestVanDammeAnim.AnimateDeath/Jumping frameRate
 export const CLIMB_FRAME_RATE = 0.033; // TestVanDammeAnim.AnimateWallClimb
+export const JUDO_FRAME_RATE = 0.045; // BroLee.AnimateAttackForwards: frameRate 0.045 on every frame
+export const JUDO_FRAMES = 8; // ... StopBrocAttack once attackFrames reaches 8
+export const JUDO_STRIKE_FRAME = 2; // BroLee.Awake: attackForwardsStrikeFrame = 2
+export const JUDO_STRIKE_LAST = 5; // BroLee.RunFiring: units are hit while attackFrames <= 5
+export const JUDO_HIT = { range: 13, x: 7, y: 7 }; // BroLee.RunFiring: Map.HitUnits(..., 13, X + dir * 7, Y + 7, ...)
+export const JUDO_GROUND = { damage: 5, x: 9, y: 6, reach: 8 }; // AnimateAttackForwards: FireWeaponGround(X + dir * 9, Y + 6, dir, 8); groundSwordDamage 5
+export const JUDO_COL = 24; // AnimateAttackForwards: column 24 + attackFrames ...
+export const JUDO_ROW = 7; // ... lowerLeftPixel y = 32 * (8 + attackSpriteRow): sheet rows 7 and 8 from the top
 
 // Design values (not in the original game). Tuned in playtesting; listed in docs/findings.md.
 export const FOOTBALL = {
