@@ -1,6 +1,7 @@
 export interface HudState {
   lives: number;
   ammo: number;
+  portrait: string; // URL of the current bro's sheet
 }
 
 export function createHudStore(initial: HudState) {
@@ -9,7 +10,7 @@ export function createHudStore(initial: HudState) {
   return {
     get: (): HudState => state,
     set(next: HudState): void {
-      if (next.lives === state.lives && next.ammo === state.ammo) return;
+      if (next.lives === state.lives && next.ammo === state.ammo && next.portrait === state.portrait) return;
       state = next;
       for (const l of listeners) l();
     },

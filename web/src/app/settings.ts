@@ -21,3 +21,21 @@ export const loadVoiceSetting = (): boolean => load(VOICE_KEY);
 export const saveVoiceSetting = (on: boolean): void => save(VOICE_KEY, on);
 export const loadSoundSetting = (): boolean => load(SOUND_KEY);
 export const saveSoundSetting = (on: boolean): void => save(SOUND_KEY, on);
+
+const BRO_KEY = 'brolusconi.bro';
+
+export function loadBroSetting(fallback: string): string {
+  try {
+    return localStorage.getItem(BRO_KEY) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export function saveBroSetting(id: string): void {
+  try {
+    localStorage.setItem(BRO_KEY, id);
+  } catch {
+    // storage unavailable: the choice lasts for this session only
+  }
+}

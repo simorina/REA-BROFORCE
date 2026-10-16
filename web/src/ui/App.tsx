@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
-import { loadSoundSetting, loadVoiceSetting, saveSoundSetting, saveVoiceSetting } from '../app/settings';
-import { loadAssets, type Assets } from '../render/assets';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  loadBroSetting, loadSoundSetting, loadVoiceSetting, saveBroSetting, saveSoundSetting, saveVoiceSetting,
+} from '../app/settings';
+import { BROS } from '../bros';
+import { broSheet, loadAssets, type Assets } from '../render/assets';
 import { EndScreen } from './EndScreen';
 import { GameView } from './GameView';
 import { Menu } from './Menu';
@@ -19,6 +22,7 @@ export function App() {
   const [voice, setVoice] = useState(loadVoiceSetting);
   const [sound, setSound] = useState(loadSoundSetting);
   const [run, setRun] = useState(0);
+  const [broId, setBroId] = useState(() => loadBroSetting(BROS[0].id));
 
   useEffect(() => {
     let alive = true;
@@ -53,16 +57,27 @@ export function App() {
       return !v;
     });
   }, []);
+  const selectBro = useCallback((id: string) => {
+    saveBroSetting(id);
+    setBroId(id);
+  }, []);
+  const portraits = useMemo(
+    () => (assets ? Object.fromEntries(BROS.map((b) => [b.id, `/${assets.sheets[broSheet(b)].file}`])) : {}),
+    [assets],
+  );
 
   if (screen.name === 'loading') return <div className="screen">Caricamento…</div>;
   if (screen.name === 'missing') return <MissingData reason={screen.reason} />;
   if (!assets) return null;
   if (screen.name === 'menu') {
-    return <Menu voice={voice} sound={sound} onToggleVoice={toggleVoice} onToggleSound={toggleSound} onStart={start} />;
+    return (
+      <Menu bros={BROS} selected={broId} portraits={portraits} voice={voice} sound={sound} onSelect={selectBro}
+        onToggleVoice={toggleVoice} onToggleSound={toggleSound} onStart={start} />
+    );
   }
   if (screen.name === 'playing') {
     return (
-      <GameView key={run} assets={assets} voice={voice} sound={sound} onEnd={onEnd} onMenu={() => setScreen({ name: 'menu' })} />
+      <GameView key={run} assets={assets} broId={broId} voice={voice} sound={sound} onEnd={onEnd} onMenu={() => setScreen({ name: 'menu' })} />
     );
   }
   return <EndScreen result={screen.result} onRestart={start} onMenu={() => setScreen({ name: 'menu' })} />;
