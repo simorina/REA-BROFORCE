@@ -1,0 +1,10 @@
+{
+  "id": "putin",
+  "name": "Vladimir Putin",
+  "sheet": "putin",
+  "base": "bro_lee",
+  "weapon": "judo",
+  "special": "matryoshka",
+  "voiceLine": "Если драка неизбежна, бей первым!",
+  "voiceLang": "ru-RU"
+}

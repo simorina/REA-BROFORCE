@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BROLUSCONI } from '../bros';
+import { BROLUSCONI, BROS, PUTIN, rosterStartingWith } from '../bros';
 import { parseBro } from './bro';
 
 const valid = {
@@ -13,6 +13,23 @@ describe('bro definitions', () => {
       id: 'brolusconi', name: 'Silvio Brolusconi', sheet: 'brolusconi', base: 'bro_base', weapon: 'football',
       special: 'airstrike', voiceLine: 'Siete solo dei poveri comunisti!', voiceLang: 'it-IT',
     });
+  });
+
+  it('Putin throws mooks with judo and opens a matryoshka, in Russian', () => {
+    expect(PUTIN).toEqual({
+      id: 'putin', name: 'Vladimir Putin', sheet: 'putin', base: 'bro_lee', weapon: 'judo', special: 'matryoshka',
+      voiceLine: 'Если драка неизбежна, бей первым!', voiceLang: 'ru-RU',
+    });
+  });
+
+  it('rosterStartingWith puts the chosen bro first and keeps the cycle order', () => {
+    expect(BROS).toEqual([BROLUSCONI, PUTIN]);
+    expect(rosterStartingWith('putin')).toEqual([PUTIN, BROLUSCONI]);
+    expect(rosterStartingWith('brolusconi')).toEqual([BROLUSCONI, PUTIN]);
+  });
+
+  it('rosterStartingWith falls back to the first bro for an unknown id', () => {
+    expect(rosterStartingWith('ghost')).toEqual([BROLUSCONI, PUTIN]);
   });
 
   it('rejects unknown weapons and specials', () => {
