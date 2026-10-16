@@ -46,7 +46,7 @@ export function GameView({ assets, voice, sound, onEnd, onMenu }: Props) {
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
     const level = buildLevel1();
-    const world = createWorld(level, assets.stats, BRO);
+    const world = createWorld(level, assets.stats, [BRO]);
     const renderer = new Renderer(ctx, assets, SCALE, BRO_SHEET, level.parallax);
     const keyboard = new Keyboard();
     keyboard.attach(window);

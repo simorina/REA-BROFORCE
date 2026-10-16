@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BROLUSCONI } from '../bros';
+import type { BroDef } from './bro';
 import { FIXED_DT } from './constants';
 import type { LevelData } from './level';
 import { TEST_STATS } from './testStats';
@@ -32,7 +33,7 @@ const EMPTY = level([[2, 'P'], [27, 'F']]);
 
 describe('createWorld', () => {
   it('spawns everything from the level', () => {
-    const w = createWorld(level([[0, 'P'], [4, 'c'], [16, 'm'], [27, 'F']]), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[0, 'P'], [4, 'c'], [16, 'm'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
     expect([w.player.x, w.player.y]).toEqual([0, 24]);
     expect(w.enemies.map((e) => [e.kind, e.x, e.y])).toEqual([['mook', 256, 24]]);
     expect(w.prisoners).toEqual([{ x: 64, y: 24, freed: false }]);
@@ -44,7 +45,7 @@ describe('createWorld', () => {
 
 describe('stepWorld', () => {
   it('kicks footballs no faster than the fireRate', () => {
-    const w = createWorld(EMPTY, TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(EMPTY, TEST_STATS, [BROLUSCONI], () => 0.5);
     const seen = new Set<number>();
     let prev = NO_CONTROLS;
     for (let i = 0; i < 30; i++) {
@@ -55,7 +56,7 @@ describe('stepWorld', () => {
   });
 
   it('special fires once per press, speaks, and stops at zero ammo', () => {
-    const w = createWorld(EMPTY, TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(EMPTY, TEST_STATS, [BROLUSCONI], () => 0.5);
     let prev = play(w, { special: true }, 30);
     expect(w.specialAmmo).toBe(3);
     expect(w.projectiles.filter((p) => p.kind === 'marker')).toHaveLength(1);
@@ -72,13 +73,13 @@ describe('stepWorld', () => {
   });
 
   it('the bro uses the unit values of his base prefab', () => {
-    const w = createWorld(EMPTY, TEST_STATS, { ...BROLUSCONI, base: 'bro_lee' }, () => 0.5);
+    const w = createWorld(EMPTY, TEST_STATS, [{ ...BROLUSCONI, base: 'bro_lee' }], () => 0.5);
     expect(w.player.stats).toBe(TEST_STATS.bros.bro_lee);
     expect(w.specialAmmo).toBe(2);
   });
 
   it('the airstrike brings five bombs from outside the map, and they all land', () => {
-    const w = createWorld(EMPTY, TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(EMPTY, TEST_STATS, [BROLUSCONI], () => 0.5);
     const prev = play(w, { special: true }, 1);
     play(w, {}, 62, prev);
     expect(w.projectiles.filter((p) => p.kind === 'bomb')).toHaveLength(5);
@@ -89,7 +90,7 @@ describe('stepWorld', () => {
   });
 
   it('touching a cage frees the prisoner and adds a life', () => {
-    const w = createWorld(level([[0, 'P'], [4, 'c'], [27, 'F']]), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[0, 'P'], [4, 'c'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
     play(w, { right: true }, 60);
     expect(w.prisoners[0].freed).toBe(true);
     expect(w.lives).toBe(4);
@@ -97,7 +98,7 @@ describe('stepWorld', () => {
   });
 
   it('reaching the flag starts the extraction, which wins the level', () => {
-    const w = createWorld(EMPTY, TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(EMPTY, TEST_STATS, [BROLUSCONI], () => 0.5);
     w.player.x = w.flag.x - 4;
     play(w, {}, 1);
     expect(w.state).toBe('extracting');
@@ -106,7 +107,7 @@ describe('stepWorld', () => {
   });
 
   it('dying respawns at the start after 1.8 s for a life; with none left the game is lost', () => {
-    const w = createWorld(EMPTY, TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(EMPTY, TEST_STATS, [BROLUSCONI], () => 0.5);
     w.player.x = 200;
     damageUnit(w.player, 1);
     play(w, {}, 100);
@@ -124,7 +125,7 @@ describe('stepWorld', () => {
   });
 
   it('a respawned bro is invulnerable for 0.5 s (Player.SpawnHero)', () => {
-    const w = createWorld(EMPTY, TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(EMPTY, TEST_STATS, [BROLUSCONI], () => 0.5);
     damageUnit(w.player, 1);
     play(w, {}, 109);
     expect(w.player.invulnerable).toBeGreaterThan(0.4);
@@ -137,7 +138,7 @@ describe('stepWorld', () => {
   it('barrels chain-explode once each', () => {
     const barrels: Array<[number, string]> = [];
     for (let c = 10; c <= 19; c++) barrels.push([c, 'x']);
-    const w = createWorld(level([[0, 'P'], ...barrels, [27, 'F']]), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[0, 'P'], ...barrels, [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
     w.projectiles.push({ id: 999, kind: 'bullet', team: 'enemy', x: 140, y: 30, xI: 250, yI: 0, life: 1, bounces: 0, dead: false });
     play(w, {}, 10);
     for (let c = 10; c <= 19; c++) expect(w.map.get(c, 2)).toBeNull();
@@ -146,14 +147,14 @@ describe('stepWorld', () => {
   });
 
   it('falling off the bottom of the map kills the player', () => {
-    const w = createWorld(EMPTY, TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(EMPTY, TEST_STATS, [BROLUSCONI], () => 0.5);
     w.player.y = -70;
     play(w, {}, 1);
     expect(w.player.dead).toBe(true);
   });
 
   it('reaching a checkpoint raises its flag and moves the respawn there (Map.CheckCheckPoint)', () => {
-    const w = createWorld(level([[0, 'P'], [10, 'C'], [27, 'F']]), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[0, 'P'], [10, 'C'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
     expect(w.checkpoints).toEqual([{ x: 160, y: 24, activated: false, raisedAt: 0 }]);
     play(w, { right: true }, 100);
     expect(w.checkpoints[0].activated).toBe(true);
@@ -166,7 +167,7 @@ describe('stepWorld', () => {
   });
 
   it('walking into a mook alerts it (Map.AlertNearbyMooks)', () => {
-    const w = createWorld(level([[2, 'P'], [3, 'm'], [27, 'F']]), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[2, 'P'], [3, 'm'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
     w.enemies[0].facing = 1; // its back to the bro
     play(w, {}, 1);
     expect(w.enemies[0].ai?.mental).toBe('idle'); // 16 apart: just out of reach
@@ -176,7 +177,7 @@ describe('stepWorld', () => {
   });
 
   it('an explosion makes mooks in earshot turn to look (Rocket.MakeEffects: DisturbWildLife 80)', () => {
-    const w = createWorld(level([[0, 'P'], [12, 'm'], [25, 'm'], [27, 'F']]), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[0, 'P'], [12, 'm'], [25, 'm'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
     for (const m of w.enemies) m.facing = 1;
     w.projectiles.push(blastAt(999, 120, 30, 'rocket', 'enemy'));
     play(w, {}, 2);
@@ -185,7 +186,7 @@ describe('stepWorld', () => {
   });
 
   it('mooks only shoot while on screen', () => {
-    const w = createWorld(level([[0, 'P'], [40, 'm'], [57, 'F']], 60), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[0, 'P'], [40, 'm'], [57, 'F']], 60), TEST_STATS, [BROLUSCONI], () => 0.5);
     const m = w.enemies[0]; // x = 640, the camera starts at x = 192
     const fire = () => {
       m.ai!.mental = 'alerted';
@@ -203,7 +204,7 @@ describe('stepWorld', () => {
   });
 
   it('a killed suicide mook goes off 0.7 s later (MookSuicide.Damage)', () => {
-    const w = createWorld(level([[0, 'P'], [20, 'k'], [27, 'F']]), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[0, 'P'], [20, 'k'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
     damageUnit(w.enemies[0], 10);
     play(w, {}, 40);
     expect(w.events.filter((e) => e.type === 'explosion')).toHaveLength(0);
@@ -213,7 +214,7 @@ describe('stepWorld', () => {
   });
 
   it('a corpse caught in a second blast is gibbed', () => {
-    const w = createWorld(level([[0, 'P'], [20, 'm'], [27, 'F']]), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[0, 'P'], [20, 'm'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
     const m = w.enemies[0];
     damageUnit(m, 3);
     play(w, {}, 1);
@@ -228,7 +229,7 @@ describe('stepWorld', () => {
   });
 
   it('a suicide mook blown to pieces goes off at once (MookSuicide.Gib)', () => {
-    const w = createWorld(level([[0, 'P'], [20, 'k'], [27, 'F']]), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[0, 'P'], [20, 'k'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
     const m = w.enemies[0];
     m.health = -5; // a corpse already, one blast from gibbing
     m.dead = true;
@@ -239,7 +240,7 @@ describe('stepWorld', () => {
   });
 
   it('the airstrike grenade panics the mooks around it in its last half second (Grenade.RunWarnings)', () => {
-    const w = createWorld(level([[0, 'P'], [10, 'm'], [27, 'F']]), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[0, 'P'], [10, 'm'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
     const m = w.enemies[0];
     w.projectiles.push({ id: 999, kind: 'marker', team: 'player', x: m.x + 10, y: m.y + 4, xI: 0, yI: 0, life: 0.4, bounces: 0, dead: false });
     play(w, {}, 2);
@@ -248,7 +249,7 @@ describe('stepWorld', () => {
   });
 
   it('a bazooka shot kicks the mook back (xIBlast)', () => {
-    const w = createWorld(level([[0, 'P'], [12, 'z'], [27, 'F']]), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[0, 'P'], [12, 'z'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
     const m = w.enemies[0];
     w.player.x = m.x - 100;
     w.camera.x = m.x;
@@ -262,7 +263,7 @@ describe('stepWorld', () => {
 
   it('blasts tear up long grass (Map.DamageDoodads)', () => {
     const lvl = { ...level([[0, 'P'], [27, 'F']]), grass: [{ c: 10, r: 2 }] };
-    const w = createWorld(lvl, TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(lvl, TEST_STATS, [BROLUSCONI], () => 0.5);
     expect(w.grass).toHaveLength(1);
     w.projectiles.push(blastAt(900, 160, 30));
     play(w, {}, 1);
@@ -273,7 +274,7 @@ describe('stepWorld', () => {
   });
 
   it('jumping high over a checkpoint still reaches it (the ground-height probe)', () => {
-    const w = createWorld(level([[0, 'P'], [10, 'C'], [27, 'F']]), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[0, 'P'], [10, 'C'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
     w.player.x = 160;
     w.player.y = 24 + 80; // 80 over the ground: out of the feet check's 40
     w.player.yI = 200;
@@ -285,7 +286,7 @@ describe('stepWorld', () => {
 
 describe('fire (RocketBombardment and MookSuicide)', () => {
   it('an airstrike bomb sets fire to the mooks around it; the fire goes out half a second later and hurts', () => {
-    const w = createWorld(level([[2, 'P'], [15, 'm'], [17, 'm'], [27, 'F']]), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[2, 'P'], [15, 'm'], [17, 'm'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
     w.projectiles.push(blastAt(99, 240, 24, 'bomb'));
     play(w, {}, 1);
     const [near, edge] = w.enemies;
@@ -301,7 +302,7 @@ describe('fire (RocketBombardment and MookSuicide)', () => {
   });
 
   it('a suicide mook going off sends the mooks within range + 30 running, singed (BurnUnitsAround)', () => {
-    const w = createWorld(level([[2, 'P'], [15, 'k'], [19, 'm'], [27, 'F']]), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[2, 'P'], [15, 'k'], [19, 'm'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
     const [suicide, other] = w.enemies;
     suicide.ai!.litFuse = true;
     suicide.ai!.suicideTimer = 0;
@@ -320,7 +321,7 @@ describe('the flex (TestVanDammeAnim gestures, BroBase.TriggerFlexEvent)', () =>
   it('plays the flex and, with the Alluring flex power, draws the mooks in range over', () => {
     // the mooks stand behind the bro, looking away from him
     const lv = { ...level([[1, 'm'], [4, 'm'], [8, 'P'], [27, 'F']]), flexPower: 'allure' as const };
-    const w = createWorld(lv, TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(lv, TEST_STATS, [BROLUSCONI], () => 0.5);
     const [far, near] = w.enemies;
     let prev = play(w, { gesture: true }, 1);
     expect(w.player.flex?.frame).toBe(0);
@@ -333,7 +334,7 @@ describe('the flex (TestVanDammeAnim gestures, BroBase.TriggerFlexEvent)', () =>
   });
 
   it('holds the last pose until a direction is pressed', () => {
-    const w = createWorld(EMPTY, TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(EMPTY, TEST_STATS, [BROLUSCONI], () => 0.5);
     let prev = play(w, { gesture: true }, 1);
     prev = play(w, {}, 300, prev);
     expect(w.player.flex?.frame).toBeGreaterThan(54);
@@ -342,10 +343,63 @@ describe('the flex (TestVanDammeAnim gestures, BroBase.TriggerFlexEvent)', () =>
   });
 
   it('without a flex power it is only a flex', () => {
-    const w = createWorld(level([[4, 'm'], [8, 'P'], [27, 'F']]), TEST_STATS, BROLUSCONI, () => 0.5);
+    const w = createWorld(level([[4, 'm'], [8, 'P'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
     const prev = play(w, { gesture: true }, 1);
     play(w, {}, 60, prev);
     expect(w.events.some((e) => e.type === 'flex')).toBe(true);
     expect(w.enemies[0].ai?.mental).toBe('idle');
+  });
+});
+
+const SECOND: BroDef = { ...BROLUSCONI, id: 'second', base: 'bro_lee', voiceLine: 'Второй!', voiceLang: 'ru-RU' };
+
+/** Runs right until the first cage is open (at most 60 steps). */
+function walkToCage(w: World): void {
+  let prev = NO_CONTROLS;
+  for (let i = 0; i < 60 && !w.prisoners[0].freed; i++) prev = play(w, { right: true }, 1, prev);
+}
+
+describe('the roster (HeroController.SwapBro)', () => {
+  it('needs at least one bro', () => {
+    expect(() => createWorld(EMPTY, TEST_STATS, [], () => 0.5)).toThrow('roster');
+  });
+
+  it('a rescue swaps to the next bro in place, with his values and full specials', () => {
+    const w = createWorld(level([[0, 'P'], [4, 'c'], [27, 'F']]), TEST_STATS, [BROLUSCONI, SECOND], () => 0.5);
+    w.specialAmmo = 1;
+    const unit = w.player;
+    walkToCage(w);
+    expect(w.prisoners[0].freed).toBe(true);
+    expect(w.bro).toBe(SECOND);
+    expect(w.player).toBe(unit); // the same unit: position and motion carry over
+    expect(w.player.stats).toBe(TEST_STATS.bros.bro_lee);
+    expect(w.specialAmmo).toBe(2);
+    expect(w.player.invulnerable).toBeGreaterThan(0);
+    expect(w.lives).toBe(4);
+  });
+
+  it('swaps cycle through the roster', () => {
+    const w = createWorld(level([[0, 'P'], [4, 'c'], [9, 'c'], [27, 'F']]), TEST_STATS, [BROLUSCONI, SECOND], () => 0.5);
+    play(w, { right: true }, 90);
+    expect(w.prisoners.every((p) => p.freed)).toBe(true);
+    expect(w.bro).toBe(BROLUSCONI);
+    expect(w.player.stats).toBe(TEST_STATS.bros.bro_base);
+  });
+
+  it('with one bro a rescue only adds a life', () => {
+    const w = createWorld(level([[0, 'P'], [4, 'c'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
+    w.specialAmmo = 1;
+    walkToCage(w);
+    expect(w.bro).toBe(BROLUSCONI);
+    expect(w.specialAmmo).toBe(1);
+  });
+
+  it('a respawn keeps the current bro', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [SECOND, BROLUSCONI], () => 0.5);
+    damageUnit(w.player, 1);
+    play(w, {}, 120);
+    expect(w.player.dead).toBe(false);
+    expect(w.bro).toBe(SECOND);
+    expect(w.player.stats).toBe(TEST_STATS.bros.bro_lee);
   });
 });

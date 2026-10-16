@@ -82,6 +82,7 @@ export interface World {
   map: TileMap;
   stats: GameStats;
   bro: BroDef;
+  roster: readonly BroDef[]; // the bros a rescue cycles through; `bro` is the one playing
   rng: () => number;
   player: Unit;
   spawn: { x: number; y: number }; // HeroController's checkpoint position: where the next bro appears
@@ -113,7 +114,10 @@ const feetY = (r: number): number => r * TILE - HALF_TILE;
 const WEAPON_SPAWN: Record<WeaponId, (id: number, u: Unit) => Projectile> = { football: kickFootball };
 const SPECIAL_SPAWN: Record<SpecialId, (id: number, u: Unit, ducking: boolean) => Projectile> = { airstrike: throwMarker };
 
-export function createWorld(level: LevelData, stats: GameStats, bro: BroDef, rng: () => number = Math.random): World {
+export function createWorld(level: LevelData, stats: GameStats, roster: readonly BroDef[],
+  rng: () => number = Math.random): World {
+  if (roster.length === 0) throw new Error('createWorld: the roster is empty');
+  const bro = roster[0];
   const parsed = parseLevel(level, stats);
   let nextId = 1;
   const spawn = { x: cellX(parsed.player.c), y: feetY(parsed.player.r) };
@@ -130,7 +134,7 @@ export function createWorld(level: LevelData, stats: GameStats, bro: BroDef, rng
     }
   }
   return {
-    map: parsed.map, stats, bro, rng, player, spawn, enemies, projectiles: [], effects: [],
+    map: parsed.map, stats, bro, roster, rng, player, spawn, enemies, projectiles: [], effects: [],
     prisoners: parsed.cages.map((c) => ({ x: cellX(c.c), y: feetY(c.r), freed: false })),
     checkpoints: parsed.checkpoints.map((c) => ({ x: cellX(c.c), y: feetY(c.r), activated: false, raisedAt: 0 })),
     grass: parsed.grass.map((c) => ({ x: cellX(c.c), y: c.r * TILE, health: stats.grass.health, destroyed: false })),
@@ -227,6 +231,20 @@ function respawn(w: World): void {
 }
 
 /**
+ * HeroController.SwapBro: a rescue adds a life and brings in the next bro. Ours takes over in place, keeping
+ * the unit's position, motion and rescue invulnerability, with his own values and full specials.
+ */
+function swapBro(w: World): void {
+  if (w.roster.length < 2) return;
+  w.bro = w.roster[(w.roster.indexOf(w.bro) + 1) % w.roster.length];
+  const stats = w.stats.bros[w.bro.base];
+  w.player.stats = stats;
+  w.player.health = stats.health;
+  w.player.flex = null;
+  w.specialAmmo = stats.specialAmmo;
+}
+
+/**
  * TestVanDammeAnim.Update: pressing the gesture button flexes (SetGestureAnimation(Flex)), unless an early flex
  * is already under way. blockMovementForGesture stays set until a direction is pressed with the button up,
  * so a flex holds its last pose until the bro moves.
@@ -303,6 +321,7 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number): vo
       w.lives += 1;
       p.invulnerable = Math.max(p.invulnerable, RESCUE_INVULNERABLE); // RescueBro.Free: the freed bro is invulnerable
       w.events.push({ type: 'rescue', x: pr.x, y: pr.y });
+      swapBro(w);
     }
   }
   if (p.dead) return;

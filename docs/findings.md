@@ -68,7 +68,7 @@ Football: kick (220, 160), bounce 0.7, friction 0.85, explodes on contact / afte
 damage 5, range 32. Airstrike fuse 1.0 s (the prefab's `life` is 0; the real fuse is set elsewhere). Coyote time 0.1 s after
 walking off a ledge.
 Lives 3, extraction 3 s; a checkpoint flag takes 0.6 s to climb. Freeing a prisoner gives the bro the freed
-prisoner's 0.75 s of invulnerability (there is no bro swap). The suicide mook's warning flash speeds up as its fuse
+prisoner's 0.75 s of invulnerability and swaps to the next bro (HeroController.SwapBro respawns a new bro; ours takes over in place). The suicide mook's warning flash speeds up as its fuse
 runs down. The pathfinder's budget is 60 expanded points per millisecond of the C#'s time limit. Our own art and sound:
 the football, the speech bubble and WebAudio-synthesized effects; no Broforce audio is used. The level layout, hill
 and grass placement, scout and door placement are ours.
@@ -80,7 +80,7 @@ spreading fire (only mooks escaping a collapsing door burn), homing rockets or c
 AddAction is a one-frame no-op and is dropped. Only MookGeneral/Satan ("evil" units) can block a checkpoint, so ours
 never are. `Map.ExplodeUnits` multiplies its `yI` argument for every unit it visits after a close one; the port keeps
 that boost per unit. Bullets skip corpses: every `Map.HitUnits` variant requires `health > 0`, whatever
-`Demonstration.projectilesHitWalls` says.
+`Demonstration.projectilesHitWalls` says. A respawn keeps the current bro (Broforce brings in another one).
 
 ## Effects, background and more AI (second pass)
 

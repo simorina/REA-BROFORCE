@@ -82,7 +82,7 @@ describe('ScoutAI', () => {
 
 describe('MookDoor', () => {
   it('lets a mook out every second or so while on screen, up to three alive', () => {
-    const w = createWorld(level([[2, 'P'], [10, 'D'], [27, 'F']]), TEST_STATS, BROLUSCONI, lcg());
+    const w = createWorld(level([[2, 'P'], [10, 'D'], [27, 'F']]), TEST_STATS, [BROLUSCONI], lcg());
     w.player.invulnerable = Infinity;
     run(w, 2, () => w.enemies.length > 0);
     expect(w.time).toBeGreaterThan(0.9);
@@ -100,7 +100,7 @@ describe('MookDoor', () => {
   });
 
   it('counts a dead mook out (Mook.Death: RemoveMook)', () => {
-    const w = createWorld(level([[2, 'P'], [10, 'D'], [27, 'F']]), TEST_STATS, BROLUSCONI, lcg());
+    const w = createWorld(level([[2, 'P'], [10, 'D'], [27, 'F']]), TEST_STATS, [BROLUSCONI], lcg());
     run(w, 1.05);
     expect(w.doors[0].mookCount).toBe(1);
     w.enemies[0].invulnerable = 0;
@@ -110,13 +110,13 @@ describe('MookDoor', () => {
   });
 
   it('stays shut while off screen', () => {
-    const w = createWorld(level([[2, 'P'], [55, 'D'], [58, 'F']], 60), TEST_STATS, BROLUSCONI, lcg());
+    const w = createWorld(level([[2, 'P'], [55, 'D'], [58, 'F']], 60), TEST_STATS, [BROLUSCONI], lcg());
     run(w, 3);
     expect(w.enemies).toHaveLength(0);
   });
 
   it('a scout runs to the door and its alarm sends mooks along a path to the player', () => {
-    const w = createWorld(level([[2, 'P'], [12, 'o'], [25, 'D'], [28, 'F']]), TEST_STATS, BROLUSCONI, lcg());
+    const w = createWorld(level([[2, 'P'], [12, 'o'], [25, 'D'], [28, 'F']]), TEST_STATS, [BROLUSCONI], lcg());
     w.player.invulnerable = Infinity;
     const scout = w.enemies[0];
     run(w, 8, () => w.doors[0].alarmed > 0);
@@ -130,7 +130,7 @@ describe('MookDoor', () => {
   });
 
   it('collapses with its block, lets out burning mooks, then blows up', () => {
-    const w = createWorld(level([[2, 'P'], [10, 'D'], [27, 'F']]), TEST_STATS, BROLUSCONI, lcg());
+    const w = createWorld(level([[2, 'P'], [10, 'D'], [27, 'F']]), TEST_STATS, [BROLUSCONI], lcg());
     w.player.invulnerable = Infinity;
     w.map.set(10, 1, null); // the block it stands on is gone
     const events = run(w, 4, (_, ev) => ev.some((e) => e.type === 'doorBlast'));
