@@ -2,7 +2,7 @@ import {
   attract, blind, followPath, fullyAlert, hearSound, panic, panicAi, playerDied, SCOUT_SHOUT, stopPanicking, thinkMook,
   type AlertScene, type DoorPoint,
 } from './ai';
-import type { BroDef, SpecialId, WeaponId } from './bro';
+import type { BroDef } from './bro';
 import { followCamera, isVisible, screenMaxY, type Camera } from './camera';
 import {
   ALERT_TOUCH, BAZOOKA_FIRE_DELAY, CHECKPOINT_FAST_SPEED, CHECKPOINT_RANGE_X, CHECKPOINT_RANGE_X_FAST,
@@ -19,10 +19,11 @@ import { parseLevel, type LevelData } from './level';
 import { makeBlock, type TileMap } from './map';
 import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
-  fireBazookaRocket, fireMookBullet, kickFootball, spawnAirstrike, stepProjectile, throwMarker,
+  fireBazookaRocket, fireMookBullet, spawnAirstrike, stepProjectile,
 } from './projectiles';
+import { SPECIAL_KITS, WEAPON_KITS } from './kits';
 import { damageUnit, makeUnit, runFiring } from './units';
-import type { BlockKind, Controls, EnemyKind, GameStats, Projectile, Team, Unit, UnitKind } from './types';
+import type { BlockKind, Controls, EnemyKind, GameStats, Projectile, ProjectileKind, Team, Unit, UnitKind } from './types';
 
 /** Something the renderer times: a screen shake (SortOfFollow.Shake) or the bro's speech bubble. */
 export interface Effect {
@@ -59,7 +60,7 @@ export interface Grass {
 /** What happened during a step, for sound, particles and the voice line. Positions are world units. */
 export type GameEvent =
   | { type: 'voice'; text: string; lang: string }
-  | { type: 'shot'; weapon: 'football' | 'marker' | 'bullet' | 'rocket'; x: number; y: number; facing: 1 | -1 }
+  | { type: 'shot'; weapon: ProjectileKind; x: number; y: number; facing: 1 | -1 }
   | { type: 'explosion'; x: number; y: number; big: boolean; source: Blast['source']; range: number }
   | { type: 'airstrike'; x: number; y: number } // GrenadeAirstrike.Death: the marker calls the strike in
   | { type: 'block'; x: number; y: number; kind: BlockKind; damage: number }
@@ -110,9 +111,6 @@ export interface World {
 
 const cellX = (c: number): number => c * TILE;
 const feetY = (r: number): number => r * TILE - HALF_TILE;
-
-const WEAPON_SPAWN: Record<WeaponId, (id: number, u: Unit) => Projectile> = { football: kickFootball };
-const SPECIAL_SPAWN: Record<SpecialId, (id: number, u: Unit, ducking: boolean) => Projectile> = { airstrike: throwMarker };
 
 export function createWorld(level: LevelData, stats: GameStats, roster: readonly BroDef[],
   rng: () => number = Math.random): World {
@@ -300,16 +298,20 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number): vo
   stepUnit(p, intentFrom(controls, prev), w.map, t, w.time);
   animateFlex(w, p, controls, t);
   p.fireCooldown -= t;
-  if (controls.fire && p.fireCooldown <= 0) {
-    w.projectiles.push(WEAPON_SPAWN[w.bro.weapon](w.nextId++, p));
-    w.events.push({ type: 'shot', weapon: w.bro.weapon, x: p.x, y: p.y, facing: p.facing });
+  const weapon = WEAPON_KITS[w.bro.weapon];
+  if (controls.fire && (weapon.repeat || !prev.fire) && p.fireCooldown <= 0) {
+    weapon.fire(w, p);
     p.fireCooldown = p.stats.fireRate;
   }
   if (controls.special && !prev.special && w.specialAmmo > 0) {
     w.specialAmmo -= 1;
-    w.projectiles.push(SPECIAL_SPAWN[w.bro.special](w.nextId++, p, controls.down));
+    const thrown = SPECIAL_KITS[w.bro.special](w.nextId++, p, controls.down);
+    w.projectiles.push(thrown);
     w.effects.push({ kind: 'speech', x: p.x, y: p.y + 40, age: 0, duration: SPEECH_DURATION, text: w.bro.voiceLine });
-    w.events.push({ type: 'voice', text: w.bro.voiceLine, lang: w.bro.voiceLang }, { type: 'shot', weapon: 'marker', x: p.x, y: p.y, facing: p.facing });
+    w.events.push(
+      { type: 'voice', text: w.bro.voiceLine, lang: w.bro.voiceLang },
+      { type: 'shot', weapon: thrown.kind, x: p.x, y: p.y, facing: p.facing },
+    );
   }
   if (p.y < -64) {
     p.invulnerable = 0;
