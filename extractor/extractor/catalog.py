@@ -14,7 +14,8 @@ class SpriteRef:
 @dataclass(frozen=True)
 class TextureRef:
     key: str
-    texture: str             # exact Texture2D name; frames are square (side = texture height)
+    texture: str             # exact Texture2D name; frames are square (side = texture height) unless `frame`
+    frame: tuple[int, int] | None = None  # (w, h) when frames aren't square
 
 
 @dataclass(frozen=True)
@@ -55,6 +56,7 @@ SPRITES = (
     SpriteRef("prisoner", "RescueBro", "Hobro", True),
     SpriteRef("cage", "Cage", "CageBig", True),
     SpriteRef("helicopter", "Helicopter", "Helicopter", True),
+    SpriteRef("jet_harrier", "HarrierJet", "Jet Support Attack", True),
     SpriteRef("rocket", "Rocket", "Rocket", False),
     SpriteRef("bomb", "RocketBombardment", "Rocket Bombardment", False),
     SpriteRef("marker", "GrenadeAirstrike", "Grenade Airstrike", False),
@@ -68,6 +70,7 @@ SPRITES = (
 TEXTURES = (
     TextureRef("bullet", "Bullet Enemy"),
     TextureRef("flag", "AmericanFlagTiny"),
+    TextureRef("rifle_gun", "Broniversal Soldier Gun Anim", frame=(32, 32)),
 )
 
 VALUES = (
@@ -79,6 +82,8 @@ VALUES = (
     ValuesRef("tank_shell", "HeavyShell", "Shell Heavy Tankbro", ("damage", "range", "life")),
     ValuesRef("tank_rocket", "RocketMassive", "Rocket Tankbro BIG",
               ("damage", "range", "blastForce", "blastForceExtraY", "life", "horizontalAcceleration", "crushWallLayers")),
+    ValuesRef("bro_soldier", "BroniversalSoldier", "BroniversalSoldier", UNIT_FIELDS + ("extraFireDelay",)),
+    ValuesRef("rifle_bullet", "BulletRambro", "Bullet Rambo", ("damage", "life")),
     ValuesRef("mook", "MookTrooper", "ZMook", MOOK_FIELDS),
     ValuesRef("mook_suicide", "MookSuicide", "ZMookSuicide", MOOK_FIELDS),
     ValuesRef("mook_bazooka", "MookBazooka", "ZMookBazooka", MOOK_FIELDS),

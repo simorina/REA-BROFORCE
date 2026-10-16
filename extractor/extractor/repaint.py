@@ -101,6 +101,32 @@ RU_FLAG = Decal(
 )
 
 
+# Double Bro Seven -> Trump: a dark navy suit, the white shirt kept, the red flower kept as the tie,
+# blond-orange hair, orange tan
+TRUMP_MAP: dict[RGB, RGB] = {
+    (0x20, 0x20, 0x20): (0x16, 0x1B, 0x2E),
+    (0x2B, 0x2D, 0x2F): (0x20, 0x27, 0x40),
+    (0x1F, 0x1D, 0x1D): (0x11, 0x15, 0x24),
+    (0x20, 0x13, 0x06): (0xC8, 0x8A, 0x2E),
+    (0x3E, 0x2B, 0x1A): (0xF0, 0xC0, 0x5A),
+    (0x2C, 0x1A, 0x09): (0xDB, 0xA4, 0x44),
+    (0xCF, 0x8C, 0x71): (0xE8, 0x8C, 0x4A),
+    (0xE9, 0xA6, 0x8C): (0xF5, 0xA8, 0x64),
+    (0xAA, 0x73, 0x5D): (0xC0, 0x6A, 0x30),
+    (0xA8, 0x86, 0x78): (0xC8, 0x84, 0x58),
+}
+
+
+def stealth(rgb: RGB) -> RGB:
+    """The Harrier is painted (1196 colours), so it is toned rather than mapped: greys go dark slate, and the bluish
+    cockpit glass is kept."""
+    r, g, b = rgb
+    if b > r + 40 and b > 150:
+        return rgb
+    v = round((0.3 * r + 0.59 * g + 0.11 * b) * 0.42 + 10)
+    return (v, v, min(255, v + 6))
+
+
 @dataclass(frozen=True)
 class Recipe:
     key: str                  # output sheet: sprites/<key>.png
@@ -108,6 +134,7 @@ class Recipe:
     palette: dict
     hair: HairMask | None = None
     decal: Decal | None = None
+    tone: object = None       # a function RGB -> RGB applied to every opaque pixel
 
 
 RECIPES = (
@@ -115,6 +142,8 @@ RECIPES = (
     Recipe("putin", "bro_lee", PUTIN_MAP, PUTIN_HAIR),
     Recipe("tank_ru", "tank_hull", HULL_MAP),
     Recipe("turret_ru", "tank_turret", TURRET_MAP, decal=RU_FLAG),
+    Recipe("trump", "bro_base", TRUMP_MAP),
+    Recipe("jet_us", "jet_harrier", {}, tone=stealth),
 )
 
 
@@ -155,7 +184,7 @@ def _split_hair(px, width: int, height: int, mask: HairMask) -> tuple[set, set]:
 
 
 def repaint(img: Image.Image, mapping: dict = PALETTE_MAP, hair: HairMask | None = None,
-            decal: Decal | None = None) -> Image.Image:
+            decal: Decal | None = None, tone=None) -> Image.Image:
     out = img.convert("RGBA").copy()
     px = out.load()
     width, height = out.size
@@ -164,6 +193,9 @@ def repaint(img: Image.Image, mapping: dict = PALETTE_MAP, hair: HairMask | None
         for x in range(width):
             r, g, b, a = px[x, y]
             if a == 0:
+                continue
+            if tone is not None:
+                px[x, y] = (*tone((r, g, b)), a)
                 continue
             new = mapping.get((r, g, b))
             if hair and (x, y) in hair_px:

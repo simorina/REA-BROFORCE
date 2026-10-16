@@ -1,4 +1,5 @@
-"""Putin's tank plays the Russian anthem. It isn't in Broforce, so it is downloaded once into game-data/audio/."""
+"""Putin's tank plays the Russian anthem and Trump's jet the US one. They aren't in Broforce, so they are downloaded
+once into game-data/audio/."""
 import hashlib
 import os
 import sys
@@ -21,6 +22,13 @@ ANTHEM = AudioRef(
     sha256="b4a7eb9957c20053f0ce8db4f7a7bbfeeebfcf233d4cfc6632601c9ed518bd99",
     source=("National Anthem of Russia (2000), instrumental, one verse, by the Presidential Orchestra of the Russian "
             "Federation; Wikimedia Commons, from kremlin.ru (attribution is the only condition of reuse)"),
+)
+ANTHEM_US = AudioRef(
+    key="audio/anthem_us.ogg",
+    url="https://upload.wikimedia.org/wikipedia/commons/6/65/Star_Spangled_Banner_instrumental.ogg",
+    sha256="025bb322eee1e3e2638e2aa3b1b4e8c8e5c3798dca97fc4d059e7a9ab250c654",
+    source=("The Star-Spangled Banner, instrumental, by the United States Navy Band; Wikimedia Commons, public "
+            "domain (a work of the US government; composition published before 1931)"),
 )
 USER_AGENT = "REA-BROFORCE-extractor/1.0 (personal, non-commercial game remake)"
 

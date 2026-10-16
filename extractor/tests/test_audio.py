@@ -32,3 +32,10 @@ def test_a_wrong_hash_is_rejected(tmp_path, capsys):
     assert fetch(REF, OutputWriter(str(tmp_path)), lambda url: b"something else") is False
     assert "hash" in capsys.readouterr().err
     assert not (tmp_path / "audio" / "test.ogg").exists()
+
+
+def test_the_us_anthem_is_pinned():
+    from extractor.audio import ANTHEM_US
+    assert ANTHEM_US.key == "audio/anthem_us.ogg"
+    assert ANTHEM_US.sha256 == "025bb322eee1e3e2638e2aa3b1b4e8c8e5c3798dca97fc4d059e7a9ab250c654"
+    assert ANTHEM_US.url.endswith("/6/65/Star_Spangled_Banner_instrumental.ogg")

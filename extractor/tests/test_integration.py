@@ -45,6 +45,10 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert values["tank_turret"]["cannonFireSpeed"] == 44.0
     assert values["tank_shell"]["damage"] == 10 and values["tank_shell"]["range"] == 36.0
     assert values["tank_rocket"]["horizontalAcceleration"] == 120.0 and values["tank_rocket"]["crushWallLayers"] == 3
+    assert values["bro_soldier"]["fireRate"] == pytest.approx(0.12) and values["bro_soldier"]["extraFireDelay"] == pytest.approx(0.3)
+    assert values["rifle_bullet"]["damage"] == 1
+    assert sheets["trump"]["frameW"] == 32 and sheets["rifle_gun"]["frameW"] == 32 and sheets["rifle_gun"]["rows"] == 2
+    assert sheets["jet_us"]["frameW"] == 96 and sheets["jet_us"]["frameH"] == 64 and sheets["jet_us"]["offsetY"] == 12.0
     assert sheets["tank_ru"]["frameW"] == 48 and sheets["turret_ru"]["frameW"] == 48
     assert sheets["tank_shell"]["frameW"] == 32 and sheets["tank_rocket"]["frameH"] == 16
     assert Image.open(tmp_path / "sprites" / "block_dirt.png").size == (16, 16)

@@ -46,14 +46,14 @@ def run(data_dir: str, out_dir: str, fetch_audio: bool = True) -> None:
         for recipe in RECIPES:
             if recipe.source == ref.key:
                 repainted = f"sprites/{recipe.key}.png"
-                out.write_png(repainted, repaint(image, recipe.palette, recipe.hair, recipe.decal), f"repaint of {source}")
+                out.write_png(repainted, repaint(image, recipe.palette, recipe.hair, recipe.decal, recipe.tone), f"repaint of {source}")
                 sheets[recipe.key] = {**sheets[ref.key], "file": repainted}
     for ref in TEXTURES:
         image = prefabs.texture(ref.texture)
         file = f"sprites/{ref.key}.png"
         out.write_png(file, image, f"texture {ref.texture}")
-        side = image.height
-        sheets[ref.key] = sheet_entry(file, image.width, image.height, {"w": side, "h": side, "offset_y": 0.0})
+        w, h = ref.frame or (image.height, image.height)
+        sheets[ref.key] = sheet_entry(file, image.width, image.height, {"w": w, "h": h, "offset_y": 0.0})
     values = {}
     for ref in VALUES:
         fields = prefabs.values(ref.script, ref.gameobject, ref.fields)
@@ -63,7 +63,8 @@ def run(data_dir: str, out_dir: str, fetch_audio: bool = True) -> None:
     out.write_json("values.json", values, "prefab MonoBehaviour fields")
     effects.extract(os.path.join(data_dir, "StreamingAssets"), out)
     if fetch_audio:
-        audio.fetch(audio.ANTHEM, out)
+        for ref in (audio.ANTHEM, audio.ANTHEM_US):
+            audio.fetch(ref, out)
     out.finish({"generatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(), "dataDir": data_dir})
 
 

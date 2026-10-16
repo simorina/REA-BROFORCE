@@ -1,7 +1,7 @@
 from PIL import Image
 
 from extractor.catalog import SPRITES
-from extractor.repaint import HULL_MAP, PALETTE_MAP, PUTIN_HAIR, PUTIN_MAP, RECIPES, RU_FLAG, TURRET_MAP, repaint
+from extractor.repaint import HULL_MAP, PALETTE_MAP, PUTIN_HAIR, PUTIN_MAP, RECIPES, RU_FLAG, TRUMP_MAP, TURRET_MAP, repaint, stealth
 
 
 def test_maps_known_colours_and_keeps_alpha():
@@ -107,4 +107,31 @@ def test_the_turret_flag_becomes_the_russian_tricolour_in_every_frame():
 
 
 def test_tank_recipes():
-    assert [(r.key, r.source) for r in RECIPES][2:] == [("tank_ru", "tank_hull"), ("turret_ru", "tank_turret")]
+    assert [(r.key, r.source) for r in RECIPES][2:4] == [("tank_ru", "tank_hull"), ("turret_ru", "tank_turret")]
+
+
+def test_trump_keeps_the_red_tie_and_gets_blond_hair_and_orange_skin():
+    img = Image.new("RGBA", (3, 1))
+    img.putpixel((0, 0), (0x7F, 0x11, 0x00, 255))  # the red flower: kept as the tie
+    img.putpixel((1, 0), (0x3E, 0x2B, 0x1A, 255))  # hair
+    img.putpixel((2, 0), (0xE9, 0xA6, 0x8C, 255))  # skin
+    out = repaint(img, TRUMP_MAP)
+    assert out.getpixel((0, 0)) == (0x7F, 0x11, 0x00, 255)
+    assert out.getpixel((1, 0)) == (*TRUMP_MAP[(0x3E, 0x2B, 0x1A)], 255)
+    assert out.getpixel((2, 0)) == (*TRUMP_MAP[(0xE9, 0xA6, 0x8C)], 255)
+
+
+def test_stealth_darkens_the_harrier_but_keeps_its_cockpit_glass():
+    grey, glass = (0x97, 0x9B, 0x9C), (0x81, 0xBA, 0xE2)
+    assert max(stealth(grey)) < 0x60
+    assert stealth(glass) == glass
+    img = Image.new("RGBA", (2, 1))
+    img.putpixel((0, 0), (*grey, 200))
+    img.putpixel((1, 0), (*glass, 255))
+    out = repaint(img, {}, tone=stealth)
+    assert out.getpixel((0, 0)) == (*stealth(grey), 200)
+    assert out.getpixel((1, 0)) == (*glass, 255)
+
+
+def test_trump_and_jet_recipes():
+    assert [(r.key, r.source) for r in RECIPES][4:] == [("trump", "bro_base"), ("jet_us", "jet_harrier")]
