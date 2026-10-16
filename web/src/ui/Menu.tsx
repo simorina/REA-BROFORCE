@@ -4,6 +4,7 @@ import type { BroDef, SpecialId, WeaponId } from '../engine/bro';
 const WEAPON_HINT: Record<WeaponId, string> = {
   football: 'Calcia un pallone esplosivo',
   judo: 'Presa di judo: afferra un mook e scaraventalo',
+  rifle: "Fucile d'assalto (raffiche da tre)",
 };
 const SPECIAL_HINT: Record<SpecialId, string> = {
   airstrike: 'Attacco aereo (con ↓ lo lanci corto)',

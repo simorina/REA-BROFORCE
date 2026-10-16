@@ -412,6 +412,7 @@ export class Renderer {
     const angle = Math.atan2(-p.yI, Math.abs(p.xI)) * Math.sign(p.xI || 1);
     switch (p.kind) {
       case 'bullet':
+      case 'rifle':
         this.sprite('bullet', loopFrame(time, 0.05, this.assets.sheets.bullet.cols), 0, p.x, p.y, p.xI < 0);
         break;
       case 'rocket':

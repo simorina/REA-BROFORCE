@@ -1,6 +1,6 @@
 import {
   AIRSTRIKE_FUSE, AIRSTRIKE_ROCKETS, AIRSTRIKE_SPEED_MIN, AIRSTRIKE_SPEED_RAND, AIRSTRIKE_THROW,
-  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, FOOTBALL, GRAVITY, HEAVY_SHELL_DIP, JUDO_THROW, MOOK_BULLET_SPEED, TANK_CANNON, TANK_ROCKET_CRUSH, TANK_SHELL,
+  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, FOOTBALL, GRAVITY, HEAVY_SHELL_DIP, JUDO_THROW, MOOK_BULLET_SPEED, RIFLE, TANK_CANNON, TANK_ROCKET_CRUSH, TANK_SHELL,
   TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT,
 } from './constants';
 import { barrelBlast, rocketBlast, shellBlast, suicideBlast, type Blast } from './explosions';
@@ -45,6 +45,12 @@ export function fireMookBullet(id: number, m: Unit, stats: GameStats, rng: () =>
 export function fireBazookaRocket(id: number, m: Unit, stats: GameStats, rng: () => number): Projectile {
   return make(id, 'rocket', m.team, m.x + m.facing * 12, m.y + 8, m.facing * BAZOOKA_ROCKET_SPEED,
     (Math.floor(rng() * 4) - 2) * 0.2, stats.rocketMook.life);
+}
+
+/** BroniversalSoldier.FireWeapon: from (X + dir*14, Y + 8.5) at dir*420, ySpeed -10 + random*20. */
+export function fireRifleBullet(id: number, u: Unit, stats: GameStats, rng: () => number): Projectile {
+  return make(id, 'rifle', u.team, u.x + u.facing * RIFLE.ox, u.y + RIFLE.oy, u.facing * RIFLE.speed,
+    -RIFLE.jitter + rng() * RIFLE.jitter * 2, stats.rifle.life);
 }
 
 export function kickFootball(id: number, u: Unit): Projectile {
@@ -167,23 +173,25 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
   if (p.dead) return events;
   p.life -= t;
   switch (p.kind) {
-    case 'bullet': {
+    case 'bullet':
+    case 'rifle': {
+      const damage = p.kind === 'rifle' ? w.stats.rifle.damage : w.stats.bullet.damage;
       p.x += p.xI * t;
       p.y += p.yI * t;
       if (w.map.blockAt(p.x, p.y)) {
-        hitBlock(p, w, w.stats.bullet.damage, events);
+        hitBlock(p, w, damage, events);
         p.dead = true;
         break;
       }
       const tank = p.team === 'enemy' ? tankAt(w.tanks ?? [], p.x, p.y) : null;
       if (tank) {
-        events.push({ type: 'hitTank', tank, damage: w.stats.bullet.damage });
+        events.push({ type: 'hitTank', tank, damage });
         p.dead = true;
         break;
       }
       const target = unitAt(w.units, p.x, p.y, p.team);
       if (target) {
-        damageUnit(target, w.stats.bullet.damage);
+        damageUnit(target, damage);
         events.push({ type: 'hit', unit: target, x: p.x, y: p.y, xI: p.xI, yI: p.yI });
         p.dead = true;
       } else if (p.life <= 0) {

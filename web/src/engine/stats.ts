@@ -92,7 +92,7 @@ export function parseValues(raw: Raw): GameStats {
       mook_bazooka: unit(raw, 'mook_bazooka'),
       mook_scout: unit(raw, 'mook_scout'),
     },
-    bros: { bro_base: unit(raw, 'bro_base', true), bro_lee: unit(raw, 'bro_lee', true) },
+    bros: { bro_base: unit(raw, 'bro_base', true), bro_lee: unit(raw, 'bro_lee', true), bro_soldier: unit(raw, 'bro_soldier', true) },
     ai: {
       mook: ai(raw, 'ai_mook'), mook_suicide: ai(raw, 'ai_mook_suicide'), mook_bazooka: ai(raw, 'ai_mook_bazooka'),
       mook_scout: ai(raw, 'ai_mook_scout'),
@@ -120,6 +120,11 @@ export function parseValues(raw: Raw): GameStats {
       ...rocket(raw, 'tank_rocket'),
       acceleration: num(raw, 'tank_rocket', 'horizontalAcceleration'),
       crushLayers: num(raw, 'tank_rocket', 'crushWallLayers'),
+    },
+    rifle: {
+      extraFireDelay: num(raw, 'bro_soldier', 'extraFireDelay'),
+      damage: num(raw, 'rifle_bullet', 'damage'),
+      life: num(raw, 'rifle_bullet', 'life'),
     },
     blocks: {
       dirt: { health: num(raw, 'block_dirt', 'health') },

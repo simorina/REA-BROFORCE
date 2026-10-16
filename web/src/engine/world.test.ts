@@ -670,3 +670,35 @@ describe('driving the tank (MookArmouredGuy / TankBroTank)', () => {
     expect(w.driving).toBeNull();
   });
 });
+
+describe("the rifle (BroniversalSoldier.UseFire / FireWeapon)", () => {
+  const RIFLEMAN: BroDef = { ...BROLUSCONI, id: 'rifleman', base: 'bro_soldier', weapon: 'rifle' };
+  const rifleShots = (w: World) => w.events.filter((e) => e.type === 'shot' && e.weapon === 'rifle').length;
+
+  it('fires bursts of three, the last two 0.07 s apart, and the next after the 0.3 s fireDelay', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [RIFLEMAN], () => 0.5);
+    let prev = play(w, { fire: true }, 1);
+    const b = w.projectiles.find((p) => p.kind === 'rifle');
+    // fired at (X + 14, Y + 8.5), then moved one step at 420 in the same frame (projectiles step after the player)
+    expect(b).toMatchObject({ team: 'player', y: w.player.y + 8.5, xI: 420 });
+    expect(b?.x).toBeCloseTo(w.player.x + 14 + 420 * FIXED_DT, 5);
+    prev = play(w, { fire: true }, 19, prev); // 0.33 s: shots on steps 1, 5 and 9; the next burst waits for fireDelay
+    expect(rifleShots(w)).toBe(3);
+    play(w, { fire: true }, 20, prev); // 0.67 s: the second burst (from step 25 or 26)
+    expect(rifleShots(w)).toBe(6);
+  });
+
+  it('its bullets kill a mook ahead', () => {
+    const w = createWorld(level([[2, 'P'], [8, 'm'], [27, 'F']]), TEST_STATS, [RIFLEMAN], () => 0.5);
+    play(w, { fire: true }, 30);
+    expect(w.enemies[0].dead).toBe(true);
+  });
+
+  it('each shot shows the muzzle frames 3, 2, 1, then the gun rests at 0 (TestVanDammeAnim.RunGun, 0.0334 s each)', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [RIFLEMAN], () => 0.5);
+    const prev = play(w, { fire: true }, 1);
+    expect(w.player.gunFrame).toBe(3);
+    play(w, {}, 20, prev); // the burst goes on without the trigger; its last shot is on step 9
+    expect(w.player.gunFrame).toBe(0);
+  });
+});

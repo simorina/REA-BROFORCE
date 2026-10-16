@@ -3,6 +3,12 @@ import { parseValues } from './stats';
 import { RAW_VALUES, TEST_STATS } from './testStats';
 
 describe('parseValues', () => {
+  it("reads Broniversal Soldier as a bro and his rifle's bullet", () => {
+    const s = parseValues(RAW_VALUES);
+    expect(s.bros.bro_soldier).toMatchObject({ speed: 110, fireRate: 0.12, specialAmmo: 3, canHideInGrass: false });
+    expect(s.rifle).toEqual({ extraFireDelay: 0.3, damage: 1, life: 0.45 });
+  });
+
   it('maps values.json onto GameStats', () => {
     expect(parseValues(RAW_VALUES)).toEqual(TEST_STATS);
   });

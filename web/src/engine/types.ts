@@ -4,9 +4,9 @@ export type BlockKind = 'dirt' | 'brick' | 'steel' | 'barrel';
 export type UnitKind = 'bro' | 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout';
 export type EnemyKind = Exclude<UnitKind, 'bro'>;
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
-export const BRO_BASES = ['bro_base', 'bro_lee'] as const;
+export const BRO_BASES = ['bro_base', 'bro_lee', 'bro_soldier'] as const;
 export type BroBase = (typeof BRO_BASES)[number];
-export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket';
+export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket' | 'rifle';
 
 export interface Block {
   kind: BlockKind;
@@ -111,6 +111,7 @@ export interface GameStats {
   tank: TankStats;
   tankShell: { damage: number; range: number; life: number }; // HeavyShell "Shell Heavy Tankbro"
   tankRocket: RocketStats & { acceleration: number; crushLayers: number }; // RocketMassive "Rocket Tankbro BIG"
+  rifle: { extraFireDelay: number; damage: number; life: number }; // BroniversalSoldier, "Bullet Rambo"
   blocks: Record<BlockKind, { health: number }>;
   barrelRange: number;
   suicide: { range: number; blastForce: number };
@@ -241,6 +242,10 @@ export interface Unit {
   flex: { frame: number; counter: number; block: boolean } | null; // GestureElement.Gestures.Flex in progress
   attack: JudoAttack | null; // the judo throw in progress
   attackRow: 0 | 1; // BroLee.attackSpriteRow, kept between strikes
+  burstLeft: number; // BroniversalSoldier.burstShotsLeft
+  burstCounter: number; // ... burstFireCounter
+  gunFrame: number; // TestVanDammeAnim.gunFrame: the muzzle flash after a shot, counting down
+  gunCounter: number;
   dead: boolean;
   deadTime: number;
   gibbed: boolean; // blown to pieces: no corpse is left
