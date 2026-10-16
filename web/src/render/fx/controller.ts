@@ -447,6 +447,8 @@ export class Effects {
         if (e.weapon === 'bullet') {
           // Mook.FireWeapon: CreateMuzzleFlashEffect(x, y, -25, xSpeed * 0.01, ySpeed * 0.01)
           this.puff('muzzleFlash', e.x + e.facing * 10, e.y + 8, e.facing, e.facing * 2.5, 0);
+        } else if (e.weapon === 'bigRocket') {
+          this.puff('muzzleFlash', e.x + e.facing * 24, e.y + 22, e.facing, e.facing * 2, 0); // CreateMuzzleFlashTankCannonEffect
         } else if (e.weapon === 'rocket') {
           // MookBazooka.UseFire: three puffs of smoke out of the back of the tube, then the muzzle flash
           this.smoke(e.x - e.facing * 10, e.y + 7, e.facing * -60, 0);
@@ -488,6 +490,26 @@ export class Effects {
       }
       case 'suicide':
         this.suicideBlast(x, y);
+        return;
+      case 'shell':
+        // HeavyShell.MakeEffects: a range pop and a medium explosion
+        this.rangePop(x, y, range * 3);
+        this.sparkShower(x, y, 50, 3, 160, 0, 60, 0.6, 0.33);
+        this.shaderExplosion('medium', x, y);
+        return;
+      case 'bigRocket':
+        // Rocket.MakeEffects, then RocketMassive's three plumes
+        this.rangePop(x, y, range * 3);
+        this.sparkShower(x, y, 60, 3, 160, 0, 60, 0.6, 0.33);
+        this.shaderExplosion('medium', x + ux * range * 0.05, y + uy * range * 0.05);
+        this.plumes(x, y, 3, 15, 240, 0, 0);
+        return;
+      case 'tank':
+        // MookArmouredGuy.Gib: CreateMassiveExplosion
+        this.rangePop(x, y, range * 2);
+        this.sparkShower(x, y, 70, 3, 200, 0, 250, 0.6, 0.5);
+        this.plumes(x, y, 5, 10, 315, 0, 0);
+        this.shaderExplosion('large', x, y);
         return;
       default:
         // the football is ours: a small shader explosion

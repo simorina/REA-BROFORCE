@@ -30,6 +30,13 @@ describe('loadData', () => {
     expect(() => broSheet({ id: 'x', sheet: 'rambro' })).toThrow("sheet 'rambro' is not extracted");
   });
 
+  it('the tank sheets are required', () => {
+    const old: Record<string, unknown> = { ...sheets };
+    delete old.tank_ru;
+    delete old.tank_rocket;
+    expect(missingSheets(old)).toEqual(['tank_ru', 'tank_rocket']);
+  });
+
   it('loads sheets and parses values', async () => {
     const data = await loadData(fakeFetch({
       '/sheets.json': { status: 200, body: JSON.stringify(sheets) },

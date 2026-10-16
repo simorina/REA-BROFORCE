@@ -1,6 +1,7 @@
 import {
-  CLIMB_FRAME_RATE, FLEX_FRAMES, FLEX_ROW, JUDO_COL, JUDO_FRAMES, JUDO_ROW, JUMP_FRAME_RATE, RUN_FRAME_RATE,
+  CLIMB_FRAME_RATE, FLEX_FRAMES, FLEX_ROW, JUDO_COL, JUDO_FRAMES, JUDO_ROW, JUMP_FRAME_RATE, RUN_FRAME_RATE, TANK_RUN_FRAME_RATE,
 } from '../engine/constants';
+import type { Tank, Turret } from '../engine/tank';
 
 const PANIC_FRAME_RATE = 0.044455; // Mook.AnimateRunning while burning, blind or scared
 const SPECIAL2_FRAME_RATE = 0.045; // MookSuicide.AnimateSpecial2, with frame 9 held for 1 s
@@ -56,4 +57,21 @@ export function loopFrame(time: number, frameRate: number, cols: number): number
 /** Hobro_anim: columns 0-3 are the standing idle; 4-5 are death poses, so the cage loop stays on 0-3. */
 export function prisonerFrame(time: number): number {
   return loopFrame(time, 0.15, 4);
+}
+
+/** TankBroTank: AnimateActualIdleFrames (0, 0); AnimateRunning, columns 0-2 at runningFrameRate; AnimateJumping, row 1 by yI. */
+export function tankHullFrame(k: Tank): Frame {
+  if (!k.onGround) {
+    const col = k.yI > 100 ? 1 : k.yI > 66 ? 2 : k.yI > 33 ? 3 : k.yI > 0 ? 4 : k.yI > -33 ? 5 : k.yI > -66 ? 6 : 7;
+    return { col, row: 1 };
+  }
+  if (Math.abs(k.xI) > 1) return { col: Math.floor(k.animTime / TANK_RUN_FRAME_RATE) % 3, row: 0 };
+  return { col: 0, row: 0 };
+}
+
+/** TankBroTankTurret.SetTurretFrame: the mortar's frames on row 0, the gun switch on row 1, the cannon's on row 2. */
+export function turretFrame(tu: Turret): Frame {
+  if (tu.switching) return { col: tu.switchFrame, row: 1 };
+  const row = tu.gun === 0 ? 0 : 2;
+  return { col: tu.firing ? tu.frame : 0, row };
 }

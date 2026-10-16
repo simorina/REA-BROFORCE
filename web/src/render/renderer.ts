@@ -4,9 +4,10 @@ import {
 } from '../engine/constants';
 import type { ParallaxDoodad } from '../engine/level';
 import { getColumn, getRow } from '../engine/map';
+import type { Tank } from '../engine/tank';
 import type { BlockKind, Projectile, Unit, UnitKind } from '../engine/types';
 import type { Effect, GameEvent, World } from '../engine/world';
-import { loopFrame, prisonerFrame, unitFrame } from './animation';
+import { loopFrame, prisonerFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
 import type { Assets, SheetKey } from './assets';
 import { Effects } from './fx/controller';
 import { particleFrame } from './fx/particles';
@@ -86,9 +87,10 @@ export class Renderer {
     this.drawCheckpoints(w);
     this.drawFlag(w);
     this.drawPrisoners(w);
+    for (const k of w.tanks) this.drawTank(k);
     for (const e of w.enemies) if (!e.exitDoor) this.drawUnit(e, w.time);
     const boarded = w.state === 'extracting' && w.extractionTime >= EXTRACTION_TIME / 2;
-    if (!boarded) this.drawUnit(w.player, w.time);
+    if (!boarded && !w.driving) this.drawUnit(w.player, w.time);
     this.drawGibs();
     this.drawParticles();
     this.drawPuffs();
@@ -309,6 +311,19 @@ export class Renderer {
     if (b !== 1) this.ctx.filter = 'none';
   }
 
+  /** TankBroTank's hull with the turret on top (bobbing a pixel while it rolls), flashing in its death countdown. */
+  private drawTank(k: Tank): void {
+    const hull = tankHullFrame(k);
+    const top = turretFrame(k.turret);
+    const y = k.y + this.assets.sheets.tank_ru.offsetY;
+    const bob = k.onGround && Math.abs(k.xI) > 1 && Math.floor(k.bob / 2) % 2 === 0 ? 1 : 0; // TankBroTank.AnimateRunning
+    const flash = k.countdown >= 0 && k.countdown % 2 === 1;
+    if (flash) this.ctx.filter = 'brightness(2.2)';
+    this.sprite('tank_ru', hull.col, hull.row, k.x, y, k.facing < 0);
+    this.sprite('turret_ru', top.col, top.row, k.x, y + bob, k.facing < 0);
+    if (flash) this.ctx.filter = 'none';
+  }
+
   private drawGibs(): void {
     for (const g of this.effects.gibs) {
       if (g.w <= 0 || g.h <= 0) continue;
@@ -410,6 +425,12 @@ export class Renderer {
         break;
       case 'football':
         this.drawFootball(p, time);
+        break;
+      case 'shell':
+        this.sprite('tank_shell', 0, 0, p.x, p.y, false, angle);
+        break;
+      case 'bigRocket':
+        this.sprite('tank_rocket', loopFrame(time, 0.05, this.assets.sheets.tank_rocket.cols), 0, p.x, p.y, p.xI < 0);
         break;
       case 'body':
         // the grabbed mook in its falling pose, spinning

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { TEST_STATS } from '../engine/testStats';
 import { makeUnit } from '../engine/units';
-import { loopFrame, prisonerFrame, special2Frame, stripFrame, unitFrame } from './animation';
+import { makeTank } from '../engine/tank';
+import { loopFrame, prisonerFrame, special2Frame, stripFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
 
 const bro = (patch: Partial<ReturnType<typeof makeUnit>>) =>
   Object.assign(makeUnit(1, 'bro', 'player', 0, 8, TEST_STATS.bros.bro_base), { onGround: true }, patch);
@@ -91,5 +92,32 @@ describe('the flex', () => {
   it('shows row 11 and holds frame 23', () => {
     expect(unitFrame(bro({ flex: { frame: 5, counter: 0, block: true } }))).toEqual({ col: 5, row: 11 });
     expect(unitFrame(bro({ flex: { frame: 40, counter: 0, block: true } }))).toEqual({ col: 23, row: 11 });
+  });
+});
+
+describe('the tank (TankBroTank.Animate*, TankBroTankTurret.SetTurretFrame)', () => {
+  it('idles on column 0, rolls through columns 0-2 at 0.0334 s, and uses row 1 by yI in the air', () => {
+    const k = makeTank(1, 0, 0, 1);
+    k.onGround = true;
+    expect(tankHullFrame(k)).toEqual({ col: 0, row: 0 });
+    Object.assign(k, { xI: 60, animTime: 0.07 });
+    expect(tankHullFrame(k)).toEqual({ col: 2, row: 0 });
+    Object.assign(k, { onGround: false, yI: 120 });
+    expect(tankHullFrame(k)).toEqual({ col: 1, row: 1 });
+    Object.assign(k, { yI: -100 });
+    expect(tankHullFrame(k)).toEqual({ col: 7, row: 1 });
+  });
+
+  it('the turret: mortar firing on row 0, the transform on row 1, the cannon on row 2', () => {
+    const tu = makeTank(1, 0, 0, 1).turret;
+    expect(turretFrame(tu)).toEqual({ col: 0, row: 0 });
+    Object.assign(tu, { firing: true, frame: 5 });
+    expect(turretFrame(tu)).toEqual({ col: 5, row: 0 });
+    Object.assign(tu, { firing: false, switching: true, switchFrame: 12, gun: 1 });
+    expect(turretFrame(tu)).toEqual({ col: 12, row: 1 });
+    Object.assign(tu, { switching: false, firing: true, frame: 7 });
+    expect(turretFrame(tu)).toEqual({ col: 7, row: 2 });
+    Object.assign(tu, { firing: false });
+    expect(turretFrame(tu)).toEqual({ col: 0, row: 2 });
   });
 });
