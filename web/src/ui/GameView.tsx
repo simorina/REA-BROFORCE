@@ -8,8 +8,9 @@ import { Sfx, sfxFor } from '../app/sfx';
 import { speak } from '../app/speech';
 import { BROS, rosterStartingWith } from '../bros';
 import type { BroDef } from '../engine/bro';
-import { LIVES_START } from '../engine/constants';
+import { JET_FUEL, LIVES_START } from '../engine/constants';
 import { VIEW_H, VIEW_W } from '../engine/camera';
+import type { Jet } from '../engine/jet';
 import { NO_CONTROLS, type Controls } from '../engine/types';
 import { createWorld, stepWorld } from '../engine/world';
 import { buildLevel1 } from '../levels/level1';
@@ -35,7 +36,7 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
   const roster = useMemo(() => rosterStartingWith(broId), [broId]);
   const portraitOf = useCallback((b: BroDef) => `/${assets.sheets[broSheet(b)].file}`, [assets]);
   const hud = useMemo(
-    () => createHudStore({ lives: LIVES_START, ammo: assets.stats.bros[roster[0].base].specialAmmo, portrait: portraitOf(roster[0]) }),
+    () => createHudStore({ lives: LIVES_START, ammo: assets.stats.bros[roster[0].base].specialAmmo, portrait: portraitOf(roster[0]), fuel: null }),
     [assets, roster, portraitOf],
   );
   const pause = useMemo(() => createPause(), []);
@@ -53,7 +54,7 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
     if (!ctx) return;
     const level = buildLevel1();
     const world = createWorld(level, assets.stats, roster);
-    const renderer = new Renderer(ctx, assets, SCALE, () => broSheet(world.bro), level.parallax);
+    const renderer = new Renderer(ctx, assets, SCALE, () => broSheet(world.bro), () => (world.bro.weapon === 'rifle' ? 'rifle_gun' : null), level.parallax);
     const keyboard = new Keyboard();
     keyboard.attach(window);
     const sfx = new Sfx(sound);
@@ -95,7 +96,10 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
           if (name) sfx.play(name, e.x, world.camera.x);
           renderer.onEvent(e);
         }
-        hud.set({ lives: world.lives, ammo: world.specialAmmo, portrait: portraitOf(world.bro) });
+        hud.set({
+          lives: world.lives, ammo: world.specialAmmo, portrait: portraitOf(world.bro),
+          fuel: world.driving?.kind === 'jet' ? Math.round(((world.driving as Jet).fuel / JET_FUEL) * 20) / 20 : null,
+        });
         if (!ended && (world.state === 'won' || world.state === 'lost')) {
           ended = true;
           const result = world.state;

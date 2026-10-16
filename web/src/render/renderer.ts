@@ -4,6 +4,7 @@ import {
 } from '../engine/constants';
 import type { ParallaxDoodad } from '../engine/level';
 import { getColumn, getRow } from '../engine/map';
+import type { Jet } from '../engine/jet';
 import type { Tank } from '../engine/tank';
 import type { BlockKind, Projectile, Unit, UnitKind } from '../engine/types';
 import type { Effect, GameEvent, World } from '../engine/world';
@@ -43,6 +44,7 @@ export class Renderer {
     private readonly assets: Assets,
     private readonly scale: number,
     private readonly playerSheet: () => SheetKey, // the current bro's
+    private readonly playerGun: () => SheetKey | null, // his gun drawn over him, if he carries one
     parallax: readonly ParallaxDoodad[] = [],
     rng: () => number = Math.random,
   ) {
@@ -88,6 +90,7 @@ export class Renderer {
     this.drawFlag(w);
     this.drawPrisoners(w);
     for (const k of w.tanks) this.drawTank(k);
+    for (const j of w.jets) this.drawJet(j);
     for (const e of w.enemies) if (!e.exitDoor) this.drawUnit(e, w.time);
     const boarded = w.state === 'extracting' && w.extractionTime >= EXTRACTION_TIME / 2;
     if (!boarded && !w.driving) this.drawUnit(w.player, w.time);
@@ -308,6 +311,11 @@ export class Renderer {
     const image = disarmed ? this.assets.files[this.assets.effects.scoutDisarmed] : undefined;
     // SpriteSM offset: the 32x32 frame is centred offsetY above the feet.
     this.sprite(key, f.col, f.row, u.x, u.y + this.assets.sheets[key].offsetY, u.facing < 0, 0, image);
+    // the bro's gun on top of him (TestVanDammeAnim.gunSprite: same pivot as the body), muzzle frames from gunFrame
+    const gun = u.kind === 'bro' ? this.playerGun() : null;
+    if (gun && !u.dead && !u.wallClimbing && !u.flex && !u.attack) {
+      this.sprite(gun, u.gunFrame, 0, u.x, u.y + this.assets.sheets[key].offsetY, u.facing < 0);
+    }
     if (b !== 1) this.ctx.filter = 'none';
   }
 
@@ -321,6 +329,14 @@ export class Renderer {
     if (flash) this.ctx.filter = 'brightness(2.2)';
     this.sprite('tank_ru', hull.col, hull.row, k.x, y, k.facing < 0);
     this.sprite('turret_ru', top.col, top.row, k.x, y + bob, k.facing < 0);
+    if (flash) this.ctx.filter = 'none';
+  }
+
+  /** The Harrier, stealth grey, facing the way it flies; flashing in its death countdown like the tank. */
+  private drawJet(j: Jet): void {
+    const flash = j.countdown >= 0 && j.countdown % 2 === 1;
+    if (flash) this.ctx.filter = 'brightness(2.2)';
+    this.sprite('jet_us', 0, 0, j.x, j.y + this.assets.sheets.jet_us.offsetY, j.facing < 0);
     if (flash) this.ctx.filter = 'none';
   }
 
@@ -419,6 +435,7 @@ export class Renderer {
         this.sprite('rocket', 0, 0, p.x, p.y, p.xI < 0);
         break;
       case 'bomb':
+      case 'jetBomb':
         this.sprite('bomb', 0, 0, p.x, p.y, false, angle);
         break;
       case 'marker':

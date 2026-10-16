@@ -36,6 +36,13 @@ describe('loadData', () => {
     expect(missingSheets(old)).toEqual(['trump']);
   });
 
+  it('the rifle and jet sheets are required', () => {
+    const old: Record<string, unknown> = { ...sheets };
+    delete old.rifle_gun;
+    delete old.jet_us;
+    expect(missingSheets(old)).toEqual(['rifle_gun', 'jet_us']);
+  });
+
   it('the tank sheets are required', () => {
     const old: Record<string, unknown> = { ...sheets };
     delete old.tank_ru;

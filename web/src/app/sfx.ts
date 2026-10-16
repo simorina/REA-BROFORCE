@@ -16,8 +16,10 @@ export function sfxFor(e: GameEvent): SfxName | null {
           return 'swish';
         case 'marker':
         case 'body':
+        case 'jetBomb':
           return 'throw';
         case 'rocket':
+        case 'bomb':
           return 'rocket';
         case 'shell':
           return 'mortar';

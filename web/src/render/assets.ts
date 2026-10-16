@@ -14,7 +14,7 @@ export interface SheetInfo {
 }
 
 export const SHEET_KEYS = [
-  'brolusconi', 'putin', 'trump', 'tank_ru', 'turret_ru', 'tank_shell', 'tank_rocket', 'mook', 'mook_suicide', 'mook_bazooka', 'mook_scout', 'prisoner', 'cage', 'helicopter', 'bullet', 'rocket',
+  'brolusconi', 'putin', 'trump', 'rifle_gun', 'jet_us', 'tank_ru', 'turret_ru', 'tank_shell', 'tank_rocket', 'mook', 'mook_suicide', 'mook_bazooka', 'mook_scout', 'prisoner', 'cage', 'helicopter', 'bullet', 'rocket',
   'bomb', 'marker', 'block_dirt', 'block_brick', 'block_steel', 'block_barrel', 'flagpole', 'flag',
 ] as const;
 export type SheetKey = (typeof SHEET_KEYS)[number];
