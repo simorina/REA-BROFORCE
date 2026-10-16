@@ -112,6 +112,8 @@ export const SHELL_BLAST = { force: 350, extraY: 300 }; // HeavyShell.MakeEffect
 export const TANK_ROCKET_CRUSH = { damage: 15, range: 16, ox: 9 }; // RocketMassive.Bounce: DamageGround(15, Crush, 16, X + dir*9, Y)
 export const RIFLE = { ox: 14, oy: 8.5, speed: 420, jitter: 10, burst: 2, burstGap: 0.07 }; // BroniversalSoldier.UseFire / Update / FireWeapon
 export const GUN_FRAME_RATE = 0.0334; // TestVanDammeAnim.RunGun
+export const JET_ROCKET = { ox: [32, 8], oy: -5, x: 450, y: -285, jitter: 12 }; // HarrierJet.Update: two shots from (X+32, Y-5), (X+8, Y-5) at (450, -285) + insideUnitCircle * 12
+export const JET_DESCENT = { slow: 40, slowZone: 48 }; // HarrierJet.Start: yI -40 over its last 48 px
 export const TANK_COUNTDOWN = { first: 0.4667, step: 0.2667, speedup: 4 }; // MookArmouredGuy.Update: deathCountdownCounter
 export const TANK_EMPTY_LIMIT = 60; // MookArmouredGuy.Damage: shieldDamage > 60
 export const TANK_GIB_YI = 180; // MookArmouredGuy.Gib: DisChargePilot(180)
@@ -123,6 +125,13 @@ export const JUDO_ROW = 7; // ... lowerLeftPixel y = 32 * (8 + attackSpriteRow):
 export const TANK_DRIVER_SHIELD = 0.1; // the hidden driver can't be hit (renewed every step he is inside)
 export const TANK_EJECT_INVULNERABLE = 0.5; // the driver thrown clear by the gib outlives its blast
 export const JET_BOX = { halfWidth: 24, height: 20 }; // the Harrier's body in its 96x64 frame
+export const JET_FAST_DESCENT = 160; // the jet's way down before its last 48 px
+export const JET_ENTRY = 32; // it appears this far above the screen top
+export const JET_FLY = { x: 110, y: 80, accel: 400 }; // piloted flight (the Harrier was never player-driven)
+export const JET_ROCKET_COOLDOWN = 0.4; // rockets instead of its heavy bullets, slower than its 0.133 s
+export const JET_BOMB = { oy: -4, yI: -50, cooldown: 0.5 };
+export const JET_FUEL = 20;
+export const JET_LEAVE_SPEED = 80; // an empty, dry jet rises away
 export const FOOTBALL = {
   kickX: 220, kickY: 160, bounceM: 0.7, frictionM: 0.85, maxBounces: 3, fuse: 1.6,
   damage: 5, range: 32, blastForce: 20, blastForceExtraY: 300,

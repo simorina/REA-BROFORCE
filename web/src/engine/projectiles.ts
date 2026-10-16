@@ -1,6 +1,6 @@
 import {
   AIRSTRIKE_FUSE, AIRSTRIKE_ROCKETS, AIRSTRIKE_SPEED_MIN, AIRSTRIKE_SPEED_RAND, AIRSTRIKE_THROW,
-  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, FOOTBALL, GRAVITY, HEAVY_SHELL_DIP, JUDO_THROW, MOOK_BULLET_SPEED, RIFLE, TANK_CANNON, TANK_ROCKET_CRUSH, TANK_SHELL,
+  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, FOOTBALL, GRAVITY, HEAVY_SHELL_DIP, JET_BOMB, JET_ROCKET, JUDO_THROW, MOOK_BULLET_SPEED, RIFLE, TANK_CANNON, TANK_ROCKET_CRUSH, TANK_SHELL,
   TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT,
 } from './constants';
 import { barrelBlast, rocketBlast, shellBlast, suicideBlast, type Blast } from './explosions';
@@ -16,6 +16,7 @@ export type ProjectileEvent =
   | { type: 'hit'; unit: Unit; x: number; y: number; xI: number; yI: number }
   | { type: 'gib'; kind: EnemyKind; x: number; y: number; xI: number; yI: number }
   | { type: 'callTank'; x: number; y: number; dir: 1 | -1 }
+  | { type: 'callJet'; x: number; y: number }
   | { type: 'hitVehicle'; vehicle: Vehicle; damage: number };
 
 export interface ProjectileWorld {
@@ -70,10 +71,33 @@ export function throwTankMarker(id: number, u: Unit, ducking: boolean): Projecti
   return p;
 }
 
+/** Trump's signal grenade: the airstrike grenade calling in his jet. */
+export function throwJetMarker(id: number, u: Unit, ducking: boolean): Projectile {
+  const p = throwMarker(id, u, ducking);
+  p.call = 'jet';
+  return p;
+}
+
 interface Gun {
   x: number;
   y: number;
   facing: 1 | -1;
+}
+
+/** HarrierJet.Update: a pair of shots from (X + dir*32, Y - 5) and (X + dir*8, Y - 5) at (dir*450, -285), jittered
+ *  within 12; here they are RocketBombardment rockets (the user asked for rockets). */
+export function fireJetRockets(nextId: () => number, j: Gun, stats: GameStats, rng: () => number): Projectile[] {
+  return JET_ROCKET.ox.map((ox) => {
+    const a = rng() * Math.PI * 2;
+    const r = Math.sqrt(rng()) * JET_ROCKET.jitter;
+    return make(nextId(), 'bomb', 'player', j.x + j.facing * ox, j.y + JET_ROCKET.oy,
+      j.facing * JET_ROCKET.x + Math.cos(a) * r, JET_ROCKET.y + Math.sin(a) * r, stats.bomb.life);
+  });
+}
+
+/** The jet's bomb: straight down from under it, falling, with RocketBombardment's blast. */
+export function dropJetBomb(id: number, j: Gun & { xI: number }, stats: GameStats): Projectile {
+  return make(id, 'jetBomb', 'player', j.x, j.y + JET_BOMB.oy, j.xI, JET_BOMB.yI, stats.bomb.life);
 }
 
 /** TankBroTankTurret.FireShell: a HeavyShell from (X + dir*17, Y + 33) at (dir*150, 150) * 0.9. */
@@ -154,7 +178,7 @@ function bounce(p: Projectile, map: TileMap, t: number, bounceM: number, frictio
 
 function explodeAt(p: Projectile, stats: RocketStats, big: boolean, events: ProjectileEvent[]): void {
   p.dead = true;
-  const source = p.kind === 'football' ? 'football' : p.kind === 'bomb' ? 'bomb' : 'rocket';
+  const source = p.kind === 'football' ? 'football' : p.kind === 'bomb' || p.kind === 'jetBomb' ? 'bomb' : 'rocket';
   events.push({ type: 'explode', blast: rocketBlast(p.x, p.y, stats, p.team, big, source) });
 }
 
@@ -221,6 +245,15 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
       }
       break;
     }
+    case 'jetBomb': {
+      p.yI -= GRAVITY * t;
+      p.x += p.xI * t;
+      p.y += p.yI * t;
+      if (w.map.blockAt(p.x, p.y) || unitAt(w.units, p.x, p.y, p.team) || p.life <= 0) {
+        explodeAt(p, w.stats.bomb, true, events);
+      }
+      break;
+    }
     case 'body': {
       p.yI -= GRAVITY * t;
       p.x += p.xI * t;
@@ -278,7 +311,9 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
         p.dead = true;
         events.push(p.call === 'tank'
           ? { type: 'callTank', x: p.x, y: p.y, dir: p.xI < 0 ? -1 : 1 }
-          : { type: 'airstrike', x: p.x, y: p.y });
+          : p.call === 'jet'
+            ? { type: 'callJet', x: p.x, y: p.y }
+            : { type: 'airstrike', x: p.x, y: p.y });
       }
       break;
     }

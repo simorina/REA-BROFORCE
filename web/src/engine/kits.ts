@@ -1,7 +1,7 @@
 import type { SpecialId, WeaponId } from './bro';
 import { startJudo } from './judo';
 import { RIFLE } from './constants';
-import { fireRifleBullet, kickFootball, throwMarker, throwTankMarker } from './projectiles';
+import { fireRifleBullet, kickFootball, throwJetMarker, throwMarker, throwTankMarker } from './projectiles';
 import type { Projectile, Unit } from './types';
 import { runFiring } from './units';
 import type { World } from './world';
@@ -65,4 +65,5 @@ export const WEAPON_KITS: Record<WeaponId, WeaponKit> = {
 export const SPECIAL_KITS: Record<SpecialId, (id: number, p: Unit, ducking: boolean) => Projectile> = {
   airstrike: throwMarker,
   tank: throwTankMarker,
+  jet: throwJetMarker,
 };

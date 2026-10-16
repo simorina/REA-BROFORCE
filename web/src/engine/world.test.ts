@@ -5,6 +5,7 @@ import { FIXED_DT } from './constants';
 import type { LevelData } from './level';
 import { hitTank } from './driving';
 import type { Blast } from './explosions';
+import { makeJet } from './jet';
 import { fireMookBullet, throwBody } from './projectiles';
 import { makeTank } from './tank';
 import { TEST_STATS } from './testStats';
@@ -700,5 +701,112 @@ describe("the rifle (BroniversalSoldier.UseFire / FireWeapon)", () => {
     expect(w.player.gunFrame).toBe(3);
     play(w, {}, 20, prev); // the burst goes on without the trigger; its last shot is on step 9
     expect(w.player.gunFrame).toBe(0);
+  });
+});
+
+describe("Trump's jet", () => {
+  const PILOT: BroDef = { ...BROLUSCONI, id: 'pilot', base: 'bro_soldier', weapon: 'rifle', special: 'jet' };
+  /** A landed jet `dx` to the right of the bro on EMPTY's floor. */
+  function withJet(dx = 10): World {
+    const w = createWorld(EMPTY, TEST_STATS, [PILOT], () => 0.5);
+    w.jets.push(Object.assign(makeJet(900, w.player.x + dx, 24, 1), { state: 'landed' as const, onGround: true }));
+    return w;
+  }
+
+  it('the signal grenade brings it down from above the screen; walking into it boards it', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [PILOT], () => 0.5);
+    const prev = play(w, { special: true }, 1); // thrown long: a jet landing on him would seat him at once
+    expect(w.projectiles.find((p) => p.kind === 'marker')?.call).toBe('jet');
+    play(w, {}, 62, prev);
+    expect(w.jets).toHaveLength(1);
+    play(w, {}, 300);
+    expect(w.jets[0].state).toBe('landed');
+    w.player.x = w.jets[0].x;
+    play(w, {}, 1);
+    expect(w.driving).toBe(w.jets[0]);
+    expect(w.jets[0].state).toBe('flying');
+  });
+
+  it('up flies it up with the pilot hidden inside', () => {
+    const w = withJet();
+    let prev = play(w, {}, 1);
+    prev = play(w, { up: true }, 30, prev);
+    expect(w.jets[0].y).toBeGreaterThan(40);
+    expect(w.player.y).toBe(w.jets[0].y);
+    expect(w.player.invulnerable).toBeGreaterThan(0);
+  });
+
+  it('X fires a pair of rockets diagonally down-forward, again every 0.4 s while held (HarrierJet)', () => {
+    const w = withJet();
+    let prev = play(w, {}, 1);
+    prev = play(w, { up: true }, 30, prev);
+    const j = w.jets[0];
+    prev = play(w, { fire: true }, 1, prev);
+    const rockets = w.projectiles.filter((p) => p.kind === 'bomb');
+    expect(rockets).toHaveLength(2);
+    // fired from X + 8 and X + 32, then moved one step in the same frame
+    expect(rockets.map((r) => Math.round(r.x - r.xI * FIXED_DT - j.x)).sort((a, b) => a - b)).toEqual([8, 32]);
+    expect(rockets[0].xI).toBeGreaterThan(430);
+    expect(rockets[0].yI).toBeLessThan(-265);
+    play(w, { fire: true }, 25, prev); // the next pair 0.4 s later (24 steps, one more for float rounding)
+    expect(w.events.filter((e) => e.type === 'shot' && e.weapon === 'bomb').length).toBe(2); // one event per pair
+  });
+
+  it('C drops a bomb straight down, at most every 0.5 s, costing no special', () => {
+    const w = withJet();
+    let prev = play(w, {}, 1);
+    prev = play(w, { up: true }, 30, prev);
+    prev = play(w, { special: true }, 1, prev);
+    prev = play(w, {}, 1, prev);
+    prev = play(w, { special: true }, 1, prev);
+    expect(w.projectiles.filter((p) => p.kind === 'jetBomb')).toHaveLength(1);
+    expect(w.specialAmmo).toBe(3);
+  });
+
+  it('F in the air drops him below; the empty jet lands and waits', () => {
+    const w = withJet();
+    let prev = play(w, {}, 1);
+    prev = play(w, { up: true }, 30, prev);
+    const j = w.jets[0];
+    prev = play(w, { gesture: true }, 1, prev);
+    expect(w.driving).toBeNull();
+    expect(w.player.y).toBeLessThan(j.y);
+    play(w, {}, 240, prev);
+    expect(j.state).toBe('landed');
+    expect(w.jets).toHaveLength(1);
+  });
+
+  it('out of fuel it comes down, puts him out beside it and leaves', () => {
+    const w = withJet();
+    let prev = play(w, {}, 1);
+    prev = play(w, { up: true }, 20, prev);
+    w.jets[0].fuel = 0.01;
+    play(w, {}, 240, prev);
+    expect(w.driving).toBeNull();
+    expect(w.player.onGround).toBe(true);
+    play(w, {}, 600);
+    expect(w.jets).toHaveLength(0);
+  });
+
+  it('a jet over a pit sinks away and lets the pilot out', () => {
+    const w = withJet();
+    play(w, {}, 1);
+    w.jets[0].y = -70;
+    play(w, {}, 1);
+    expect(w.jets).toHaveLength(0);
+    expect(w.driving).toBeNull();
+  });
+
+  it('enemy bullets hit the jet; past 25 it counts down and blows up', () => {
+    const w = withJet();
+    play(w, {}, 1);
+    const shooter = makeUnit(901, 'mook', 'enemy', w.player.x + 80, 24, TEST_STATS.units.mook);
+    w.projectiles.push(fireMookBullet(w.nextId++, shooter, TEST_STATS, () => 0.5));
+    play(w, {}, 30);
+    expect(w.jets[0].damage).toBe(1);
+    hitTank(w, w.jets[0], 25, []);
+    play(w, {}, 420);
+    expect(w.jets).toHaveLength(0);
+    expect(w.player.dead).toBe(false);
   });
 });

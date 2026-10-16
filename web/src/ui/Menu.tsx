@@ -9,6 +9,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
 const SPECIAL_HINT: Record<SpecialId, string> = {
   airstrike: 'Attacco aereo (con ↓ lo lanci corto)',
   tank: 'Carro armato: lancia il segnale e salici sopra (X spara, C cambia arma, F scendi)',
+  jet: 'Jet: lancia il segnale e salici sopra (frecce per volare, X razzi, C bomba, F salti giù)',
 };
 
 interface Props {
