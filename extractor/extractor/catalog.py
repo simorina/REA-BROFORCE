@@ -43,6 +43,7 @@ GRENADE_FIELDS = ("bounceM", "frictionM")
 
 SPRITES = (
     SpriteRef("bro_base", "DoubleBroSeven", "DoubleBroSeven", True),
+    SpriteRef("bro_lee", "BroLee", "BroLee", True),
     SpriteRef("mook", "MookTrooper", "ZMook", True),
     SpriteRef("mook_suicide", "MookSuicide", "ZMookSuicide", True),
     SpriteRef("mook_bazooka", "MookBazooka", "ZMookBazooka", True),
@@ -67,6 +68,7 @@ TEXTURES = (
 
 VALUES = (
     ValuesRef("bro_base", "DoubleBroSeven", "DoubleBroSeven", UNIT_FIELDS),
+    ValuesRef("bro_lee", "BroLee", "BroLee", UNIT_FIELDS),
     ValuesRef("mook", "MookTrooper", "ZMook", MOOK_FIELDS),
     ValuesRef("mook_suicide", "MookSuicide", "ZMookSuicide", MOOK_FIELDS),
     ValuesRef("mook_bazooka", "MookBazooka", "ZMookBazooka", MOOK_FIELDS),

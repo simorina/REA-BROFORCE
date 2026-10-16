@@ -46,6 +46,7 @@ with UnityPy 1.25.4 from `networkobjects`, `sharedtextures` and `sharedassets` b
 ## Read from prefabs (game-data/values.json)
 
 Brolusconi = Double Bro Seven: jump 260, speed 110, health 1, fireRate 0.27, specials 4, wall climb, dash.
+Putin = BroLee: jump 260, speed 120, health 1, fireRate 0.2, specials 2, wall climb, dash.
 Mook: health 3, speed 70, jump 200, fireRate 0.17, hearing 50 × 0. Bazooka mook: health 4. Suicide mook: health 3,
 range 40, hearing 100 × 50.
 AI components (`sightRangeX/Y`, `attackTime`, `sightDelay`, `delayBetweenFiring`, `patrolBlocksRadius`, idle wait):
@@ -57,6 +58,9 @@ Blocks: dirt 5, brick 5, steel 500000, barrel 1 (range 50).
 
 Brolusconi's repaint maps Double Bro Seven's palette: the red lapel flower becomes a blue pocket square,
 the bow tie stays black (it shares the outline colour).
+Putin's repaint maps BroLee's palette (skin → pale pink). His hair and trousers share `#161616` with `#000000`
+shading, so each 32×32 frame is flood-filled: a dark region touching a shoe (`#0E0E0E`) or sock (`#F1F2F6`) is
+trousers (olive), any other is hair (ash-brown, darker sides). Right on every frame the game draws.
 
 ## Design values (not in Broforce)
 

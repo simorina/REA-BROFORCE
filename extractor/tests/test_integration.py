@@ -35,6 +35,11 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     sheets = json.loads((tmp_path / "sheets.json").read_text(encoding="utf-8"))
     assert sheets["brolusconi"]["frameW"] == 32 and sheets["brolusconi"]["cols"] == 32
     assert sheets["helicopter"]["frameW"] == 96 and sheets["helicopter"]["cols"] == 21
+    assert values["bro_lee"]["speed"] == 120.0 and values["bro_lee"]["originalSpecialAmmo"] == 2
+    assert values["bro_lee"]["fireRate"] == pytest.approx(0.2)
+    assert sheets["putin"]["frameW"] == 32 and sheets["putin"]["offsetY"] == 15.0
+    putin = Image.open(tmp_path / "sprites" / "putin.png").convert("RGBA")
+    assert (0x16, 0x16, 0x16) not in {p[:3] for p in putin.get_flattened_data() if p[3]}  # every hair/trouser pixel recoloured
     assert Image.open(tmp_path / "sprites" / "block_dirt.png").size == (16, 16)
 
 

@@ -7,7 +7,7 @@ import sys
 from . import effects
 from .catalog import SPRITES, TEXTURES, VALUES
 from .manifest import OutputWriter
-from .repaint import repaint
+from .repaint import RECIPES, repaint
 from .unity import AssetNotFound, Prefabs, load_env
 
 
@@ -43,9 +43,11 @@ def run(data_dir: str, out_dir: str) -> None:
             crop = image.crop((frame["x"], frame["y_top"], frame["x"] + frame["w"], frame["y_top"] + frame["h"]))
             out.write_png(file, crop, source)
             sheets[ref.key] = sheet_entry(file, crop.width, crop.height, frame)
-        if ref.key == "bro_base":
-            out.write_png("sprites/brolusconi.png", repaint(image), f"repaint of {source}")
-            sheets["brolusconi"] = {**sheets["bro_base"], "file": "sprites/brolusconi.png"}
+        for recipe in RECIPES:
+            if recipe.source == ref.key:
+                repainted = f"sprites/{recipe.key}.png"
+                out.write_png(repainted, repaint(image, recipe.palette, recipe.hair), f"repaint of {source}")
+                sheets[recipe.key] = {**sheets[ref.key], "file": repainted}
     for ref in TEXTURES:
         image = prefabs.texture(ref.texture)
         file = f"sprites/{ref.key}.png"

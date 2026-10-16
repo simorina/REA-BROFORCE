@@ -1,11 +1,16 @@
-"""Brolusconi: a deterministic colour-to-colour remap of Double Bro Seven's body sheet.
+"""Bro repaints: deterministic colour remaps of an original bro's body sheet.
 
-The source palette was measured from 00Bro7_anim (29 colours). Colours not
-listed here (black outline, white shirt, gadget effects) are kept.
+Brolusconi repaints Double Bro Seven (palette measured from 00Bro7_anim, 29 colours). Putin repaints BroLee
+(13 colours), whose hair and trousers share one black, so a hair mask tells them apart first. Colours not
+listed are kept.
 """
+from dataclasses import dataclass
+
 from PIL import Image
 
-PALETTE_MAP: dict[tuple[int, int, int], tuple[int, int, int]] = {
+RGB = tuple[int, int, int]
+
+PALETTE_MAP: dict[RGB, RGB] = {
     # tuxedo -> navy suit
     (0x20, 0x20, 0x20): (0x1F, 0x2A, 0x4A),
     (0x2B, 0x2D, 0x2F): (0x2A, 0x37, 0x5E),
@@ -27,17 +32,102 @@ PALETTE_MAP: dict[tuple[int, int, int], tuple[int, int, int]] = {
     (0xA4, 0x0E, 0x0C): (0x2D, 0x4F, 0xB0),
 }
 
+# BroLee's tan skin -> pale pink
+PUTIN_MAP: dict[RGB, RGB] = {
+    (0xEE, 0xB8, 0x91): (0xF4, 0xC9, 0xB4),
+    (0xD7, 0xA1, 0x7F): (0xE0, 0xAD, 0x98),
+    (0xC3, 0x86, 0x6D): (0xC8, 0x93, 0x82),
+    (0xAA, 0x73, 0x5D): (0xA9, 0x77, 0x69),
+    (0xAA, 0x7C, 0x5D): (0xAD, 0x80, 0x6E),
+}
 
-def repaint(img: Image.Image, mapping: dict = PALETTE_MAP) -> Image.Image:
+
+@dataclass(frozen=True)
+class HairMask:
+    """Splits a colour shared by hair and trousers. In each frame, a region of `base` + `shade` pixels
+    (8-connected, grown from a `base` pixel) that touches a `feet` pixel is trousers; any other is hair."""
+    base: RGB
+    shade: RGB
+    feet: frozenset
+    hair: RGB
+    hair_shade: RGB
+    trousers: RGB
+    frame: int = 32
+
+
+# BroLee: hair top and trousers #161616, black sides/back of the head, belt and trouser shading, shoes #0E0E0E,
+# socks #F1F2F6 -> ash-brown hair with darker sides, olive trousers (black shading, shoes and socks kept)
+PUTIN_HAIR = HairMask(
+    base=(0x16, 0x16, 0x16), shade=(0x00, 0x00, 0x00), feet=frozenset({(0x0E, 0x0E, 0x0E), (0xF1, 0xF2, 0xF6)}),
+    hair=(0xA8, 0x8B, 0x6A), hair_shade=(0x6B, 0x54, 0x40), trousers=(0x4B, 0x53, 0x20),
+)
+
+
+@dataclass(frozen=True)
+class Recipe:
+    key: str                  # output sheet: sprites/<key>.png
+    source: str               # catalog SpriteRef key of the sheet it repaints
+    palette: dict
+    hair: HairMask | None = None
+
+
+RECIPES = (
+    Recipe("brolusconi", "bro_base", PALETTE_MAP),
+    Recipe("putin", "bro_lee", PUTIN_MAP, PUTIN_HAIR),
+)
+
+
+def _split_hair(px, width: int, height: int, mask: HairMask) -> tuple[set, set]:
+    """(hair pixels, trousers pixels) of every base/shade region; a region never crosses a frame edge."""
+    hair: set = set()
+    trousers: set = set()
+    seen: set = set()
+
+    def colour(x, y):
+        r, g, b, a = px[x, y]
+        return (r, g, b) if a else None
+
+    for fy in range(0, height, mask.frame):
+        for fx in range(0, width, mask.frame):
+            x1, y1 = min(fx + mask.frame, width), min(fy + mask.frame, height)
+            for y in range(fy, y1):
+                for x in range(fx, x1):
+                    if (x, y) in seen or colour(x, y) != mask.base:
+                        continue
+                    region, stack, feet = [], [(x, y)], False
+                    seen.add((x, y))
+                    while stack:
+                        cx, cy = stack.pop()
+                        region.append((cx, cy))
+                        for nx in (cx - 1, cx, cx + 1):
+                            for ny in (cy - 1, cy, cy + 1):
+                                if not (fx <= nx < x1 and fy <= ny < y1):
+                                    continue
+                                c = colour(nx, ny)
+                                if c in mask.feet:
+                                    feet = True
+                                elif (nx, ny) not in seen and c in (mask.base, mask.shade):
+                                    seen.add((nx, ny))
+                                    stack.append((nx, ny))
+                    (trousers if feet else hair).update(region)
+    return hair, trousers
+
+
+def repaint(img: Image.Image, mapping: dict = PALETTE_MAP, hair: HairMask | None = None) -> Image.Image:
     out = img.convert("RGBA").copy()
     px = out.load()
     width, height = out.size
+    hair_px, trousers_px = _split_hair(px, width, height, hair) if hair else (set(), set())
     for y in range(height):
         for x in range(width):
             r, g, b, a = px[x, y]
             if a == 0:
                 continue
             new = mapping.get((r, g, b))
+            if hair and (x, y) in hair_px:
+                new = hair.hair if (r, g, b) == hair.base else hair.hair_shade
+            elif hair and (x, y) in trousers_px and (r, g, b) == hair.base:
+                new = hair.trousers
             if new is not None:
                 px[x, y] = (*new, a)
     return out
