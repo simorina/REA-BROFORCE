@@ -5,6 +5,7 @@ import {
 } from './constants';
 import { barrelBlast, rocketBlast, shellBlast, suicideBlast, type Blast } from './explosions';
 import { TileMap, getColumn, getRow } from './map';
+import { tankAt, type Tank } from './tank';
 import { damageUnit } from './units';
 import type { BlockKind, EnemyKind, GameStats, Projectile, ProjectileKind, RocketStats, Team, Unit } from './types';
 
@@ -14,12 +15,14 @@ export type ProjectileEvent =
   | { type: 'block'; c: number; r: number; kind: BlockKind; damage: number }
   | { type: 'hit'; unit: Unit; x: number; y: number; xI: number; yI: number }
   | { type: 'gib'; kind: EnemyKind; x: number; y: number; xI: number; yI: number }
-  | { type: 'callTank'; x: number; y: number; dir: 1 | -1 };
+  | { type: 'callTank'; x: number; y: number; dir: 1 | -1 }
+  | { type: 'hitTank'; tank: Tank; damage: number };
 
 export interface ProjectileWorld {
   map: TileMap;
   units: readonly Unit[];
   stats: GameStats;
+  tanks?: readonly Tank[];
 }
 
 const HIT_MARGIN = 2;
@@ -172,6 +175,12 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
         p.dead = true;
         break;
       }
+      const tank = p.team === 'enemy' ? tankAt(w.tanks ?? [], p.x, p.y) : null;
+      if (tank) {
+        events.push({ type: 'hitTank', tank, damage: w.stats.bullet.damage });
+        p.dead = true;
+        break;
+      }
       const target = unitAt(w.units, p.x, p.y, p.team);
       if (target) {
         damageUnit(target, w.stats.bullet.damage);
@@ -186,7 +195,8 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
     case 'bomb': {
       p.x += p.xI * t;
       p.y += p.yI * t;
-      if (w.map.blockAt(p.x, p.y) || unitAt(w.units, p.x, p.y, p.team) || p.life <= 0) {
+      if (w.map.blockAt(p.x, p.y) || unitAt(w.units, p.x, p.y, p.team) || p.life <= 0
+        || (p.team === 'enemy' && tankAt(w.tanks ?? [], p.x, p.y) !== null)) {
         explodeAt(p, p.kind === 'rocket' ? w.stats.rocketMook : w.stats.bomb, true, events);
       }
       break;

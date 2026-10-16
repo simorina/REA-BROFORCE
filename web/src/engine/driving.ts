@@ -1,10 +1,13 @@
 import { screenMaxY, VIEW_W } from './camera';
 import {
-  TANK_BOX, TANK_CRUSH, TANK_DRIVER_SHIELD, TANK_EXIT_BOOST, TANK_EXIT_Y, TANK_EXIT_YI, TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT,
+  TANK_BOX, TANK_CRUSH, TANK_DRIVER_SHIELD, TANK_EJECT_INVULNERABLE, TANK_EXIT_BOOST, TANK_EXIT_Y, TANK_EXIT_YI, TANK_GIB_YI,
+  TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT,
 } from './constants';
-import { barrelBlast, type Blast } from './explosions';
+import { barrelBlast, tankBlast, type Blast } from './explosions';
 import { fireBigRocket, fireShell } from './projectiles';
-import { NO_DRIVE, makeTank, pressFire, stepTankBody, stepTurret, switchGun, tankDrop, type Tank } from './tank';
+import {
+  NO_DRIVE, damageTank, makeTank, pressFire, stepCountdown, stepTankBody, stepTurret, switchGun, tankDrop, type Tank,
+} from './tank';
 import { damageUnit, inHitBox, knock } from './units';
 import type { Controls } from './types';
 import type { World } from './world';
@@ -98,6 +101,12 @@ export function stepTanks(w: World, t: number, blasts: Blast[]): void {
       w.projectiles.push(fireBigRocket(w.nextId++, k, w.stats));
       w.events.push({ type: 'shot', weapon: 'bigRocket', x: k.x, y: k.y, facing: k.facing });
     }
+    if (stepCountdown(k, w.stats.tank, t)) {
+      gibTank(w, k, blasts);
+    } else if (k.y < -64) {
+      if (k.driven) exitTank(w, 0); // fell off the map: the driver drops out, the tank is gone
+      k.exploded = true;
+    }
   }
   const k = w.driving;
   if (k) {
@@ -111,4 +120,22 @@ export function stepTanks(w: World, t: number, blasts: Blast[]): void {
     p.invulnerable = Math.max(p.invulnerable, TANK_DRIVER_SHIELD);
   }
   w.tanks = w.tanks.filter((x) => !x.exploded);
+}
+
+/** MookArmouredGuy.Gib: the driver is thrown clear, then the tank blows up. */
+export function gibTank(w: World, k: Tank, blasts: Blast[]): void {
+  if (k.exploded) return;
+  const massive = k.countdown >= 0; // deathCount > 9000: the countdown's massive blast
+  if (k.driven) {
+    exitTank(w, TANK_GIB_YI);
+    w.player.invulnerable = Math.max(w.player.invulnerable, TANK_EJECT_INVULNERABLE);
+    w.reboard = null;
+  }
+  k.exploded = true;
+  blasts.push(tankBlast(k.x, k.y, massive));
+}
+
+/** A hit on a tank: past its limit an empty one gibs at once, a driven one counts down (damageTank). */
+export function hitTank(w: World, k: Tank, damage: number, blasts: Blast[]): void {
+  if (!k.exploded && damageTank(k, damage, w.stats.tank)) gibTank(w, k, blasts);
 }

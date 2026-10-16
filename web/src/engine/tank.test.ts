@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { FIXED_DT } from './constants';
 import { TileMap, makeBlock } from './map';
-import { NO_DRIVE, makeTank, pressFire, stepTankBody, stepTurret, switchGun, tankDrop } from './tank';
+import {
+  NO_DRIVE, damageTank, makeTank, pressFire, stepCountdown, stepTankBody, stepTurret, switchGun, tankDrop,
+} from './tank';
 import { TEST_STATS } from './testStats';
 
 /** Floor on row 0 (top at y 8); `heights` raises columns to that many extra blocks. */
@@ -112,5 +114,29 @@ describe('the turret (TankBroTankTurret.FireWeapon / Update)', () => {
     expect(k.turret.switching).toBe(false);
     expect(k.turret.switchFrame).toBe(20);
     expect(shots).toBe(0);
+  });
+});
+
+describe('tank damage (MookArmouredGuy.Damage / Update / TankBroTank.Damage)', () => {
+  it('a driven tank past 25 starts its death countdown; an empty one gibs past 60', () => {
+    const k = makeTank(1, 0, 0, 1);
+    k.driven = true;
+    expect(damageTank(k, 25, TEST_STATS.tank)).toBe(false);
+    expect(k.countdown).toBe(-1);
+    expect(damageTank(k, 1, TEST_STATS.tank)).toBe(false);
+    expect(k.countdown).toBe(0);
+    const empty = makeTank(2, 0, 0, 1);
+    expect(damageTank(empty, 60, TEST_STATS.tank)).toBe(false);
+    expect(damageTank(empty, 1, TEST_STATS.tank)).toBe(true);
+  });
+
+  it('the countdown ticks faster as it goes and ends at 45 ticks, about 5 s in', () => {
+    const k = makeTank(1, 0, 0, 1);
+    k.countdown = 0;
+    let time = 0;
+    while (!stepCountdown(k, TEST_STATS.tank, FIXED_DT) && time < 20) time += FIXED_DT;
+    expect(k.countdown).toBe(45);
+    expect(time).toBeGreaterThan(4);
+    expect(time).toBeLessThan(7);
   });
 });

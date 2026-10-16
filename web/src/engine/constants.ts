@@ -110,10 +110,16 @@ export const TANK_CANNON = { ox: 24, oy: 22 }; // TankBroTankTurret.FireCannon: 
 export const HEAVY_SHELL_DIP = { coast: 0.1, slow: 0.35, fall: 0.4, drag: 1.5, gravity: 600 }; // HeavyShell.RunProjectile
 export const SHELL_BLAST = { force: 350, extraY: 300 }; // HeavyShell.MakeEffects: ExplodeUnits(..., 350, 300)
 export const TANK_ROCKET_CRUSH = { damage: 15, range: 16, ox: 9 }; // RocketMassive.Bounce: DamageGround(15, Crush, 16, X + dir*9, Y)
+export const TANK_COUNTDOWN = { first: 0.4667, step: 0.2667, speedup: 4 }; // MookArmouredGuy.Update: deathCountdownCounter
+export const TANK_EMPTY_LIMIT = 60; // MookArmouredGuy.Damage: shieldDamage > 60
+export const TANK_GIB_YI = 180; // MookArmouredGuy.Gib: DisChargePilot(180)
+export const TANK_GIB = { ground: 15, damage: 20, killRange: 32, force: 200, extraY: 150, yOffset: 6 }; // MookArmouredGuy.Gib: ExplodeUnits(20, ..., 200, 150, -15); DamageGround(15, ...)
+export const TANK_GIB_RANGE = { massive: 72, small: 36, smallUnits: 48 }; // ... range 72 after the countdown, else 36 (ground) / 48 (units)
 export const JUDO_ROW = 7; // ... lowerLeftPixel y = 32 * (8 + attackSpriteRow): sheet rows 7 and 8 from the top
 
 // Design values (not in the original game). Tuned in playtesting; listed in docs/findings.md.
 export const TANK_DRIVER_SHIELD = 0.1; // the hidden driver can't be hit (renewed every step he is inside)
+export const TANK_EJECT_INVULNERABLE = 0.5; // the driver thrown clear by the gib outlives its blast
 export const FOOTBALL = {
   kickX: 220, kickY: 160, bounceM: 0.7, frictionM: 0.85, maxBounces: 3, fuse: 1.6,
   damage: 5, range: 32, blastForce: 20, blastForceExtraY: 300,

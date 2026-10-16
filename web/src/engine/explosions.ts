@@ -1,6 +1,6 @@
 import {
   BARREL_EXTRA_Y, BARREL_FORCE, BARREL_GROUND_DAMAGE, BARREL_UNIT_DAMAGE, BARREL_UNIT_RANGE_M,
-  BARREL_Y_OFFSET, MIN_KNOCK_DIST, NOISE_BARREL, NOISE_ROCKET, SHELL_BLAST, SUICIDE_EXTRA_Y, SUICIDE_FORCE_M,
+  BARREL_Y_OFFSET, MIN_KNOCK_DIST, NOISE_BARREL, NOISE_ROCKET, SHELL_BLAST, SUICIDE_EXTRA_Y, SUICIDE_FORCE_M, TANK_GIB, TANK_GIB_RANGE,
   SUICIDE_GROUND_DAMAGE, SUICIDE_UNIT_DAMAGE, UNIT_BOX_HEIGHT,
 } from './constants';
 import type { TileMap } from './map';
@@ -108,5 +108,16 @@ export function shellBlast(x: number, y: number, s: { damage: number; range: num
     x, y, groundDamage: s.damage, groundRange: s.range, unitDamage: s.damage, unitRange: s.range, killRange: s.range,
     force: SHELL_BLAST.force, extraY: SHELL_BLAST.extraY, team, big: true, noise: NOISE_ROCKET, source: 'shell',
     doodadDamage: 1, doodadRange: s.range * 0.6,
+  };
+}
+
+/** MookArmouredGuy.Gib: the countdown's massive blast or the smaller one; fired as playerNum -15, it hurts everyone. */
+export function tankBlast(x: number, y: number, massive: boolean): Blast {
+  const ground = massive ? TANK_GIB_RANGE.massive : TANK_GIB_RANGE.small;
+  return {
+    x, y: y + TANK_GIB.yOffset, groundDamage: TANK_GIB.ground, groundRange: ground, unitDamage: TANK_GIB.damage,
+    unitRange: massive ? TANK_GIB_RANGE.massive : TANK_GIB_RANGE.smallUnits, killRange: TANK_GIB.killRange,
+    force: TANK_GIB.force, extraY: TANK_GIB.extraY, team: 'neutral', big: true, noise: NOISE_BARREL, source: 'tank',
+    doodadDamage: TANK_GIB.ground, doodadRange: ground,
   };
 }

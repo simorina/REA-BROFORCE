@@ -3,11 +3,13 @@ import { BROLUSCONI } from '../bros';
 import type { BroDef } from './bro';
 import { FIXED_DT } from './constants';
 import type { LevelData } from './level';
-import { throwBody } from './projectiles';
+import { hitTank } from './driving';
+import type { Blast } from './explosions';
+import { fireMookBullet, throwBody } from './projectiles';
 import { makeTank } from './tank';
 import { TEST_STATS } from './testStats';
 import { NO_CONTROLS, type Controls } from './types';
-import { damageUnit } from './units';
+import { damageUnit, makeUnit } from './units';
 import { createWorld, stepWorld, type World } from './world';
 
 function line(cols: number, entries: Array<[number, string]> = [], fillCh = '.'): string {
@@ -572,6 +574,45 @@ describe('driving the tank (MookArmouredGuy / TankBroTank)', () => {
     prev = play(w, { fire: true }, 1, prev);
     play(w, {}, 45, prev);
     expect(w.events).toContainEqual(expect.objectContaining({ type: 'shot', weapon: 'bigRocket' }));
+  });
+
+  it('enemy bullets hit the tank, not the hidden driver', () => {
+    const w = withTank();
+    play(w, {}, 1);
+    const shooter = makeUnit(901, 'mook', 'enemy', w.player.x + 80, 24, TEST_STATS.units.mook);
+    w.projectiles.push(fireMookBullet(w.nextId++, shooter, TEST_STATS, () => 0.5));
+    play(w, {}, 30);
+    expect(w.tanks[0].damage).toBe(1);
+    expect(w.player.dead).toBe(false);
+  });
+
+  it('past its limit it counts down, throws the driver clear and blows up', () => {
+    const w = withTank();
+    play(w, {}, 1);
+    hitTank(w, w.tanks[0], 26, []);
+    expect(w.tanks[0].countdown).toBe(0);
+    play(w, {}, 420);
+    expect(w.tanks).toHaveLength(0);
+    expect(w.driving).toBeNull();
+    expect(w.player.dead).toBe(false);
+    expect(w.events).toContainEqual(expect.objectContaining({ type: 'explosion', source: 'tank' }));
+  });
+
+  it('an empty tank blows up at once past 60', () => {
+    const w = withTank(200);
+    const blasts: Blast[] = [];
+    hitTank(w, w.tanks[0], 61, blasts);
+    expect(w.tanks[0].exploded).toBe(true);
+    expect(blasts[0].source).toBe('tank');
+  });
+
+  it('a tank that falls off the map lets the driver out and is gone', () => {
+    const w = withTank();
+    play(w, {}, 1);
+    w.tanks[0].y = -70;
+    play(w, {}, 1);
+    expect(w.tanks).toHaveLength(0);
+    expect(w.driving).toBeNull();
   });
 
   it('driving into a mook runs it over (CrushGroundWhileMoving: 5 crush damage)', () => {

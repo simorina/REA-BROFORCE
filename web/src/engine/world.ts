@@ -21,11 +21,11 @@ import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
   fireBazookaRocket, fireMookBullet, spawnAirstrike, stepProjectile,
 } from './projectiles';
-import { boardTanks, callTank, driveTank, exitTank, stepTanks } from './driving';
+import { boardTanks, callTank, driveTank, exitTank, hitTank, stepTanks } from './driving';
 import { stepJudo } from './judo';
 import { SPECIAL_KITS, WEAPON_KITS } from './kits';
 import { damageUnit, makeUnit, runFiring } from './units';
-import type { Tank } from './tank';
+import { tankInBlast, type Tank } from './tank';
 import type { BlockKind, Controls, EnemyKind, GameStats, Projectile, ProjectileKind, Team, Unit, UnitKind } from './types';
 
 /** Something the renderer times: a screen shake (SortOfFollow.Shake) or the bro's speech bubble. */
@@ -539,7 +539,7 @@ function explodeSuicide(w: World, m: Unit, blasts: Blast[]): void {
 }
 
 function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
-  const pw = { map: w.map, units: [w.player, ...w.enemies], stats: w.stats };
+  const pw = { map: w.map, units: [w.player, ...w.enemies], stats: w.stats, tanks: w.tanks };
   for (const p of w.projectiles) {
     // Grenade.RunWarnings: in its last half second a grenade sends the mooks around it running
     if (p.kind !== 'marker' || p.dead || p.life >= GRENADE_WARNING_LIFE) continue;
@@ -555,6 +555,7 @@ function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
       else if (ev.type === 'block') w.events.push({ type: 'block', x: cellX(ev.c), y: ev.r * TILE, kind: ev.kind, damage: ev.damage });
       else if (ev.type === 'hit') w.events.push({ type: 'hit', x: ev.unit.x, y: ev.unit.y, hitY: ev.y, xI: ev.xI, yI: ev.yI });
       else if (ev.type === 'gib') w.events.push({ type: 'gib', x: ev.x, y: ev.y, team: 'enemy', kind: ev.kind, xI: ev.xI, yI: ev.yI });
+      else if (ev.type === 'hitTank') hitTank(w, ev.tank, ev.damage, blasts);
       else if (ev.type === 'callTank') {
         w.events.push({ type: 'airstrike', x: ev.x, y: ev.y }); // GrenadeAirstrike.MakeEffects
         callTank(w, ev.x, ev.y, ev.dir);
@@ -588,6 +589,8 @@ function resolveBlasts(w: World, blasts: Blast[]): void {
     if (b.source === 'suicide') burnAround(w, b.owner ?? null, b.x, b.y, b.groundRange + SUICIDE_BURN_EXTRA);
     if (b.noise > 0) makeNoise(w, b.x, b.y, b.noise);
     damageGrass(w, b);
+    // Map.ExplodeUnits on the tanks: enemy and neutral blasts (the player's own don't hurt his tanks)
+    if (b.team !== 'player') for (const k of w.tanks) if (!k.exploded && tankInBlast(k, b)) hitTank(w, k, b.unitDamage, blasts);
     // MookSuicide.Gib: a suicide mook blown apart before it went off goes off right away
     for (const m of w.enemies) if (m.kind === 'mook_suicide' && m.gibbed) explodeSuicide(w, m, blasts);
     for (const d of res.destroyed) {
