@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TEST_STATS } from '../engine/testStats';
 import { makeUnit } from '../engine/units';
 import { makeTank } from '../engine/tank';
-import { loopFrame, prisonerFrame, special2Frame, stripFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
+import { jetFrameCentreY, loopFrame, prisonerFrame, special2Frame, stripFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
 
 const bro = (patch: Partial<ReturnType<typeof makeUnit>>) =>
   Object.assign(makeUnit(1, 'bro', 'player', 0, 8, TEST_STATS.bros.bro_base), { onGround: true }, patch);
@@ -119,5 +119,11 @@ describe('the tank (TankBroTank.Animate*, TankBroTankTurret.SetTurretFrame)', ()
     expect(turretFrame(tu)).toEqual({ col: 7, row: 2 });
     Object.assign(tu, { firing: false });
     expect(turretFrame(tu)).toEqual({ col: 0, row: 2 });
+  });
+});
+
+describe('the jet sprite', () => {
+  it('stands on its wheels: the 64 px frame, whose lowest pixels are 8 up, is centred 24 above the jet', () => {
+    expect(jetFrameCentreY(100, 64)).toBe(124);
   });
 });

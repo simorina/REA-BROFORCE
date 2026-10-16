@@ -59,6 +59,16 @@ export function prisonerFrame(time: number): number {
   return loopFrame(time, 0.15, 4);
 }
 
+const JET_WHEELS = 8; // the Harrier frame's lowest opaque pixels (its wheels) sit 8 px above the frame's bottom
+
+/**
+ * Where the jet's frame is centred. Broforce's Harrier hangs from a pivot in mid-air (it only hovers), so its SpriteSM
+ * offset would sink our landed jet's wheels 12 px into the ground; ours stands on them at its y.
+ */
+export function jetFrameCentreY(y: number, frameH: number): number {
+  return y + frameH / 2 - JET_WHEELS;
+}
+
 /** TankBroTank: AnimateActualIdleFrames (0, 0); AnimateRunning, columns 0-2 at runningFrameRate; AnimateJumping, row 1 by yI. */
 export function tankHullFrame(k: Tank): Frame {
   if (!k.onGround) {

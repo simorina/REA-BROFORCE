@@ -8,7 +8,7 @@ import type { Jet } from '../engine/jet';
 import type { Tank } from '../engine/tank';
 import type { BlockKind, Projectile, Unit, UnitKind } from '../engine/types';
 import type { Effect, GameEvent, World } from '../engine/world';
-import { loopFrame, prisonerFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
+import { jetFrameCentreY, loopFrame, prisonerFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
 import type { Assets, SheetKey } from './assets';
 import { Effects } from './fx/controller';
 import { particleFrame } from './fx/particles';
@@ -336,7 +336,7 @@ export class Renderer {
   private drawJet(j: Jet): void {
     const flash = j.countdown >= 0 && j.countdown % 2 === 1;
     if (flash) this.ctx.filter = 'brightness(2.2)';
-    this.sprite('jet_us', 0, 0, j.x, j.y + this.assets.sheets.jet_us.offsetY, j.facing < 0);
+    this.sprite('jet_us', 0, 0, j.x, jetFrameCentreY(j.y, this.assets.sheets.jet_us.frameH), j.facing < 0);
     if (flash) this.ctx.filter = 'none';
   }
 
