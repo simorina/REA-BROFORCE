@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FIXED_DT } from './constants';
 import { TileMap, makeBlock } from './map';
 import {
-  fireMookBullet, kickFootball, spawnAirstrike, stepProjectile, throwMarker,
+  fireMookBullet, kickFootball, spawnAirstrike, stepProjectile, throwBody, throwMarker,
   type ProjectileEvent, type ProjectileWorld,
 } from './projectiles';
 import { TEST_STATS } from './testStats';
@@ -130,5 +130,41 @@ describe('airstrike (BroBase.UseSpecial + GrenadeAirstrike.Death)', () => {
     const w = world(floorMap(60));
     const events = bombs.flatMap((b) => steps(b, w, 400));
     expect(events.filter((e) => e.type === 'explode')).toHaveLength(5);
+  });
+});
+
+describe('thrown bodies (the judo throw)', () => {
+  it('fly ahead in an arc and blow up where they land, leaving gibs', () => {
+    const p = throwBody(1, bro(80, 8), 'mook');
+    expect([p.kind, p.x, p.y, p.xI, p.yI, p.body]).toEqual(['body', 90, 18, 180, 240, 'mook']);
+    const events = steps(p, world(floorMap()), 120);
+    expect(p.dead).toBe(true);
+    expect(p.x).toBeGreaterThan(160); // lands about 85 px ahead
+    const e = events.find((x) => x.type === 'explode');
+    expect(e?.type === 'explode' && [e.blast.source, e.blast.team, e.blast.big]).toEqual(['football', 'player', false]);
+    expect(events).toContainEqual(expect.objectContaining({ type: 'gib', kind: 'mook' }));
+  });
+
+  it('blow up against a wall', () => {
+    const map = floorMap();
+    for (let r = 1; r <= 3; r++) map.set(7, r, makeBlock('steel', TEST_STATS)); // x 104..120, up to y 56
+    const p = throwBody(1, bro(80, 8), 'mook');
+    steps(p, world(map), 120);
+    expect(p.dead).toBe(true);
+    expect(p.x).toBeLessThan(110);
+  });
+
+  it('blow up on the first enemy they hit', () => {
+    const p = throwBody(1, bro(80, 8), 'mook');
+    const events = steps(p, world(floorMap(), [mook(168, 8)]), 120);
+    expect(p.dead).toBe(true);
+    expect(p.x).toBeLessThan(168);
+    expect(events.some((e) => e.type === 'explode')).toBe(true);
+  });
+
+  it('a thrown suicide mook goes off with its own big blast, which spares the bro', () => {
+    const p = throwBody(1, bro(80, 8), 'mook_suicide');
+    const e = steps(p, world(floorMap()), 120).find((x) => x.type === 'explode');
+    expect(e?.type === 'explode' && [e.blast.source, e.blast.team, e.blast.big]).toEqual(['suicide', 'player', true]);
   });
 });

@@ -535,6 +535,7 @@ function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
       if (ev.type === 'explode') blasts.push(ev.blast);
       else if (ev.type === 'block') w.events.push({ type: 'block', x: cellX(ev.c), y: ev.r * TILE, kind: ev.kind, damage: ev.damage });
       else if (ev.type === 'hit') w.events.push({ type: 'hit', x: ev.unit.x, y: ev.unit.y, hitY: ev.y, xI: ev.xI, yI: ev.yI });
+      else if (ev.type === 'gib') w.events.push({ type: 'gib', x: ev.x, y: ev.y, team: 'enemy', kind: ev.kind, xI: ev.xI, yI: ev.yI });
       else {
         w.events.push({ type: 'airstrike', x: ev.x, y: ev.y });
         w.projectiles.push(...spawnAirstrike(() => w.nextId++, ev.x, ev.y, screenMaxY(w.camera), w.stats, w.rng));

@@ -3,6 +3,7 @@ import { BROLUSCONI } from '../bros';
 import type { BroDef } from './bro';
 import { FIXED_DT } from './constants';
 import type { LevelData } from './level';
+import { throwBody } from './projectiles';
 import { TEST_STATS } from './testStats';
 import { NO_CONTROLS, type Controls } from './types';
 import { damageUnit } from './units';
@@ -76,6 +77,13 @@ describe('stepWorld', () => {
     const w = createWorld(EMPTY, TEST_STATS, [{ ...BROLUSCONI, base: 'bro_lee' }], () => 0.5);
     expect(w.player.stats).toBe(TEST_STATS.bros.bro_lee);
     expect(w.specialAmmo).toBe(2);
+  });
+
+  it('a thrown body that blows up leaves gibs', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [BROLUSCONI], () => 0.5);
+    w.projectiles.push(throwBody(w.nextId++, w.player, 'mook'));
+    play(w, {}, 60);
+    expect(w.events).toContainEqual(expect.objectContaining({ type: 'gib', team: 'enemy', kind: 'mook' }));
   });
 
   it('the airstrike brings five bombs from outside the map, and they all land', () => {

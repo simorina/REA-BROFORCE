@@ -6,7 +6,7 @@ export type EnemyKind = Exclude<UnitKind, 'bro'>;
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
 export const BRO_BASES = ['bro_base', 'bro_lee'] as const;
 export type BroBase = (typeof BRO_BASES)[number];
-export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker';
+export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body';
 
 export interface Block {
   kind: BlockKind;
@@ -237,6 +237,7 @@ export interface Projectile {
   bounces: number;
   dead: boolean;
   warning?: number; // Grenade.panicCounter
+  body?: EnemyKind; // a 'body': the mook the judo throw grabbed
 }
 
 export interface Controls {

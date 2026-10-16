@@ -97,6 +97,7 @@ export const FOOTBALL = {
   damage: 5, range: 32, blastForce: 20, blastForceExtraY: 300,
 };
 export const AIRSTRIKE_FUSE = 1.0;
+export const JUDO_THROW = { x: 180, y: 240, ox: 10, oy: 10, fuse: 2 }; // the grabbed mook, thrown ahead in an arc
 export const JUMP_GRACE = 0.1; // coyote time after walking off a ledge (not in TestVanDammeAnim)
 export const LIVES_START = 3;
 export const PRISONER_RESCUE_DIST = 16;

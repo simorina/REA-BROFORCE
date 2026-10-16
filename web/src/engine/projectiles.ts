@@ -1,18 +1,19 @@
 import {
   AIRSTRIKE_FUSE, AIRSTRIKE_ROCKETS, AIRSTRIKE_SPEED_MIN, AIRSTRIKE_SPEED_RAND, AIRSTRIKE_THROW,
-  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, FOOTBALL, GRAVITY, MOOK_BULLET_SPEED,
+  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, FOOTBALL, GRAVITY, JUDO_THROW, MOOK_BULLET_SPEED,
   TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT,
 } from './constants';
-import { barrelBlast, rocketBlast, type Blast } from './explosions';
+import { barrelBlast, rocketBlast, suicideBlast, type Blast } from './explosions';
 import { TileMap, getColumn, getRow } from './map';
 import { damageUnit } from './units';
-import type { BlockKind, GameStats, Projectile, ProjectileKind, RocketStats, Team, Unit } from './types';
+import type { BlockKind, EnemyKind, GameStats, Projectile, ProjectileKind, RocketStats, Team, Unit } from './types';
 
 export type ProjectileEvent =
   | { type: 'explode'; blast: Blast }
   | { type: 'airstrike'; x: number; y: number }
   | { type: 'block'; c: number; r: number; kind: BlockKind; damage: number }
-  | { type: 'hit'; unit: Unit; x: number; y: number; xI: number; yI: number };
+  | { type: 'hit'; unit: Unit; x: number; y: number; xI: number; yI: number }
+  | { type: 'gib'; kind: EnemyKind; x: number; y: number; xI: number; yI: number };
 
 export interface ProjectileWorld {
   map: TileMap;
@@ -50,6 +51,14 @@ export function kickFootball(id: number, u: Unit): Projectile {
 export function throwMarker(id: number, u: Unit, ducking: boolean): Projectile {
   const p = ducking ? AIRSTRIKE_THROW_DUCK : AIRSTRIKE_THROW;
   return make(id, 'marker', u.team, u.x + u.facing * p.ox, u.y + p.oy, u.facing * p.x, p.y, AIRSTRIKE_FUSE);
+}
+
+/** The judo throw: the grabbed mook flies ahead as a body and blows up where it lands (our mechanic). */
+export function throwBody(id: number, p: Unit, kind: EnemyKind): Projectile {
+  const b = make(id, 'body', p.team, p.x + p.facing * JUDO_THROW.ox, p.y + JUDO_THROW.oy, p.facing * JUDO_THROW.x,
+    JUDO_THROW.y, JUDO_THROW.fuse);
+  b.body = kind;
+  return b;
 }
 
 /** GrenadeAirstrike.Death: five bombs from the upper left at 45°, landing from x - 60 to x + 100. */
@@ -103,6 +112,16 @@ function explodeAt(p: Projectile, stats: RocketStats, big: boolean, events: Proj
   events.push({ type: 'explode', blast: rocketBlast(p.x, p.y, stats, p.team, big, source) });
 }
 
+/** A thrown suicide mook goes off with its own blast (MookSuicide.MakeEffects), now the thrower's; others pop. */
+function explodeBody(p: Projectile, w: ProjectileWorld, events: ProjectileEvent[]): void {
+  p.dead = true;
+  const kind = p.body ?? 'mook';
+  const blast = kind === 'mook_suicide'
+    ? { ...suicideBlast(p.x, p.y, w.stats.suicide), team: p.team }
+    : rocketBlast(p.x, p.y, FOOTBALL_BLAST, p.team, false, 'football');
+  events.push({ type: 'explode', blast }, { type: 'gib', kind, x: p.x, y: p.y, xI: p.xI, yI: p.yI });
+}
+
 export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): ProjectileEvent[] {
   const events: ProjectileEvent[] = [];
   if (p.dead) return events;
@@ -145,6 +164,13 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
       if (unitAt(w.units, p.x, p.y, p.team) || p.bounces > FOOTBALL.maxBounces || p.life <= 0) {
         explodeAt(p, FOOTBALL_BLAST, false, events);
       }
+      break;
+    }
+    case 'body': {
+      p.yI -= GRAVITY * t;
+      p.x += p.xI * t;
+      p.y += p.yI * t;
+      if (w.map.blockAt(p.x, p.y) || unitAt(w.units, p.x, p.y, p.team) || p.life <= 0) explodeBody(p, w, events);
       break;
     }
     case 'marker': {
