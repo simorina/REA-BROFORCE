@@ -1,4 +1,6 @@
-import { CLIMB_FRAME_RATE, FLEX_FRAMES, FLEX_ROW, JUMP_FRAME_RATE, RUN_FRAME_RATE } from '../engine/constants';
+import {
+  CLIMB_FRAME_RATE, FLEX_FRAMES, FLEX_ROW, JUDO_COL, JUDO_FRAMES, JUDO_ROW, JUMP_FRAME_RATE, RUN_FRAME_RATE,
+} from '../engine/constants';
 
 const PANIC_FRAME_RATE = 0.044455; // Mook.AnimateRunning while burning, blind or scared
 const SPECIAL2_FRAME_RATE = 0.045; // MookSuicide.AnimateSpecial2, with frame 9 held for 1 s
@@ -20,6 +22,7 @@ export interface Frame {
 /** Body frame after TestVanDammeAnim's Animate* methods (lowerLeftPixel y = (row + 1) * 32). */
 export function unitFrame(u: Unit): Frame {
   if (u.dead) return { col: u.onGround ? 5 : 4, row: 0 }; // AnimateActualDeath / AnimateFallingDeath
+  if (u.attack) return { col: JUDO_COL + Math.min(u.attack.frame, JUDO_FRAMES - 1), row: JUDO_ROW + u.attack.row }; // BroLee.AnimateAttackForwards
   if (u.special2 >= 0) return { col: special2Frame(u.special2), row: 7 }; // MookSuicide.AnimateSpecial2
   if (u.flex) return { col: Math.min(u.flex.frame, FLEX_FRAMES - 1), row: FLEX_ROW }; // AnimateGesture (Flex)
   if (u.wallClimbing) return { col: 12 + (Math.floor(u.animTime / CLIMB_FRAME_RATE) % 5), row: 2 }; // AnimateWallClimb

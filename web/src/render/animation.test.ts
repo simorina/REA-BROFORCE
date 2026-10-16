@@ -23,6 +23,12 @@ describe('unitFrame (TestVanDammeAnim.Animate*)', () => {
     expect(unitFrame(bro({ onGround: false, yI: -100, xI: 0 }))).toEqual({ col: 9, row: 2 });
   });
 
+  it("strikes on BroLee's attack rows 7 and 8, columns 24-31", () => {
+    const attack = (frame: number, row: 0 | 1) => ({ frame, counter: 0, row, hit: false, struck: false });
+    expect(unitFrame(bro({ attack: attack(0, 0) }))).toEqual({ col: 24, row: 7 });
+    expect(unitFrame(bro({ attack: attack(3, 1), onGround: false }))).toEqual({ col: 27, row: 8 });
+  });
+
   it('climbs on row 2, columns 12-16', () => {
     expect(unitFrame(bro({ onGround: false, wallClimbing: true, animTime: 0.07 }))).toEqual({ col: 14, row: 2 });
   });

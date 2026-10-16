@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RAW_VALUES, TEST_STATS } from '../engine/testStats';
-import { MissingGameDataError, SHEET_KEYS, isSheetKey, loadData, missingSheets } from './assets';
+import { MissingGameDataError, SHEET_KEYS, broSheet, isSheetKey, loadData, missingSheets } from './assets';
 import { effectFiles } from './fxdata';
 import { TEST_BACKGROUND, TEST_EFFECTS } from './testFx';
 
@@ -20,6 +20,14 @@ describe('loadData', () => {
     expect(missingSheets(sheets)).toEqual([]);
     expect(isSheetKey('brolusconi')).toBe(true);
     expect(isSheetKey('rambro')).toBe(false);
+  });
+
+  it('a game-data without putin is incomplete, and bro sheets are checked', () => {
+    const old: Record<string, unknown> = { ...sheets };
+    delete old.putin;
+    expect(missingSheets(old)).toEqual(['putin']);
+    expect(broSheet({ id: 'putin', sheet: 'putin' })).toBe('putin');
+    expect(() => broSheet({ id: 'x', sheet: 'rambro' })).toThrow("sheet 'rambro' is not extracted");
   });
 
   it('loads sheets and parses values', async () => {

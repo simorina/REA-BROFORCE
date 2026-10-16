@@ -47,7 +47,7 @@ export function GameView({ assets, voice, sound, onEnd, onMenu }: Props) {
     if (!ctx) return;
     const level = buildLevel1();
     const world = createWorld(level, assets.stats, [BRO]);
-    const renderer = new Renderer(ctx, assets, SCALE, BRO_SHEET, level.parallax);
+    const renderer = new Renderer(ctx, assets, SCALE, () => BRO_SHEET, level.parallax);
     const keyboard = new Keyboard();
     keyboard.attach(window);
     const sfx = new Sfx(sound);

@@ -14,7 +14,7 @@ export interface SheetInfo {
 }
 
 export const SHEET_KEYS = [
-  'brolusconi', 'mook', 'mook_suicide', 'mook_bazooka', 'mook_scout', 'prisoner', 'cage', 'helicopter', 'bullet', 'rocket',
+  'brolusconi', 'putin', 'mook', 'mook_suicide', 'mook_bazooka', 'mook_scout', 'prisoner', 'cage', 'helicopter', 'bullet', 'rocket',
   'bomb', 'marker', 'block_dirt', 'block_brick', 'block_steel', 'block_barrel', 'flagpole', 'flag',
 ] as const;
 export type SheetKey = (typeof SHEET_KEYS)[number];
@@ -34,6 +34,12 @@ export class MissingGameDataError extends Error {}
 
 export function isSheetKey(s: string): s is SheetKey {
   return (SHEET_KEYS as readonly string[]).includes(s);
+}
+
+/** A bro's sheet key, checked against the extracted sheets. */
+export function broSheet(bro: { id: string; sheet: string }): SheetKey {
+  if (!isSheetKey(bro.sheet)) throw new Error(`bro ${bro.id}: sheet '${bro.sheet}' is not extracted`);
+  return bro.sheet;
 }
 
 export function missingSheets(sheets: Record<string, unknown>): SheetKey[] {
