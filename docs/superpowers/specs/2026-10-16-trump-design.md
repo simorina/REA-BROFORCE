@@ -87,8 +87,10 @@ A `Vehicle` base holds the shared fields. `Tank` and `Jet` extend it with a `kin
 
 ### The rifle (`rifle`): ported from `BroniversalSoldier.UseFire` / `FireWeapon`
 
-- Each burst is 3 bullets at 420 from (X + dir·14, Y + 8.5), with a vertical jitter of −10…+10. The bullets inside
-  a burst are `fireRate` (0.12 s) apart; the next burst can start `extraFireDelay` (0.3 s) after a burst ends.
+- Each burst is 3 bullets at 420 from (X + dir·14, Y + 8.5), with a vertical jitter of −10…+10. `UseFire` fires
+  the first; `burstShotsLeft = 2` fires the other two 0.07 s apart (`burstFireCounter`). `UseFire` also sets
+  `fireDelay = extraFireDelay` (0.3 s), so the next burst comes once that has run out and the `fireRate` (0.12)
+  counter allows it (`TestVanDammeAnim.RunFiring`, like the mooks' `runFiring`).
 - Holding fire keeps firing bursts.
 - The bullets are player `bullet`s that use `rifle_bullet`'s damage and life: they hurt enemies and chip blocks like
   the mooks' bullets do.
@@ -163,7 +165,8 @@ cooldown, the fuel and the dry jet leaving: all in `constants.ts` under "Design 
   - the US anthem `AudioRef` (offline, like the Russian one's tests);
   - integration: the new sheets and values.
 - **Engine:**
-  - the rifle's burst timing (3 shots 0.12 s apart, then the 0.3 s gap) and the bullet origin and speed;
+  - the rifle's burst timing (3 shots, the last two 0.07 s apart; the next burst after the 0.3 s fireDelay) and the
+    bullet origin and speed;
   - jet: the call and descent (fast, then 40 u/s for the last 48 px), landing, boarding;
   - flying: speeds, no gravity, the map top;
   - X: the rocket pair, origin, velocity and the 0.4 s repeat; C: the bomb and its cooldown;
