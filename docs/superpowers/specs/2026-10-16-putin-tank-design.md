@@ -74,29 +74,37 @@ Code art. 1259).
   - it picks the lowest flat pair of columns, and the tank spawns above the screen top (`screenMaxY + 200`) over that
     spot and falls;
   - if no ground is found in reach, it drops at the screen's left edge facing right.
-- **Landing.** `MookArmouredGuy.FallDamage`'s crush: landing faster than the hurt speed crushes the units under it
-  (`Map.ExplodeUnits` 10 damage, 48 × 20; at the death speed 25 damage, 64 × 25). The tank takes no damage from its
-  own drop.
+- **Landing.** No crush. `MookArmouredGuy.FallDamage` only crushes below −2000 (hero −2200), and the tank never
+  falls faster than its `maxFallSpeed` of −600, so it never fires in the original either. Driving does crush: see
+  below.
 
 ### The tank (`engine/tank.ts`, `World.tanks`)
 
 A vehicle object beside the units: position, velocity, facing, `damage` (shield damage + fire), a death countdown,
 the gun index (0 mortar, 1 cannon), the turret's animation state, and whether the player is inside.
 
-- **Boarding.** The player touching an empty, unexploded tank (box overlap) boards it, unless they climbed out less
-  than 0.5 s ago. The bro is hidden and held at the tank's position, and can't be hurt. Mooks still see and shoot
+- **Boarding.** The player touching an empty, landed, unexploded tank (box overlap) boards it. The tank he just
+  left can't be boarded again until he has stood on the ground clear of it. Climbing out pops him up and he falls
+  back inside its box, so a timer alone would put him straight back in. The bro is hidden and held at the tank's position, and can't be hurt. Mooks still see and shoot
   at that position, so their bullets and blasts hit the tank. Any bro can drive (after a rescue swap the new bro stays
   inside).
 - **Driving.** Like `TestVanDammeAnim`'s movement with the tank's values: speed 60, jump 290, gravity, max fall −600,
-  no wall climbing or dashing. Its box is the tank's own: 48 wide, matching the hull frame.
+  no wall climbing or dashing. Its box is the tank's own: half-width 15 (`MookArmouredGuy.Awake`), height 28
+  (`TankBroTank.Start`).
+- **Crush while driving** (`TankBroTank.AnimateRunning` → `CrushGroundWhileMoving(4, 5, 10, 8)`). On the ground with
+  a direction held, the treads tick every 0.0334 s (`runningFrameRate`) and crush on every other pair of ticks:
+  - enemies in the box range 10 around (X + dir·8, Y + 2) take 5 crush damage and are knocked;
+  - the block just ahead takes 4 at Y + 12 and 1 at Y + 21.
+
+  This runs mooks over and grinds through dirt walls.
 - **Firing**, ported from `TankBroTankTurret.FireWeapon`/`Update`/`FireShell`/`FireCannon`. The turret runs at
   0.0334 s a frame, with the original holds on its wind-up frames.
   - The **mortar** fires on frame 6: a `HeavyShell` from (X + dir·17, Y + 33) at (dir·150·0.9, 150·0.9). It flies
     straight for 0.1 s, slows from 0.1 to 0.35 s, then falls under 600 gravity as it slows (`HeavyShell.RunProjectile`).
   - The **cannon** winds up longer (holds of 2, 3, 4 and 5 frames on frames 3–6) and fires on frame 7: a
-    `RocketMassive` from (X + dir·24, Y + 22) at dir·`cannonFireSpeed`. It gains 60 u/s² of horizontal speed and
-    crushes through up to 4 blocks before bouncing (`RocketMassive`), then blows up with its extracted damage and
-    range. Its firing frames are on turret row 2, the mortar's on row 0.
+    `RocketMassive` from (X + dir·24, Y + 22) at dir·`cannonFireSpeed` (44). It gains `horizontalAcceleration`
+    (prefab 120 u/s²) and crushes through `crushWallLayers` (prefab 3) blocks before bouncing (`RocketMassive`), then
+    blows up with its extracted damage (15) and range (56). Its life is 1 s. Its firing frames are on turret row 2, the mortar's on row 0.
   - Holding fire queues the next shot as the original does.
 - **Special inside** switches gun with the turret's transform animation (frames 0–20 on row 1). It costs no special.
 - **Gesture (F) inside** climbs out, ported from `PressHighFiveMelee` → `DisChargePilot(130)`. The bro reappears at
@@ -114,7 +122,8 @@ the gun index (0 mortar, 1 cannon), the turret's animation state, and whether th
 
 ### Design values (not in Broforce)
 
-The 0.5 s re-board delay and the driver's invulnerability after a gib (0.5 s) are ours. They go under "Design values"
+The re-board rule (stand clear first), the driver's invulnerability after a gib (0.5 s) and the tank facing the
+way the grenade flew are ours. They go under "Design values"
 in `constants.ts` and in `docs/findings.md`.
 
 ## Render
@@ -158,8 +167,8 @@ in `constants.ts` and in `docs/findings.md`.
   - Integration: the tank sheets and values exist.
 - **Engine (Vitest):**
   - the spawn-spot search (flat pair, lowest, fallback to the screen edge);
-  - the drop and the landing crush;
-  - boarding by touch, with the re-board delay;
+  - the drop and the landing; the crush while driving (mooks, dirt);
+  - boarding by touch, and no re-boarding before standing clear;
   - driving speed and jump;
   - the turret: mortar on frame 6, cannon timing, queued fire, the gun switch taking its frames;
   - the shell's flight curve; the rocket's acceleration and wall crushing;
