@@ -76,6 +76,12 @@ def test_extracts_the_jungle_background_and_the_effects(tmp_path):
         other = json.loads((tmp_path / f"background_{name}.json").read_text(encoding="utf-8"))
         assert other["theme"] == theme and other["sky"]["file"].startswith(folder)
         assert all((tmp_path / l["file"]).is_file() for k in ("near", "mid", "distant") for l in other[k])
+    # ColorShiftController grades the burning jungle's BackgroundCamera: its blue sky comes out smoky
+    burning = json.loads((tmp_path / "background_burning.json").read_text(encoding="utf-8"))
+    assert burning["grade"] == "Preset_Burning_Jungle" and "grade" not in bg
+    sky = Image.open(tmp_path / burning["sky"]["file"]).convert("RGB")
+    r, g, b = sky.getpixel((sky.width // 2, sky.height // 2))
+    assert b < 220 and abs(r - b) < 60
     assert (tmp_path / bg["distant"][0]["file"]).is_file()
     fx = json.loads((tmp_path / "effects.json").read_text(encoding="utf-8"))
     blood = fx["emitters"]["bloodBig"]

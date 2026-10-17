@@ -18,6 +18,7 @@ import re
 import UnityPy
 from PIL import Image
 
+from .grade import grade, lut_filter
 from .particles import SystemWriter
 from .unity import AssetNotFound
 
@@ -26,8 +27,10 @@ BUNDLES = ("networkobjects.assetbundle", "sharedtextures.assetbundle", "sharedas
 
 THEME = "Themeholder Jungle"  # the island
 # file -> (ThemeHolder, sprite folder): each mission's background, the island's in background.json
-BACKGROUNDS = {"background.json": (THEME, "bg"), "background_desert.json": ("Themeholder Desert", "bg/desert"),
-               "background_burning.json": ("Themeholder Jungle Burning", "bg/burning")}
+# and the ColorShiftController LUT that grades it (the jungle's is Preset_Blank and the desert has none)
+BACKGROUNDS = {"background.json": (THEME, "bg", None), "background_desert.json": ("Themeholder Desert", "bg/desert", None),
+               "background_burning.json": ("Themeholder Jungle Burning", "bg/burning", "colorMapBurningJungleDay")}
+COLOR_SHIFT = ("ColorShiftController", "BackgroundCamera")
 EFFECTS_CONTROLLER = ("EffectsController", "EffectsContoller")  # sic
 EFFECTS_THEME = ("EffectsHolderTheme", "EffectsHollderThemeVietnam")  # sic
 
@@ -189,7 +192,7 @@ class Scene:
             self.written[name] = rel
         return self.written[name]
 
-    def sprite(self, go, folder: str, crop: bool):
+    def sprite(self, go, folder: str, crop: bool, lut=None):
         """SpriteSM size/rect/offset of a GameObject with its texture (whole, or cropped to the rect)."""
         comps = self.components(go)
         if "SpriteSM" not in comps and "WobbleSprite" not in comps:
@@ -208,6 +211,8 @@ class Scene:
             x, y, w, h = rect
             rel = f"sprites/{folder}/{_safe(go.m_Name)}.png"
             image = tex.image.convert("RGBA").crop((x, y, x + w, y + h))
+            if lut is not None:
+                image = grade(image, lut)
             self.out.write_png(rel, image, f"{go.m_Name} (texture {tex.m_Name})")
             info["file"] = rel
         else:
@@ -219,14 +224,18 @@ class Scene:
         return obj.read().m_GameObject.read()
 
 
-def _background(scene: Scene, theme_name: str = THEME, folder: str = "bg") -> dict:
+def _background(scene: Scene, theme_name: str = THEME, folder: str = "bg", lut_field: str | None = None) -> dict:
     theme = scene.find("ThemeHolder", theme_name)
     tt = theme.read_typetree()
+    lut, lut_name = None, None
+    if lut_field:  # ColorShiftController's LUT for this theme, baked into the sprites
+        tex = scene.field(scene.find(*COLOR_SHIFT), lut_field).read()
+        lut, lut_name = lut_filter(tex.image), tex.m_Name
 
     def layer(obj) -> dict:
         go = scene.go_of(obj)
         pf = obj.read_typetree()
-        info = scene.sprite(go, folder, crop=True)
+        info = scene.sprite(go, folder, crop=True, lut=lut)
         info.update({"name": go.m_Name, "parallax": [_num(pf["parallaxXM"]), _num(pf["parallaxYM"])]})
         return info
 
@@ -235,9 +244,12 @@ def _background(scene: Scene, theme_name: str = THEME, folder: str = "bg") -> di
         return [layer(p.deref()) for p in objs if p.m_PathID]
 
     scatter = ("None", "Stormy", "BlueSky")[tt["cloudScatterType"]]
-    return {"theme": theme_name, "cloudScatter": scatter, "sky": layer(scene.field(theme, "sky")),
-            "clouds": layers("parallaxClouds"), "near": layers("parallax1"), "mid": layers("parallax2"),
-            "distant": layers("parallax3")}
+    out = {"theme": theme_name, "cloudScatter": scatter, "sky": layer(scene.field(theme, "sky")),
+           "clouds": layers("parallaxClouds"), "near": layers("parallax1"), "mid": layers("parallax2"),
+           "distant": layers("parallax3")}
+    if lut_name:
+        out["grade"] = lut_name
+    return out
 
 
 def _emitter(scene: Scene, obj) -> dict:
@@ -477,8 +489,8 @@ def extract(streaming_assets: str, out) -> None:
     fx = scene.find(*EFFECTS_CONTROLLER)
     theme_fx = scene.find(*EFFECTS_THEME)
     holders = {"fx": fx, "theme": theme_fx}
-    for file, (theme_name, folder) in BACKGROUNDS.items():
-        out.write_json(file, _background(scene, theme_name, folder), f"ThemeHolder {theme_name!r}")
+    for file, (theme_name, folder, lut_field) in BACKGROUNDS.items():
+        out.write_json(file, _background(scene, theme_name, folder, lut_field), f"ThemeHolder {theme_name!r}")
     ft, tt = fx.read_typetree(), theme_fx.read_typetree()
     effects = {
         "colors": {k: [_color(tt[f"{k}Color1"]), _color(tt[f"{k}Color2"])] for k in ("dirt", "flesh", "sand", "bone")},
