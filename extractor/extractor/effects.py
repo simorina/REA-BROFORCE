@@ -1,6 +1,6 @@
 """Background, effects and doodads, read from Broforce's theme and scene bundles (read only).
 
-- background.json: the Desert ThemeHolder's sky, BlueSky clouds and parallax hills, each with its
+- background.json: the Jungle ThemeHolder's sky, BlueSky clouds and parallax hills, each with its
   ParallaxFollow factors and SpriteSM size/offset (Map.SetupLevel / Map.PlaceDoodad instantiate them).
 - effects.json: legacy particle emitters (EllipsoidParticleEmitter + ParticleRenderer + the custom
   ParticleCollisionAnimator), Puff sprite animations, the theme's particle colours, the blood colours,
@@ -24,7 +24,7 @@ from .unity import AssetNotFound
 BUNDLES = ("networkobjects.assetbundle", "sharedtextures.assetbundle", "sharedassets.assetbundle",
            "themeholders.assetbundle", "scenesmain.assetbundle")
 
-THEME = "Themeholder Desert"
+THEME = "Themeholder Jungle"  # the level is a tropical island
 EFFECTS_CONTROLLER = ("EffectsController", "EffectsContoller")  # sic
 EFFECTS_THEME = ("EffectsHolderTheme", "EffectsHollderThemeVietnam")  # sic
 
@@ -76,7 +76,8 @@ SHURIKEN = {"tiny": "ExplosionTiny", "small": "ExplosionSmall", "medium": "Explo
             "fireTrail": "FireTrailSmall"}
 EXPLOSION_SIZES = ("small", "medium", "large", "massive", "tiny", "largeNoWhite")  # EffectsController.ExplosionSize
 GRASS = "Desert Long Grass Doodad"
-BLOCKS = {"dirt": ("DirtBlock", "Desert Earth"), "brick": ("BrickBlock", "WallBrick1"),
+BLOCKS = {"dirt": ("DirtBlock", "DirtBlock5"), "sand": ("DirtBlock", "Desert Earth"), "brick": ("BrickBlock", "WallBrick1"),
+          "temple": ("BrickBlock", "WallBrick1"),
           "steel": ("SteelBlock", "SteelBlock"), "barrel": ("BarrelBlock", "Barrel 1")}
 GIB_HOLDER_OWNER = ("MookTrooper", "ZMook")
 DOOR = ("MookDoor", "DoodadMookDoor")

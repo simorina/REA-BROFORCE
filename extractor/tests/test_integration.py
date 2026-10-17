@@ -51,15 +51,19 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert sheets["jet_us"]["frameW"] == 96 and sheets["jet_us"]["frameH"] == 64 and sheets["jet_us"]["offsetY"] == 12.0
     assert sheets["tank_ru"]["frameW"] == 48 and sheets["turret_ru"]["frameW"] == 48
     assert sheets["tank_shell"]["frameW"] == 32 and sheets["tank_rocket"]["frameH"] == 16
-    assert Image.open(tmp_path / "sprites" / "block_dirt.png").size == (16, 16)
+    assert Image.open(tmp_path / "sprites" / "block_dirt.png").size == (64, 16)  # the jungle earth strip, grass on frame 0
+    assert sheets["block_dirt"]["cols"] == 4 and sheets["block_sand"]["frameW"] == 16
+    assert sheets["block_temple"]["frameW"] == 16 and sheets["epstein"]["frameW"] == 32
+    assert values["block_sand"]["health"] > 0 and values["block_dirt"]["health"] > 0
 
 
-def test_extracts_the_desert_background_and_the_effects(tmp_path):
+def test_extracts_the_jungle_background_and_the_effects(tmp_path):
     run(DATA, str(tmp_path), fetch_audio=False)
     bg = json.loads((tmp_path / "background.json").read_text(encoding="utf-8"))
     assert bg["cloudScatter"] == "BlueSky"
     assert bg["sky"]["parallax"] == [1.0, 1.0]
-    assert [round(l["parallax"][0], 2) for l in bg["near"][:5]] == [0.3] * 5
+    assert bg["theme"] == "Themeholder Jungle" and round(bg["near"][0]["parallax"][0], 2) == 0.3
+    assert [len(bg[k]) for k in ("near", "mid", "distant")] == [3, 2, 3]
     assert (tmp_path / bg["distant"][0]["file"]).is_file()
     fx = json.loads((tmp_path / "effects.json").read_text(encoding="utf-8"))
     blood = fx["emitters"]["bloodBig"]
@@ -67,7 +71,7 @@ def test_extracts_the_desert_background_and_the_effects(tmp_path):
     assert fx["puffs"]["bloodGush1"]["frames"] == 7
     assert fx["bubbles"]["!"]["animatedRestFrame"] == 10
     assert [g["name"] for g in fx["gibs"]] == ["BodyArm1", "BodyArm2", "BodyHead", "BodyLeg1", "BodyLeg2", "BodyTorso"]
-    assert fx["blocks"]["dirt"]["customColors"] is not None
+    assert fx["blocks"]["sand"]["customColors"] is not None and set(fx["blocks"]) == {"dirt", "sand", "brick", "temple", "steel", "barrel"}
     assert set(fx["blocks"]["brick"]["blood"]) == {"top", "bottom", "left", "right"}
     assert fx["bubbles"]["rambro"]["animatedBubble"] == 0
     assert fx["suicide"]["explosionSize"] == "small" and fx["airstrike"]["range"] == 48.0 and fx["barrelFullExplosion"]

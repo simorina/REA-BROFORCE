@@ -2,6 +2,7 @@ from PIL import Image
 
 from extractor.catalog import SPRITES
 from extractor.repaint import HULL_MAP, PALETTE_MAP, PUTIN_HAIR, PUTIN_MAP, RECIPES, RU_FLAG, TRUMP_MAP, TURRET_MAP, repaint, stealth
+from extractor.repaint import EPSTEIN_MAP, TEMPLE_MAP
 
 
 def test_maps_known_colours_and_keeps_alpha():
@@ -134,4 +135,29 @@ def test_stealth_darkens_the_harrier_but_keeps_its_cockpit_glass():
 
 
 def test_trump_and_jet_recipes():
-    assert [(r.key, r.source) for r in RECIPES][4:] == [("trump", "bro_base"), ("jet_us", "jet_harrier")]
+    assert [(r.key, r.source) for r in RECIPES][4:6] == [("trump", "bro_base"), ("jet_us", "jet_harrier")]
+
+
+def test_epstein_gets_silver_hair_and_a_grey_sweater_without_the_flower():
+    img = Image.new("RGBA", (3, 1))
+    img.putpixel((0, 0), (0x3E, 0x2B, 0x1A, 255))  # hair
+    img.putpixel((1, 0), (0x20, 0x20, 0x20, 255))  # the tuxedo
+    img.putpixel((2, 0), (0x7F, 0x11, 0x00, 255))  # the red flower
+    out = repaint(img, EPSTEIN_MAP)
+    assert min(out.getpixel((0, 0))[:3]) > 0xA0  # silver
+    assert out.getpixel((1, 0)) == (*EPSTEIN_MAP[(0x20, 0x20, 0x20)], 255)
+    assert out.getpixel((2, 0)) == out.getpixel((1, 0))  # gone into the sweater
+
+
+def test_the_temple_bricks_are_white_with_blue_mortar():
+    img = Image.new("RGBA", (2, 1))
+    img.putpixel((0, 0), (120, 113, 80, 255))  # WallBrick1's face
+    img.putpixel((1, 0), (76, 70, 37, 255))  # its mortar
+    out = repaint(img, TEMPLE_MAP)
+    assert min(out.getpixel((0, 0))[:3]) > 0xD0
+    r, g, b, _ = out.getpixel((1, 0))
+    assert b > r + 60
+
+
+def test_island_recipes():
+    assert [(r.key, r.source) for r in RECIPES][6:] == [("epstein", "bro_base"), ("block_temple", "block_brick")]

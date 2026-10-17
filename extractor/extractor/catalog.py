@@ -60,7 +60,8 @@ SPRITES = (
     SpriteRef("rocket", "Rocket", "Rocket", False),
     SpriteRef("bomb", "RocketBombardment", "Rocket Bombardment", False),
     SpriteRef("marker", "GrenadeAirstrike", "Grenade Airstrike", False),
-    SpriteRef("block_dirt", "DirtBlock", "Desert Earth", False),
+    SpriteRef("block_dirt", "DirtBlock", "DirtBlock5", True),  # jungle earth: frame 0 has the grass on top
+    SpriteRef("block_sand", "DirtBlock", "Desert Earth", False),  # the beach
     SpriteRef("block_brick", "BrickBlock", "WallBrick1", False, frame=(0, 0, 16, 16)),
     SpriteRef("block_steel", "SteelBlock", "SteelBlock", False),
     SpriteRef("block_barrel", "BarrelBlock", "Barrel 1", False),
@@ -102,7 +103,8 @@ VALUES = (
     ValuesRef("bomb", "RocketBombardment", "Rocket Bombardment", ROCKET_FIELDS),
     ValuesRef("marker", "GrenadeAirstrike", "Grenade Airstrike", GRENADE_FIELDS),
     ValuesRef("suicide_blast", "MookSuicide", "ZMookSuicide", ("range", "blastForce")),
-    ValuesRef("block_dirt", "DirtBlock", "Desert Earth", ("health",)),
+    ValuesRef("block_dirt", "DirtBlock", "DirtBlock5", ("health",)),
+    ValuesRef("block_sand", "DirtBlock", "Desert Earth", ("health",)),
     ValuesRef("block_brick", "BrickBlock", "WallBrick1", ("health",)),
     ValuesRef("block_steel", "SteelBlock", "SteelBlock", ("health",)),
     ValuesRef("block_barrel", "BarrelBlock", "Barrel 1", ("health", "range")),
