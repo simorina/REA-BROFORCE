@@ -30,6 +30,10 @@ describe("level 1: Epstein's island", () => {
     expect(kinds).toEqual(new Set(['', 'sand', 'dirt', 'brick', 'temple', 'steel', 'barrel']));
   });
 
+  it("the guardhouse's ground floor opens on both sides, so the tank can drive through", () => {
+    for (const c of [163, 177]) for (const r of [8, 9]) expect(parsed.map.get(c, r)).toBeNull();
+  });
+
   it('has bottomless gaps to jump', () => {
     const gaps = Array.from({ length: level.cols }, (_, c) => c).filter((c) => !parsed.map.isSolid(c, 0));
     expect(gaps.length).toBeGreaterThanOrEqual(6);

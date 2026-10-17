@@ -90,6 +90,7 @@ export function buildLevel1(): LevelData {
   fill(163, 177, 11, 11, 'b');
   fill(163, 177, 16, 16, 'b');
   fill(163, 163, 8, 9, '.'); // the way in
+  fill(177, 177, 8, 9, '.'); // and out, through the ground floor
   fill(177, 177, 12, 13, '.'); // the upper floor's window
   put(167, 8, 'm');
   put(172, 8, 'm');
