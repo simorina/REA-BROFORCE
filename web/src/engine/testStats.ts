@@ -6,6 +6,7 @@ export const RAW_VALUES: Record<string, Record<string, unknown>> = {
   bro_lee: { speed: 120, _jumpForce: 260, health: 1, fireRate: 0.2, maxFallSpeed: -400, canWallClimb: 1, canDash: 1, originalSpecialAmmo: 2, hearingRangeX: 300, hearingRangeY: 200 },
   bro_soldier: { speed: 110, _jumpForce: 260, health: 1, fireRate: 0.12, maxFallSpeed: -400, canWallClimb: 1, canDash: 1, originalSpecialAmmo: 3, hearingRangeX: 300, hearingRangeY: 200, extraFireDelay: 0.3 },
   rifle_bullet: { damage: 1, life: 0.45 },
+  mech: { health: 300 },
   mook: { speed: 70, _jumpForce: 200, health: 3, fireRate: 0.17, maxFallSpeed: -400, canWallClimb: 0, canDash: 0, originalSpecialAmmo: 3, hearingRangeX: 50, hearingRangeY: 0, canHideInGrass: 1, canBeSetOnFire: 1, willPanicWhenOnFire: 1 },
   mook_suicide: { speed: 70, _jumpForce: 200, health: 3, fireRate: 0.1, maxFallSpeed: -400, canWallClimb: 0, canDash: 0, originalSpecialAmmo: 3, hearingRangeX: 100, hearingRangeY: 50, canHideInGrass: 1, canBeSetOnFire: 1, willPanicWhenOnFire: 1 },
   mook_bazooka: { speed: 70, _jumpForce: 200, health: 4, fireRate: 0.17, maxFallSpeed: -400, canWallClimb: 0, canDash: 0, originalSpecialAmmo: 3, hearingRangeX: 50, hearingRangeY: 0, canHideInGrass: 1, canBeSetOnFire: 1, willPanicWhenOnFire: 1 },
@@ -77,6 +78,7 @@ export const TEST_STATS: GameStats = {
   tankShell: { damage: 10, range: 36, life: 6 },
   tankRocket: { damage: 15, range: 56, blastForce: 16, blastForceExtraY: 220, life: 1, acceleration: 120, crushLayers: 3 },
   rifle: { extraFireDelay: 0.3, damage: 1, life: 0.45 },
+  mech: { health: 300 },
   blocks: {
     dirt: { health: 5 }, sand: { health: 5 }, brick: { health: 5 }, temple: { health: 5 }, steel: { health: 500000 },
     barrel: { health: 1 },

@@ -25,8 +25,13 @@ export function makeBoss(id: number, x: number, y: number, stats: GameStats, fle
 
 export const bossAlive = (w: World): boolean => w.boss !== null && !w.boss.dead && !w.boss.boss?.gone;
 
-/** The HUD's bar: his health (in 40ths) while he fights, nothing while he sleeps or once he is down. */
+/** The level's last boss still stands: the Goliath when there is one, else Epstein himself. The flag waits for it. */
+export const levelBossAlive = (w: World): boolean => (w.mech ? !w.mech.destroyed : bossAlive(w));
+
+/** The HUD's bar: the fighting boss's health (in 40ths), nothing while he sleeps or once he is down. */
 export function bossBar(w: World): number | null {
+  const mech = w.mech;
+  if (mech && mech.awake && !mech.destroyed) return Math.round((mech.health / mech.maxHealth) * 40) / 40;
   const b = w.boss;
   if (!b || b.dead || !b.boss?.awake || b.boss.fleeing >= 0 || b.boss.gone) return null;
   return Math.round((b.health / BOSS.health) * 40) / 40;

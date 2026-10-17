@@ -132,6 +132,27 @@ export const JET_ROCKET_COOLDOWN = 0.4; // rockets instead of its heavy bullets,
 export const JET_BOMB = { oy: -4, yI: -50, cooldown: 0.5 };
 export const JET_FUEL = 20;
 export const JET_LEAVE_SPEED = 80; // an empty, dry jet rises away
+/** Epstein's Goliath (GoliathMech): its health comes from the prefab and its patterns from GoliathMechAI (the stomp's
+ *  8 / 16 column reach, the four rockets at -300 over 15 columns); everything else is ours. */
+export const MECH = {
+  box: { halfWidth: 44, height: 64 }, // its body in the 128 x 70 frame
+  line: "This time you're finished!",
+  wake: { x: 240, y: 160 },
+  arena: 512, // it keeps within this of where it stands
+  pause: [1.2, 0.7] as const, // calm, enraged (under half health)
+  pattern: [['bombard', 'stomp', 'missiles', 'stomp'], ['stomp', 'bombard', 'stomp', 'sky']] as const,
+  guns: [{ x: 44, y: 18 }, { x: -36, y: 18 }] as const, // its chain guns, from its feet
+  fire: { time: 2, every: [0.12, 0.08] as const, speed: 300, maxAim: 0.6 },
+  stomp: {
+    rise: 80, riseSpeed: 200, glide: 180, reach: [128, 256] as const, fall: 520,
+    blast: { damage: 20, range: 80, blastForce: 40, blastForceExtraY: 300, life: 0 }, // kills 36 px past its feet
+  },
+  missiles: { count: 4, gap: 0.3, speed: 160, maxAim: 0.8, from: [{ x: 23, y: 51 }, { x: -19, y: 51 }] as const },
+  sky: { count: 4, spread: 240, gap: 60, speed: 300 },
+  dying: { time: 1.6, every: 0.2, blast: { damage: 30, range: 64, blastForce: 40, blastForceExtraY: 400, life: 0 } },
+  flash: 0.08,
+  turnRate: 0.04, // a turning frame
+};
 /** Jeffrey Epstein, the island's boss. His guard call is MookGeneral.UseSpecial's; everything else is ours. */
 export const BOSS = {
   health: 120,

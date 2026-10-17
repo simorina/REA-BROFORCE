@@ -127,6 +127,7 @@ export interface GameStats {
   tankShell: { damage: number; range: number; life: number }; // HeavyShell "Shell Heavy Tankbro"
   tankRocket: RocketStats & { acceleration: number; crushLayers: number }; // RocketMassive "Rocket Tankbro BIG"
   rifle: { extraFireDelay: number; damage: number; life: number }; // BroniversalSoldier, "Bullet Rambo"
+  mech: { health: number }; // GoliathMech
   blocks: Record<BlockKind, { health: number }>;
   barrelRange: number;
   suicide: { range: number; blastForce: number };

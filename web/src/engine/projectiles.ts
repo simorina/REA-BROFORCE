@@ -8,6 +8,7 @@ import { TileMap, getColumn, getRow } from './map';
 import { damageUnit } from './units';
 import type { BlockKind, EnemyKind, GameStats, Projectile, ProjectileKind, RocketStats, Team, Unit } from './types';
 import { vehicleAt, type Vehicle } from './vehicle';
+import { mechAt, type Mech } from './mech';
 
 export type ProjectileEvent =
   | { type: 'explode'; blast: Blast }
@@ -17,14 +18,19 @@ export type ProjectileEvent =
   | { type: 'gib'; kind: EnemyKind; x: number; y: number; xI: number; yI: number }
   | { type: 'callTank'; x: number; y: number; dir: 1 | -1 }
   | { type: 'callJet'; x: number; y: number }
-  | { type: 'hitVehicle'; vehicle: Vehicle; damage: number };
+  | { type: 'hitVehicle'; vehicle: Vehicle; damage: number }
+  | { type: 'hitMech'; damage: number };
 
 export interface ProjectileWorld {
   map: TileMap;
   units: readonly Unit[];
   stats: GameStats;
   vehicles?: readonly Vehicle[];
+  mech?: Mech | null; // Epstein's Goliath: the bro's shots stop on it
 }
+
+const hitsMech = (w: ProjectileWorld, p: Projectile): boolean => p.team === 'player' && mechAt(w.mech, p.x, p.y);
+const struck = (w: ProjectileWorld, p: Projectile): boolean => unitAt(w.units, p.x, p.y, p.team) !== null || hitsMech(w, p);
 
 const HIT_MARGIN = 2;
 const FOOTBALL_BLAST: RocketStats = {
@@ -57,10 +63,19 @@ export function fireRifleBullet(id: number, u: Unit, stats: GameStats, rng: () =
 /** A bullet aimed at (tx, ty) from (X + dir*10, Y + 8), within maxAim of level (the boss's; mooks fire level). */
 export function fireAimedBullet(id: number, u: Unit, tx: number, ty: number, speed: number, maxAim: number,
   stats: GameStats): Projectile {
-  const ox = u.x + u.facing * 10;
-  const oy = u.y + 8;
+  return fireFrom(id, 'bullet', u.team, u.x + u.facing * 10, u.y + 8, u.facing, tx, ty, speed, maxAim, stats.bullet.life);
+}
+
+/** A shot from (ox, oy) the way `facing` points, aimed at (tx, ty) within maxAim of level. */
+export function fireFrom(id: number, kind: ProjectileKind, team: Team, ox: number, oy: number, facing: 1 | -1, tx: number,
+  ty: number, speed: number, maxAim: number, life: number): Projectile {
   const a = Math.max(-maxAim, Math.min(maxAim, Math.atan2(ty - oy, Math.abs(tx - ox))));
-  return make(id, 'bullet', u.team, ox, oy, u.facing * Math.cos(a) * speed, Math.sin(a) * speed, stats.bullet.life);
+  return make(id, kind, team, ox, oy, facing * Math.cos(a) * speed, Math.sin(a) * speed, life);
+}
+
+/** A rocket falling straight down from above the screen, the enemy's (the Goliath's RocketBombardment). */
+export function skyRocket(id: number, x: number, y: number, speed: number, stats: GameStats): Projectile {
+  return make(id, 'bomb', 'enemy', x, y, 0, -speed, stats.bomb.life);
 }
 
 export function kickFootball(id: number, u: Unit): Projectile {
@@ -216,6 +231,11 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
         p.dead = true;
         break;
       }
+      if (hitsMech(w, p)) {
+        events.push({ type: 'hitMech', damage });
+        p.dead = true;
+        break;
+      }
       const vehicle = p.team === 'enemy' ? vehicleAt(w.vehicles ?? [], p.x, p.y) : null;
       if (vehicle) {
         events.push({ type: 'hitVehicle', vehicle, damage });
@@ -236,7 +256,7 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
     case 'bomb': {
       p.x += p.xI * t;
       p.y += p.yI * t;
-      if (w.map.blockAt(p.x, p.y) || unitAt(w.units, p.x, p.y, p.team) || p.life <= 0
+      if (w.map.blockAt(p.x, p.y) || struck(w, p) || p.life <= 0
         || (p.team === 'enemy' && vehicleAt(w.vehicles ?? [], p.x, p.y) !== null)) {
         explodeAt(p, p.kind === 'rocket' ? w.stats.rocketMook : w.stats.bomb, true, events);
       }
@@ -249,7 +269,7 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
         break;
       }
       bounce(p, w.map, t, FOOTBALL.bounceM, FOOTBALL.frictionM);
-      if (unitAt(w.units, p.x, p.y, p.team) || p.bounces > FOOTBALL.maxBounces || p.life <= 0) {
+      if (struck(w, p) || p.bounces > FOOTBALL.maxBounces || p.life <= 0) {
         explodeAt(p, FOOTBALL_BLAST, false, events);
       }
       break;
@@ -258,7 +278,7 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
       p.yI -= GRAVITY * t;
       p.x += p.xI * t;
       p.y += p.yI * t;
-      if (w.map.blockAt(p.x, p.y) || unitAt(w.units, p.x, p.y, p.team) || p.life <= 0) {
+      if (w.map.blockAt(p.x, p.y) || struck(w, p) || p.life <= 0) {
         explodeAt(p, w.stats.bomb, true, events);
       }
       break;
@@ -267,7 +287,7 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
       p.yI -= GRAVITY * t;
       p.x += p.xI * t;
       p.y += p.yI * t;
-      if (w.map.blockAt(p.x, p.y) || unitAt(w.units, p.x, p.y, p.team) || p.life <= 0) explodeBody(p, w, events);
+      if (w.map.blockAt(p.x, p.y) || struck(w, p) || p.life <= 0) explodeBody(p, w, events);
       break;
     }
     case 'shell': {
@@ -286,7 +306,7 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
       }
       p.x += p.xI * t;
       p.y += p.yI * t;
-      if (w.map.blockAt(p.x, p.y) || unitAt(w.units, p.x, p.y, p.team) || p.life <= 0) {
+      if (w.map.blockAt(p.x, p.y) || struck(w, p) || p.life <= 0) {
         p.dead = true;
         events.push({ type: 'explode', blast: shellBlast(p.x, p.y, w.stats.tankShell, p.team) });
       }
@@ -308,7 +328,7 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
         p.x = nx;
       }
       p.y += p.yI * t;
-      if (unitAt(w.units, p.x, p.y, p.team) || p.life <= 0) {
+      if (struck(w, p) || p.life <= 0) {
         p.dead = true;
         events.push({ type: 'explode', blast: rocketBlast(p.x, p.y, w.stats.tankRocket, p.team, true, 'bigRocket') });
       }

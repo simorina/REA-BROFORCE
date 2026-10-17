@@ -27,7 +27,8 @@ import {
 import { stepJudo } from './judo';
 import { SPECIAL_KITS, WEAPON_KITS } from './kits';
 import { damageUnit, makeUnit, runFiring, runGun } from './units';
-import { bossAlive, bossDown, makeBoss, stepBoss } from './boss';
+import { bossDown, levelBossAlive, makeBoss, stepBoss } from './boss';
+import { damageMech, makeMech, mechInBlast, stepMech, type Mech } from './mech';
 import type { Jet } from './jet';
 import type { Tank } from './tank';
 import { vehicleInBlast, type Vehicle } from './vehicle';
@@ -120,6 +121,7 @@ export interface World {
   tanks: Tank[]; // TankBroTank vehicles on the map
   jets: Jet[]; // Trump's jets
   boss: Unit | null; // Jeffrey Epstein, when the level has him (also among the enemies)
+  mech: Mech | null; // his Goliath, the level's last fight
   driving: Vehicle | null; // what the player is in
   reboard: Vehicle | null; // the vehicle just left: no boarding it until he stands clear of it
   flexPower: 'allure' | null; // PlayerInventory.flexPowers: what flexing does
@@ -150,6 +152,7 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
   const enemies = parsed.enemies.map((e) => makeUnit(nextId++, e.kind, 'enemy', cellX(e.c), feetY(e.r), stats.units[e.kind]));
   const boss = parsed.boss ? makeBoss(nextId++, cellX(parsed.boss.c), feetY(parsed.boss.r), stats, parsed.mech !== null) : null;
   if (boss) enemies.push(boss);
+  const mech = parsed.mech ? makeMech(nextId++, cellX(parsed.mech.c), feetY(parsed.mech.r), stats, parsed.map) : null;
   const doors = parsed.doors.map((d) => makeDoor(d.c, d.r, parsed.map, stats.door));
   const camera = { x: spawn.x, y: spawn.y };
   followCamera(camera, spawn, parsed.map, 1);
@@ -165,7 +168,7 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
     prisoners: parsed.cages.map((c) => ({ x: cellX(c.c), y: feetY(c.r), freed: false })),
     checkpoints: parsed.checkpoints.map((c) => ({ x: cellX(c.c), y: feetY(c.r), activated: false, raisedAt: 0 })),
     grass: parsed.grass.map((c) => ({ x: cellX(c.c), y: c.r * TILE, health: stats.grass.health, destroyed: false })),
-    doors, doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, driving: null, reboard: null, flexPower: level.flexPower ?? null,
+    doors, doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, reboard: null, flexPower: level.flexPower ?? null,
     flag: { x: cellX(parsed.flag.c), y: feetY(parsed.flag.r) },
     lives: LIVES_START, specialAmmo: stats.bros[bro.base].specialAmmo, respawnTimer: 0,
     state: 'playing', extractionTime: 0, time: 0, nextId, camera, events: [], laughIndex: 0,
@@ -368,7 +371,7 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
   checkCheckpoints(w);
   alertMooks(w, p.x, p.y, ALERT_TOUCH, ALERT_TOUCH); // TestVanDammeAnim.AlertNearbyMooks, every frame
   // the flag is locked while the island's boss lives
-  if (Math.abs(p.x - w.flag.x) < FLAG_REACH && Math.abs(p.y - w.flag.y) < FLAG_REACH * 2 && !bossAlive(w)) {
+  if (Math.abs(p.x - w.flag.x) < FLAG_REACH && Math.abs(p.y - w.flag.y) < FLAG_REACH * 2 && !levelBossAlive(w)) {
     const k = w.driving;
     if (k) {
       exitVehicle(w, TANK_EXIT_YI);
@@ -574,7 +577,7 @@ function explodeSuicide(w: World, m: Unit, blasts: Blast[]): void {
 }
 
 function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
-  const pw = { map: w.map, units: [w.player, ...w.enemies], stats: w.stats, vehicles: allVehicles(w) };
+  const pw = { map: w.map, units: [w.player, ...w.enemies], stats: w.stats, vehicles: allVehicles(w), mech: w.mech };
   for (const p of w.projectiles) {
     // Grenade.RunWarnings: in its last half second a grenade sends the mooks around it running
     if (p.kind !== 'marker' || p.dead || p.life >= GRENADE_WARNING_LIFE) continue;
@@ -591,6 +594,9 @@ function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
       else if (ev.type === 'hit') w.events.push({ type: 'hit', x: ev.unit.x, y: ev.unit.y, hitY: ev.y, xI: ev.xI, yI: ev.yI });
       else if (ev.type === 'gib') w.events.push({ type: 'gib', x: ev.x, y: ev.y, team: 'enemy', kind: ev.kind, xI: ev.xI, yI: ev.yI });
       else if (ev.type === 'hitVehicle') hitVehicle(w, ev.vehicle, ev.damage, blasts);
+      else if (ev.type === 'hitMech') {
+        if (w.mech) damageMech(w, w.mech, ev.damage);
+      }
       else if (ev.type === 'callTank') {
         w.events.push({ type: 'airstrike', x: ev.x, y: ev.y }); // GrenadeAirstrike.MakeEffects
         callTank(w, ev.x, ev.y, ev.dir);
@@ -629,6 +635,7 @@ function resolveBlasts(w: World, blasts: Blast[]): void {
     damageGrass(w, b);
     // Map.ExplodeUnits on the vehicles: enemy and neutral blasts (the player's own don't hurt his vehicles)
     if (b.team !== 'player') for (const v of allVehicles(w)) if (!v.exploded && vehicleInBlast(v, b)) hitVehicle(w, v, b.unitDamage, blasts);
+    if (b.team === 'player' && w.mech && mechInBlast(w.mech, b)) damageMech(w, w.mech, b.unitDamage); // the bro's blasts on the Goliath
     // MookSuicide.Gib: a suicide mook blown apart before it went off goes off right away
     for (const m of w.enemies) if (m.kind === 'mook_suicide' && m.gibbed) explodeSuicide(w, m, blasts);
     for (const d of res.destroyed) {
@@ -694,6 +701,7 @@ export function stepWorld(w: World, controls: Controls, prev: Controls, t: numbe
   stepJets(w, t, blasts);
   carryDriver(w);
   stepEnemies(w, t, blasts);
+  stepMech(w, t, blasts);
   stepDoors(w, t);
   stepProjectiles(w, t, blasts);
   resolveBlasts(w, blasts);

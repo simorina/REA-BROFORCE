@@ -121,6 +121,7 @@ export function parseValues(raw: Raw): GameStats {
       acceleration: num(raw, 'tank_rocket', 'horizontalAcceleration'),
       crushLayers: num(raw, 'tank_rocket', 'crushWallLayers'),
     },
+    mech: { health: num(raw, 'mech', 'health') },
     rifle: {
       extraFireDelay: num(raw, 'bro_soldier', 'extraFireDelay'),
       damage: num(raw, 'rifle_bullet', 'damage'),
