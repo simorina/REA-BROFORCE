@@ -9,23 +9,26 @@ import { damageUnit, makeUnit, runGun } from './units';
 import type { World } from './world';
 
 /** Jeffrey Epstein, the island's boss: a mook's body with the boss's health, and his own mind instead of a mook's. */
-export function makeBoss(id: number, x: number, y: number, stats: GameStats): Unit {
+export function makeBoss(id: number, x: number, y: number, stats: GameStats, flees = false): Unit {
   const s: UnitStats = {
     ...stats.units.mook, health: BOSS.health, speed: BOSS.speed, canHideInGrass: false, canBeSetOnFire: false,
     panicsOnFire: false,
   };
   const m = makeUnit(id, 'boss', 'enemy', x, y, s);
   m.ai = null; // no mook mind: he never panics, hides, laughs or goes looking for noises
-  m.boss = { awake: false, enraged: false, burstClock: 0, shots: 0, shotTimer: 0, callClock: 0, calling: -1, guards: [] };
+  m.boss = {
+    awake: false, enraged: false, burstClock: 0, shots: 0, shotTimer: 0, callClock: 0, calling: -1, guards: [], flees,
+    fleeing: -1, gone: false,
+  };
   return m;
 }
 
-export const bossAlive = (w: World): boolean => w.boss !== null && !w.boss.dead;
+export const bossAlive = (w: World): boolean => w.boss !== null && !w.boss.dead && !w.boss.boss?.gone;
 
 /** The HUD's bar: his health (in 40ths) while he fights, nothing while he sleeps or once he is down. */
 export function bossBar(w: World): number | null {
   const b = w.boss;
-  if (!b || b.dead || !b.boss?.awake) return null;
+  if (!b || b.dead || !b.boss?.awake || b.boss.fleeing >= 0 || b.boss.gone) return null;
   return Math.round((b.health / BOSS.health) * 40) / 40;
 }
 
@@ -34,6 +37,11 @@ export function bossBar(w: World): number | null {
 export function stepBoss(w: World, m: Unit, t: number): void {
   const s = m.boss as BossState;
   const p = w.player;
+  if (s.flees && m.health <= 0 && s.fleeing < 0) startFleeing(w, m, s);
+  if (s.fleeing >= 0) {
+    flee(w, m, s, t);
+    return;
+  }
   let dir: -1 | 0 | 1 = 0;
   if (!s.awake) {
     if (!p.dead && Math.abs(p.x - m.x) < BOSS.wake.x && Math.abs(p.y - m.y) < BOSS.wake.y) wake(w, m, s);
@@ -77,6 +85,28 @@ export function stepBoss(w: World, m: Unit, t: number): void {
   runGun(m, t);
   if (s.awake) m.facing = p.x < m.x ? -1 : 1; // he backs off facing the bro
   if (m.y < -64) damageUnit(m, m.health);
+}
+
+/** Beaten with his Goliath still to come: he shouts and runs from the bro, shots passing through him. */
+function startFleeing(w: World, m: Unit, s: BossState): void {
+  s.fleeing = 0;
+  s.shots = 0;
+  s.calling = -1;
+  m.stats = { ...m.stats, speed: BOSS.fleeSpeed };
+  m.facing = w.player.x < m.x ? 1 : -1;
+  w.effects.push({ kind: 'speech', x: m.x, y: m.y + 40, age: 0, duration: SPEECH_DURATION, text: BOSS.fleeLine, unit: m.id });
+  w.events.push({ type: 'voice', text: BOSS.fleeLine, lang: 'en-US' });
+}
+
+function flee(w: World, m: Unit, s: BossState, t: number): void {
+  s.fleeing += t;
+  m.invulnerable = 1;
+  stepUnit(m, { ...NO_INTENT, dir: m.facing }, w.map, t, w.time);
+  if (s.fleeing >= BOSS.fleeTime) {
+    s.gone = true; // into the smoke: he waits in his Goliath
+    w.events.push({ type: 'bossFled', x: m.x, y: m.y });
+    w.enemies = w.enemies.filter((e) => e !== m);
+  }
 }
 
 function wake(w: World, m: Unit, s: BossState): void {

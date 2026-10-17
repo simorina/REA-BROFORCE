@@ -137,6 +137,9 @@ export const BOSS = {
   health: 120,
   speed: 60,
   line: 'Nobody leaves my island!',
+  fleeLine: "This isn't over!", // beaten with his Goliath still to come
+  fleeSpeed: 200,
+  fleeTime: 1.5, // then he is gone
   wake: { x: 176, y: 96 }, // the bro this close wakes him
   near: 56, // he backs off from the bro closer than this ...
   far: 128, // ... and comes after him past this

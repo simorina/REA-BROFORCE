@@ -24,6 +24,10 @@ export function makeUnit(id: number, kind: UnitKind, team: Team, x: number, y: n
  */
 export function damageUnit(u: Unit, amount: number, ignoreInvulnerable = false): boolean {
   if (amount <= 0 || (u.invulnerable > 0 && !ignoreInvulnerable) || u.gibbed) return false;
+  if (u.boss?.flees) { // the island's boss, with his Goliath still to come, can't die here: he runs (boss.ts)
+    u.health = Math.max(0, u.health - amount);
+    return false;
+  }
   u.health -= amount;
   if (u.health < GIB_THRESHOLD) u.gibbed = true;
   if (u.dead || u.health > 0) return false;

@@ -34,6 +34,7 @@ export interface ParsedLevel {
   doors: Cell[]; // DoodadMookDoor: mooks walk out of these
   flag: Cell;
   boss: Cell | null; // 'E': Jeffrey Epstein
+  mech: Cell | null; // 'M': Epstein again, in his Goliath mech
 }
 
 const BLOCKS: Record<string, BlockKind> = { d: 'dirt', a: 'sand', b: 'brick', t: 'temple', s: 'steel', x: 'barrel' };
@@ -52,6 +53,7 @@ export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
   let player: Cell | null = null;
   let flag: Cell | null = null;
   let boss: Cell | null = null;
+  let mech: Cell | null = null;
   for (let i = 0; i < level.tiles.length; i++) {
     const line = level.tiles[i];
     if (line.length !== level.cols) throw new Error(`row ${i} has ${line.length} columns, expected ${level.cols}`);
@@ -71,6 +73,9 @@ export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
       } else if (ch === 'E') {
         if (boss) throw new Error('level has more than one E');
         boss = { c, r };
+      } else if (ch === 'M') {
+        if (mech) throw new Error('level has more than one M');
+        mech = { c, r };
       } else if (ch === 'F') {
         if (flag) throw new Error('level has more than one F');
         flag = { c, r };
@@ -85,5 +90,5 @@ export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
   }
   if (!player) throw new Error('level has no player start (P)');
   if (!flag) throw new Error('level has no flag (F)');
-  return { map, player, enemies, cages, checkpoints, grass, doors, flag, boss };
+  return { map, player, enemies, cages, checkpoints, grass, doors, flag, boss, mech };
 }

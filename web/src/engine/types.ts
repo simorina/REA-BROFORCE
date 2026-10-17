@@ -24,6 +24,9 @@ export interface BossState {
   callClock: number;
   calling: number; // -1, or how long he has been waving his guards in
   guards: number[]; // the ids of the guards he called
+  flees: boolean; // his Goliath waits further on: beaten, he runs instead of dying
+  fleeing: number; // -1, or how long he has been running
+  gone: boolean; // he got away
 }
 
 export interface UnitStats {

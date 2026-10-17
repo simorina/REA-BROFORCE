@@ -165,3 +165,25 @@ describe('Jeffrey Epstein, the boss', () => {
     expect(w.state).toBe('extracting');
   });
 });
+
+describe('when his Goliath waits further on', () => {
+  it("his defeat doesn't kill him: he cries his line, runs off and vanishes without a scratch", () => {
+    const w = createWorld(arena([[2, 'P'], [20, 'E'], [34, 'M'], [38, 'F']]), TEST_STATS, [PILOT], () => 0.5);
+    expect(parseLevel(arena([[2, 'P'], [20, 'E'], [34, 'M'], [38, 'F']]), TEST_STATS).mech).toEqual({ c: 34, r: 2 });
+    w.player.invulnerable = 1e9;
+    w.player.x = w.boss!.x - 100;
+    play(w, {}, 1);
+    damageUnit(w.boss!, BOSS.health + 50);
+    expect(w.boss!.dead).toBe(false);
+    play(w, {}, 1);
+    expect(w.events).toContainEqual({ type: 'voice', text: BOSS.fleeLine, lang: 'en-US' });
+    expect(bossBar(w)).toBeNull();
+    const x = w.boss!.x;
+    play(w, {}, steps(0.5));
+    expect(w.boss!.x).toBeGreaterThan(x); // away from the bro
+    play(w, {}, steps(1.5));
+    expect(w.enemies).not.toContain(w.boss);
+    expect(w.events).toContainEqual(expect.objectContaining({ type: 'bossFled' }));
+    expect(w.boss!.gibbed).toBe(false);
+  });
+});

@@ -96,6 +96,7 @@ export type GameEvent =
   | { type: 'boardJet'; x: number; y: number }
   | { type: 'bossCall'; x: number; y: number } // Epstein waves his guards in
   | { type: 'bossDown'; x: number; y: number }
+  | { type: 'bossFled'; x: number; y: number } // into the smoke, to his Goliath
   | { type: 'exitJet'; x: number; y: number }
   | { type: 'gunSwitch'; x: number; y: number };
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
@@ -147,7 +148,7 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
   const spawn = { x: cellX(parsed.player.c), y: feetY(parsed.player.r) };
   const player = makeUnit(nextId++, 'bro', 'player', spawn.x, spawn.y, stats.bros[bro.base]);
   const enemies = parsed.enemies.map((e) => makeUnit(nextId++, e.kind, 'enemy', cellX(e.c), feetY(e.r), stats.units[e.kind]));
-  const boss = parsed.boss ? makeBoss(nextId++, cellX(parsed.boss.c), feetY(parsed.boss.r), stats) : null;
+  const boss = parsed.boss ? makeBoss(nextId++, cellX(parsed.boss.c), feetY(parsed.boss.r), stats, parsed.mech !== null) : null;
   if (boss) enemies.push(boss);
   const doors = parsed.doors.map((d) => makeDoor(d.c, d.r, parsed.map, stats.door));
   const camera = { x: spawn.x, y: spawn.y };
