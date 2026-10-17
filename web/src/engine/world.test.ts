@@ -789,6 +789,21 @@ describe("Trump's jet", () => {
     expect(w.jets).toHaveLength(0);
   });
 
+  it('the empty or dry jet comes down at 40 u/s; only the called-in one is fast (spec)', () => {
+    const empty = withJet();
+    let prev = play(empty, {}, 1);
+    prev = play(empty, { up: true }, 90, prev); // at the map's top, well above the last 48 px
+    prev = play(empty, { gesture: true }, 1, prev);
+    play(empty, {}, 1, prev);
+    expect(empty.jets[0].yI).toBe(-40);
+    const dry = withJet();
+    prev = play(dry, {}, 1);
+    prev = play(dry, { up: true }, 90, prev);
+    dry.jets[0].fuel = 0;
+    play(dry, {}, 2, prev);
+    expect(dry.jets[0].yI).toBe(-40);
+  });
+
   it("put out beside a jet facing the map's edge, he lands inside the map, on the other side", () => {
     const w = createWorld(EMPTY, TEST_STATS, [PILOT], () => 0.5);
     w.jets.push(Object.assign(makeJet(900, -8 + 24 + 1, 24, -1), { state: 'landed' as const, onGround: true }));

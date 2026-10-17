@@ -18,6 +18,7 @@ export type JetState = 'descending' | 'landed' | 'flying' | 'leaving';
 export interface Jet extends Vehicle {
   kind: 'jet';
   state: JetState;
+  fast: boolean; // still coming in from the call: fast until it first lands (every later descent is slow)
   fuel: number;
   drive: JetDrive;
   rocketCooldown: number;
@@ -28,7 +29,7 @@ export interface Jet extends Vehicle {
 export function makeJet(id: number, x: number, y: number, facing: 1 | -1): Jet {
   return {
     kind: 'jet', id, x, y, xI: 0, yI: 0, facing, onGround: false, driven: false, damage: 0, countdown: -1,
-    countdownCounter: 0, exploded: false, state: 'descending', fuel: JET_FUEL, drive: NO_FLY, rocketCooldown: 0,
+    countdownCounter: 0, exploded: false, state: 'descending', fast: true, fuel: JET_FUEL, drive: NO_FLY, rocketCooldown: 0,
     bombCooldown: 0, animTime: 0,
   };
 }
@@ -74,10 +75,11 @@ export function stepJetBody(j: Jet, drive: JetDrive, map: TileMap, t: number, sc
     if (j.y > screenMaxY + 64) j.exploded = true;
     return;
   }
+  if (j.state !== 'descending') j.fast = false;
   if (j.state === 'flying' && !j.driven) j.state = 'descending';
   if (j.state === 'descending') {
     const ground = groundBelow(map, j.x, j.y);
-    const speed = j.y - ground > JET_DESCENT.slowZone ? JET_FAST_DESCENT : JET_DESCENT.slow;
+    const speed = j.fast && j.y - ground > JET_DESCENT.slowZone ? JET_FAST_DESCENT : JET_DESCENT.slow;
     j.xI = 0;
     j.yI = -speed;
     j.y -= speed * t;
@@ -87,6 +89,7 @@ export function stepJetBody(j: Jet, drive: JetDrive, map: TileMap, t: number, sc
       j.yI = 0;
       j.onGround = true;
       j.state = 'landed';
+      j.fast = false;
     }
     return;
   }
