@@ -1,5 +1,5 @@
 import { makeAiState } from './ai';
-import { FIRE_START_LIMIT, GIB_THRESHOLD, GUN_FRAME_RATE, UNIT_BOX_HEIGHT, UNIT_WIDTH } from './constants';
+import { FIRE_START_LIMIT, GIB_THRESHOLD, GUN_FRAME_RATE, SHIELD, UNIT_BOX_HEIGHT, UNIT_WIDTH } from './constants';
 import type { Team, Unit, UnitKind, UnitStats } from './types';
 
 export function makeUnit(id: number, kind: UnitKind, team: Team, x: number, y: number, stats: UnitStats): Unit {
@@ -15,6 +15,7 @@ export function makeUnit(id: number, kind: UnitKind, team: Team, x: number, y: n
     dead: false, deadTime: 0, gibbed: false, reported: { death: false, gib: false }, animTime: 0,
     ai: team === 'enemy' ? makeAiState(id) : null,
     boss: null,
+    shield: kind === 'mook_shield' ? SHIELD.points : 0,
   };
 }
 

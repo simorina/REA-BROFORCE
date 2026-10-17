@@ -112,6 +112,9 @@ export const SHELL_BLAST = { force: 350, extraY: 300 }; // HeavyShell.MakeEffect
 export const TANK_ROCKET_CRUSH = { damage: 15, range: 16, ox: 9 }; // RocketMassive.Bounce: DamageGround(15, Crush, 16, X + dir*9, Y)
 export const RIFLE = { ox: 14, oy: 8.5, speed: 420, jitter: 10, burst: 2, burstGap: 0.07 }; // BroniversalSoldier.UseFire / Update / FireWeapon
 export const GUN_FRAME_RATE = 0.0334; // TestVanDammeAnim.RunGun
+export const SHIELD = { points: 36, knock: 15 }; // MookRiotShield.Damage: past 35 of shieldDamage it goes; a stopped shot knocks him (xI * 0.05, 15)
+export const GRENADIER = { ox: 8, oy: 24, x: 130, y: 130 }; // MookGrenadier.AnimateThrowingHeldObject: from (X + dir*8, Y + 24) at (dir*130, 130), times the distance
+export const DOG = { bite: 3, range: 6 }; // MookDog.RunFiring: Map.HitLivingUnits(3, Melee, 6, X, Y + 4)
 export const JET_ROCKET = { ox: [32, 8], oy: -5, x: 450, y: -285, jitter: 12 }; // HarrierJet.Update: two shots from (X+32, Y-5), (X+8, Y-5) at (450, -285) + insideUnitCircle * 12
 export const JET_DESCENT = { slow: 40, slowZone: 48 }; // HarrierJet.Start: yI -40 over its last 48 px
 export const TANK_COUNTDOWN = { first: 0.4667, step: 0.2667, speedup: 4 }; // MookArmouredGuy.Update: deathCountdownCounter
@@ -124,6 +127,11 @@ export const JUDO_ROW = 7; // ... lowerLeftPixel y = 32 * (8 + attackSpriteRow):
 // Design values (not in the original game). Tuned in playtesting; listed in docs/findings.md.
 export const TANK_DRIVER_SHIELD = 0.1; // the hidden driver can't be hit (renewed every step he is inside)
 export const TANK_EJECT_INVULNERABLE = 0.5; // the driver thrown clear by the gib outlives its blast
+export const GRENADIER_THROW_DELAY = 1.5; // a grenade, then a breath
+export const GRENADIER_REACH = 160; // full throwing speed reaches the bro this far off (0.5x to 1.5x of it)
+export const GRENADE_FUSE = 2.5; // the long fuse
+export const GRENADE_EXTRA_Y = 200; // its blast's upward kick
+export const DOG_BITE_COOLDOWN = 0.5;
 export const JET_BOX = { halfWidth: 24, height: 34 }; // the Harrier's landing gear and fuselage (it stands on its wheels)
 export const JET_FAST_DESCENT = 160; // the jet's way down before its last 48 px
 export const JET_ENTRY = 32; // it appears this far above the screen top

@@ -26,6 +26,7 @@ export interface AiContext {
   path?: PathCaps; // the unit's PathAgent
   doors?: readonly DoorPoint[]; // Map.mookInterestPoints: the mook doors, for scouts
   runSpeed?: number; // ScoutMook.runSpeed
+  dogRunSpeed?: number; // MookDog.awareRunSpeed
 }
 
 /** A ScoutMookInterestPoint: a mook door's cell and position. */
@@ -78,6 +79,7 @@ export function makeAiState(id: number): AiState {
     bubble: null, bubbleTime: 0, attractC: 0, attractR: 0, wasJump: false, agent: makeAgent(), repathCount: 0, speed: null,
     startC: null, startR: 0, interest: null, runDir: 0, alertDelay: 0, rambro: 0, rambroLife: 0,
     litFuse: false, suicideDelay: SUICIDE_DELAY, suicideTimer: SUICIDE_TIMER, deathFuse: SUICIDE_DEATH_FUSE, exploded: false,
+    droppedGrenade: false,
   };
 }
 
@@ -540,8 +542,8 @@ function think(m: Unit, ai: AiState, ctx: AiContext): void {
   else if (ai.mental === 'panicking') {
     ai.queue.push(act('move', 0, getColumn(m.x) + ai.walkDir * randInt(ctx.rng, 2, 4), getRow(m.y))); // DoPanicThink
   }
-  else if (m.kind === 'mook_suicide') suicideThink(m, ai, ctx);
-  else if (m.kind === 'mook_bazooka') bazookaThink(m, ai, ctx);
+  else if (m.kind === 'mook_suicide' || m.kind === 'dog') suicideThink(m, ai, ctx); // DogAI: it runs at the bro too
+  else if (m.kind === 'mook_bazooka' || m.kind === 'mook_grenadier') bazookaThink(m, ai, ctx); // the grenadier's AI is MookBazookaAi
   else if (m.kind === 'mook_scout') baseAlertedThink(m, ai, ctx);
   else trooperThink(m, ai, ctx);
 }
@@ -550,7 +552,7 @@ const targetX = (ai: AiState, a: AiAction): number => a.c * TILE + ai.blockOffse
 
 function atGridPoint(m: Unit, ai: AiState, a: AiAction): boolean {
   const near = Math.abs(m.x - targetX(ai, a)) < UNIT_HALF_WIDTH;
-  return m.kind === 'mook_suicide' ? near : near && getRow(m.y) === a.r; // SuicideAI ignores the row
+  return m.kind === 'mook_suicide' || m.kind === 'dog' ? near : near && getRow(m.y) === a.r; // SuicideAI ignores the row
 }
 
 function remove(ai: AiState, a: AiAction): void {
@@ -730,6 +732,7 @@ export function thinkMook(m: Unit, ctx: AiContext, t: number): AiOutput {
   if (m.kind === 'mook_suicide' && front?.type === 'special2' && m.special2 < 0 && m.onGround) m.special2 = 0;
   const intent: MoveIntent = { dir, jumpPressed: !!jump && !ai.wasJump, jumpHeld: !!jump, dash: false, down: !!down };
   if (ai.speed !== null) intent.speed = ai.speed;
+  if (m.kind === 'dog' && ai.mental === 'alerted' && ctx.dogRunSpeed) intent.speed = ctx.dogRunSpeed; // MookDog.awareRunSpeed
   ai.wasJump = !!jump;
   if (m.kind !== 'mook_suicide') return { ...out, intent, fire };
 

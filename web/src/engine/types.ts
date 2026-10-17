@@ -1,12 +1,12 @@
 export type Team = 'player' | 'enemy';
 export type BlastTeam = Team | 'neutral';
 export type BlockKind = 'dirt' | 'sand' | 'brick' | 'temple' | 'steel' | 'barrel';
-export type EnemyKind = 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout';
+export type EnemyKind = 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout' | 'mook_shield' | 'mook_grenadier' | 'dog';
 export type UnitKind = 'bro' | EnemyKind | 'boss';
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
 export const BRO_BASES = ['bro_base', 'bro_lee', 'bro_soldier'] as const;
 export type BroBase = (typeof BRO_BASES)[number];
-export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket' | 'rifle' | 'jetBomb';
+export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket' | 'rifle' | 'jetBomb' | 'grenade';
 
 export interface Block {
   kind: BlockKind;
@@ -118,6 +118,8 @@ export interface GameStats {
   ai: Record<EnemyKind, AiStats>;
   paths: Record<EnemyKind, PathCaps>;
   scoutRunSpeed: number; // ScoutMook.runSpeed: a scout runs this fast once alerted
+  dogRunSpeed: number; // MookDog.awareRunSpeed
+  grenadeMook: { bounceM: number; frictionM: number; gravityM: number; damage: number; range: number; blastForce: number }; // "GrenadeEvilSmall Long fuse"
   door: DoorStats;
   bullet: BulletStats;
   rocketMook: RocketStats;
@@ -211,6 +213,7 @@ export interface AiState {
   suicideTimer: number;
   deathFuse: number;
   exploded: boolean;
+  droppedGrenade: boolean; // MookGrenadier.DropDeathGrenade, once
 }
 
 /** BroLee's forward strike in progress: Putin's judo throw. */
@@ -269,6 +272,7 @@ export interface Unit {
   animTime: number;
   ai: AiState | null;
   boss: BossState | null; // Jeffrey Epstein's mind, on the boss only
+  shield: number; // MookRiotShield: what his shield can still take (0: he has none)
 }
 
 export interface Projectile {

@@ -1,11 +1,11 @@
 import {
   AIRSTRIKE_FUSE, AIRSTRIKE_ROCKETS, AIRSTRIKE_SPEED_MIN, AIRSTRIKE_SPEED_RAND, AIRSTRIKE_THROW,
-  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, FOOTBALL, GRAVITY, HEAVY_SHELL_DIP, JET_BOMB, JET_ROCKET, JUDO_THROW, MOOK_BULLET_SPEED, RIFLE, TANK_CANNON, TANK_ROCKET_CRUSH, TANK_SHELL,
+  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, FOOTBALL, GRAVITY, GRENADE_EXTRA_Y, GRENADE_FUSE, GRENADIER, GRENADIER_REACH, HEAVY_SHELL_DIP, JET_BOMB, JET_ROCKET, JUDO_THROW, SHIELD, MOOK_BULLET_SPEED, RIFLE, TANK_CANNON, TANK_ROCKET_CRUSH, TANK_SHELL,
   TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT,
 } from './constants';
 import { barrelBlast, rocketBlast, shellBlast, suicideBlast, type Blast } from './explosions';
 import { TileMap, getColumn, getRow } from './map';
-import { damageUnit } from './units';
+import { damageUnit, knock } from './units';
 import type { BlockKind, EnemyKind, GameStats, Projectile, ProjectileKind, RocketStats, Team, Unit } from './types';
 import { vehicleAt, type Vehicle } from './vehicle';
 import { mechAt, type Mech } from './mech';
@@ -19,7 +19,8 @@ export type ProjectileEvent =
   | { type: 'callTank'; x: number; y: number; dir: 1 | -1 }
   | { type: 'callJet'; x: number; y: number }
   | { type: 'hitVehicle'; vehicle: Vehicle; damage: number }
-  | { type: 'hitMech'; damage: number };
+  | { type: 'hitMech'; damage: number }
+  | { type: 'shieldHit'; unit: Unit; x: number; y: number; broke: boolean };
 
 export interface ProjectileWorld {
   map: TileMap;
@@ -76,6 +77,18 @@ export function fireFrom(id: number, kind: ProjectileKind, team: Team, ox: numbe
 /** A rocket falling straight down from above the screen, the enemy's (the Goliath's RocketBombardment). */
 export function skyRocket(id: number, x: number, y: number, speed: number, stats: GameStats): Projectile {
   return make(id, 'bomb', 'enemy', x, y, 0, -speed, stats.bomb.life);
+}
+
+/** MookGrenadier.AnimateThrowingHeldObject: from (X + dir*8, Y + 24) at (dir*130, 130), faster for a bro further off. */
+export function throwGrenade(id: number, m: Unit, tx: number): Projectile {
+  const f = Math.min(1.5, Math.max(0.5, Math.abs(tx - m.x) / GRENADIER_REACH));
+  return make(id, 'grenade', m.team, m.x + m.facing * GRENADIER.ox, m.y + GRENADIER.oy, m.facing * GRENADIER.x * f,
+    GRENADIER.y * f, GRENADE_FUSE);
+}
+
+/** MookGrenadier.DropDeathGrenade: from (X, Y + 4) at (xI * 0.3, yI * 0.5) over its weight of 2, plus 110 up. */
+export function dropGrenade(id: number, m: Unit): Projectile {
+  return make(id, 'grenade', m.team, m.x, m.y + 4, m.xI * 0.15, m.yI * 0.25 + 110, GRENADE_FUSE);
 }
 
 export function kickFootball(id: number, u: Unit): Projectile {
@@ -183,8 +196,8 @@ function hitBlock(p: Projectile, w: ProjectileWorld, damage: number, events: Pro
   if (kind === 'barrel') events.push({ type: 'explode', blast: barrelBlast(c * TILE, r * TILE, w.stats.barrelRange) });
 }
 
-function bounce(p: Projectile, map: TileMap, t: number, bounceM: number, frictionM: number): void {
-  p.yI -= GRAVITY * t;
+function bounce(p: Projectile, map: TileMap, t: number, bounceM: number, frictionM: number, gravityM = 1): void {
+  p.yI -= GRAVITY * gravityM * t;
   if (map.blockAt(p.x + p.xI * t, p.y)) {
     p.xI = -p.xI * bounceM;
     p.bounces++;
@@ -243,7 +256,13 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
         break;
       }
       const target = unitAt(w.units, p.x, p.y, p.team);
-      if (target) {
+      if (target && target.shield > 0 && Math.sign(p.xI) === -target.facing) {
+        // MookRiotShield.Damage: a shot at his face stops on the shield, which gives way past 35
+        target.shield = Math.max(0, target.shield - damage);
+        knock(target, p.xI * 0.05, SHIELD.knock);
+        events.push({ type: 'shieldHit', unit: target, x: p.x, y: p.y, broke: target.shield === 0 });
+        p.dead = true;
+      } else if (target) {
         damageUnit(target, damage);
         events.push({ type: 'hit', unit: target, x: p.x, y: p.y, xI: p.xI, yI: p.yI });
         p.dead = true;
@@ -280,6 +299,17 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
       p.y += p.yI * t;
       if (w.map.blockAt(p.x, p.y) || struck(w, p) || p.life <= 0) {
         explodeAt(p, w.stats.bomb, true, events);
+      }
+      break;
+    }
+    case 'grenade': {
+      // the grenadier's long-fuse grenade: it bounces until its fuse burns down
+      const g = w.stats.grenadeMook;
+      bounce(p, w.map, t, g.bounceM, g.frictionM, g.gravityM);
+      if (p.life <= 0) {
+        p.dead = true;
+        const blast = { damage: g.damage, range: g.range, blastForce: g.blastForce, blastForceExtraY: GRENADE_EXTRA_Y, life: 0 };
+        events.push({ type: 'explode', blast: rocketBlast(p.x, p.y, blast, p.team, true, 'rocket') });
       }
       break;
     }

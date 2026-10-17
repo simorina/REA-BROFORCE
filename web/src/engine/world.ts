@@ -11,7 +11,7 @@ import {
   LIVES_START, PRISONER_RESCUE_DIST, RESCUE_INVULNERABLE, RESPAWN_DELAY, SPAWN_INVULNERABLE, SPECIAL2_TIME,
   SPEECH_DURATION, TILE, UNIT_BOX_HEIGHT, UNIT_WIDTH, BAZOOKA_RECOIL, DOOR_EXIT_INVULNERABLE, DOOR_FIRE_DAMAGE, SCOUT_WAVE_TIME,
   BOMB_FIRE_RANGE_M, SUICIDE_BURN_EXTRA, ALLURE_RANGE, FLEX_EVENT_FRAMES, FLEX_FRAME_RATE, FLEX_FRAMES, FLEX_HOLD,
-  FLEX_RESTART_FRAME, FLEX_SLOW_FRAMES, FLEX_SLOW_RATE, TANK_EXIT_YI, MECH,
+  FLEX_RESTART_FRAME, FLEX_SLOW_FRAMES, FLEX_SLOW_RATE, TANK_EXIT_YI, MECH, DOG, DOG_BITE_COOLDOWN, GRENADIER_THROW_DELAY,
 } from './constants';
 import { alarmDoor, collapseDoor, doorLostSupport, makeDoor, stepDoor, type DoorSpawn, type MookDoor } from './doors';
 import { applyBlast, barrelBlast, suicideBlast, type Blast } from './explosions';
@@ -19,14 +19,14 @@ import { parseLevel, type LevelData } from './level';
 import { makeBlock, type TileMap } from './map';
 import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
-  fireBazookaRocket, fireMookBullet, spawnAirstrike, stepProjectile,
+  dropGrenade, fireBazookaRocket, fireMookBullet, spawnAirstrike, stepProjectile, throwGrenade,
 } from './projectiles';
 import {
   allVehicles, boardVehicles, callJet, callTank, carryDriver, driveVehicle, exitVehicle, hitVehicle, stepJets, stepTanks,
 } from './driving';
 import { stepJudo } from './judo';
 import { SPECIAL_KITS, WEAPON_KITS } from './kits';
-import { damageUnit, makeUnit, runFiring, runGun } from './units';
+import { damageUnit, inHitBox, makeUnit, runFiring, runGun } from './units';
 import { bossDown, levelBossAlive, makeBoss, stepBoss } from './boss';
 import { damageMech, makeMech, mechInBlast, stepMech, type Mech } from './mech';
 import type { Jet } from './jet';
@@ -100,6 +100,9 @@ export type GameEvent =
   | { type: 'bossCall'; x: number; y: number } // Epstein waves his guards in
   | { type: 'bossDown'; x: number; y: number }
   | { type: 'bossFled'; x: number; y: number } // into the smoke, to his Goliath
+  | { type: 'shieldHit'; x: number; y: number } // a shot stopped by a riot shield
+  | { type: 'shieldOff'; x: number; y: number; xI: number } // and the shield knocked away
+  | { type: 'bite'; x: number; y: number }
   | { type: 'exitJet'; x: number; y: number }
   | { type: 'gunSwitch'; x: number; y: number };
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
@@ -401,6 +404,10 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
     if (m.dead) {
       m.deadTime += t;
       if (m.kind === 'boss' && !m.gibbed) bossDown(w, m, blasts);
+      if (m.kind === 'mook_grenadier' && m.ai && !m.ai.droppedGrenade) { // MookGrenadier.DropDeathGrenade
+        m.ai.droppedGrenade = true;
+        w.projectiles.push(dropGrenade(w.nextId++, m));
+      }
       // MookSuicide.Update: a killed suicide mook goes off 0.7 s later, whatever killed it
       if (m.kind === 'mook_suicide' && ai && !ai.exploded && (ai.deathFuse -= t) <= 0) explodeSuicide(w, m, blasts);
       if (!m.gibbed) stepUnit(m, NO_INTENT, w.map, t, w.time);
@@ -418,7 +425,7 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
     const out = thinkMook(m, {
       map: w.map, player, rng: w.rng, stats: w.stats.ai[kind], visible: isVisible(w.camera, m.x, m.y, 128, 128),
       onScreen: (x, y, bx, by) => isVisible(w.camera, x, y, bx, by), inGrass: (x, y, range) => inGrass(w, x, y, range),
-      path: w.stats.paths[kind], doors: w.doorPoints, runSpeed: w.stats.scoutRunSpeed,
+      path: w.stats.paths[kind], doors: w.doorPoints, runSpeed: w.stats.scoutRunSpeed, dogRunSpeed: w.stats.dogRunSpeed,
     }, t);
     if (m.special2 >= 0 && ((m.special2 += t) > SPECIAL2_TIME || out.intent.dir !== 0 || !m.onGround)) m.special2 = -1;
     if ((ai?.bubble === '!' && bubble !== '!') || (ai && ai.rambro > rambro)) w.events.push({ type: 'alert', x: m.x, y: m.y });
@@ -430,6 +437,8 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
     if (m.waveTime > 0) m.waveTime -= t; // ScoutMook.Update
     if (m.kind === 'mook_suicide') {
       if (out.explode) explodeSuicide(w, m, blasts);
+    } else if (m.kind === 'dog') {
+      dogBite(w, m, t);
     } else if (runFiring(m, out.fire, t)) {
       useFire(w, m);
     }
@@ -552,8 +561,29 @@ function burnAround(w: World, source: Unit | null, x: number, y: number, range: 
   }
 }
 
+/** MookDog.RunFiring: alerted, it bites a bro in reach (a breath between bites). */
+function dogBite(w: World, m: Unit, t: number): void {
+  if (m.fireDelay > 0) {
+    m.fireDelay -= t;
+    return;
+  }
+  const p = w.player;
+  if (m.ai?.mental !== 'alerted' || p.dead || !inHitBox(p, m.x + m.facing * 4, m.y + 4, DOG.range)) return;
+  damageUnit(p, DOG.bite);
+  m.fireDelay = DOG_BITE_COOLDOWN;
+  w.events.push({ type: 'bite', x: m.x, y: m.y });
+}
+
 /** Mook.UseFire and MookBazooka.UseFire: they only shoot while on screen. */
 function useFire(w: World, m: Unit): void {
+  if (m.kind === 'mook_shield') return; // MookRiotShield.FireWeapon: nothing
+  if (m.kind === 'mook_grenadier') {
+    if (!isVisible(w.camera, m.x, m.y)) return;
+    w.projectiles.push(throwGrenade(w.nextId++, m, w.player.x));
+    m.fireDelay = GRENADIER_THROW_DELAY;
+    w.events.push({ type: 'shot', weapon: 'grenade', x: m.x, y: m.y, facing: m.facing });
+    return;
+  }
   if (m.kind === 'mook_scout') {
     if (!isVisible(w.camera, m.x, m.y)) return;
     m.waveTime = SCOUT_WAVE_TIME; // ScoutMook.FireWeapon
@@ -600,7 +630,10 @@ function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
       else if (ev.type === 'hit') w.events.push({ type: 'hit', x: ev.unit.x, y: ev.unit.y, hitY: ev.y, xI: ev.xI, yI: ev.yI });
       else if (ev.type === 'gib') w.events.push({ type: 'gib', x: ev.x, y: ev.y, team: 'enemy', kind: ev.kind, xI: ev.xI, yI: ev.yI });
       else if (ev.type === 'hitVehicle') hitVehicle(w, ev.vehicle, ev.damage, blasts);
-      else if (ev.type === 'hitMech') {
+      else if (ev.type === 'shieldHit') {
+        w.events.push({ type: 'shieldHit', x: ev.x, y: ev.y });
+        if (ev.broke) w.events.push({ type: 'shieldOff', x: ev.unit.x, y: ev.unit.y, xI: ev.unit.xI });
+      } else if (ev.type === 'hitMech') {
         if (w.mech) damageMech(w, w.mech, ev.damage);
       }
       else if (ev.type === 'callTank') {
@@ -633,6 +666,12 @@ function resolveBlasts(w: World, blasts: Blast[]): void {
   for (let i = 0; i < blasts.length; i++) {
     const b = blasts[i];
     const res = applyBlast(w.map, units, b);
+    for (const m of w.enemies) { // MookRiotShield.Damage: an explosion knocks the shield away
+      if (m.shield > 0 && inArea(m, b.x, b.y, b.unitRange, b.unitRange)) {
+        m.shield = 0;
+        w.events.push({ type: 'shieldOff', x: m.x, y: m.y, xI: m.x < b.x ? -100 : 100 });
+      }
+    }
     if (b.big) w.effects.push({ kind: 'shake', x: b.x, y: b.y, age: 0, duration: EXPLOSION_DURATION });
     w.events.push({ type: 'explosion', x: b.x, y: b.y, big: b.big, source: b.source, range: b.groundRange });
     if (b.source === 'bomb') bombFire(w, b.x, b.y, b.groundRange * BOMB_FIRE_RANGE_M);
