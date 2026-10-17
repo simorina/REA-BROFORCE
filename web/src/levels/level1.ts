@@ -1,9 +1,13 @@
 import type { Cell, LevelData, ParallaxDoodad } from '../engine/level';
 
-const COLS = 120;
-const ROWS = 18;
+const COLS = 300;
+const ROWS = 22;
 
-/** Level 1, built with helpers so the rows stay aligned. Here rows count from the bottom (0 = bedrock). */
+/**
+ * Level 1, Epstein's island, built with helpers so the rows stay aligned. Rows count from the bottom (0 = bedrock).
+ * From the beach the bro climbs through the jungle, a cave, a ravine of bottomless gaps, a guarded compound and the
+ * road up to the temple, where Jeffrey Epstein waits; the flag in the temple's hall opens once he is down.
+ */
 export function buildLevel1(): LevelData {
   const grid = Array.from({ length: ROWS }, () => Array<string>(COLS).fill('.'));
   const put = (c: number, r: number, ch: string) => {
@@ -12,72 +16,144 @@ export function buildLevel1(): LevelData {
   const fill = (c0: number, c1: number, r0: number, r1: number, ch: string) => {
     for (let c = c0; c <= c1; c++) for (let r = r0; r <= r1; r++) put(c, r, ch);
   };
+  /** Steel bedrock under columns c0..c1, then `ch` up to row `top` (the ground's surface). */
+  const ground = (c0: number, c1: number, top: number, ch = 'd') => {
+    fill(c0, c1, 0, 0, 's');
+    fill(c0, c1, 1, top, ch);
+  };
 
-  // Ground: steel bedrock, three rows of dirt, a pit at columns 37-40.
-  fill(0, COLS - 1, 0, 0, 's');
-  fill(0, COLS - 1, 1, 3, 'd');
-  fill(37, 40, 1, 3, '.');
-  // Start.
+  // The beach (0-39): sand. A dune with a prisoner, and a scout who runs for the mook door.
+  ground(0, 39, 3, 'a');
   put(3, 4, 'P');
-  // Bunker: brick walls, a dirt roof, two mooks inside, a prisoner on the roof.
-  fill(14, 14, 4, 7, 'b');
-  fill(25, 25, 4, 7, 'b');
-  fill(14, 25, 8, 8, 'd');
-  put(18, 4, 'm');
-  put(22, 4, 'm');
-  put(20, 9, 'c');
-  // Barrels next to a mook.
-  put(28, 4, 'x');
-  put(29, 4, 'x');
-  put(33, 4, 'm');
-  // Checkpoints (CheckPoint flagpoles): before the pit, after the hill and after the tunnel.
-  put(35, 4, 'C');
-  put(56, 4, 'C');
-  put(82, 4, 'C');
-  // A suicide mook past the pit; a hill with a steel core and a bazooka mook on top.
-  put(42, 4, 'k');
-  fill(44, 54, 4, 5, 'd');
-  fill(46, 52, 6, 7, 'd');
-  fill(48, 50, 4, 6, 's');
-  put(49, 8, 'z');
-  // Tunnel: a dirt mass with a two-tile corridor holding a barrel, mooks and a prisoner.
-  fill(58, 79, 4, 9, 'd');
-  fill(58, 79, 4, 5, '.');
-  put(63, 4, 'x');
-  put(66, 4, 'm');
-  put(69, 4, 'c');
-  put(72, 4, 'm');
-  put(76, 4, 'k');
-  // Open field with a brick tower.
-  put(86, 4, 'm');
-  put(90, 4, 'm');
-  fill(92, 93, 4, 8, 'b');
-  put(92, 9, 'm');
-  put(97, 4, 'z');
-  // A scout past the tower, who runs for the mook door between the last prisoner and the flag.
-  put(99, 4, 'o');
-  // End: the last prisoner, the door, the flag and a steel wall.
-  put(104, 4, 'c');
-  put(108, 4, 'D');
-  put(114, 4, 'F');
-  fill(119, 119, 4, ROWS - 1, 's');
+  put(12, 4, 'm');
+  put(17, 4, 'm');
+  fill(22, 28, 4, 4, 'a');
+  fill(24, 26, 5, 5, 'a');
+  put(25, 6, 'c');
+  put(31, 4, 'o');
+  put(34, 4, 'k');
+  put(37, 4, 'D');
 
-  // Long grass: the open-field mooks wait hidden in it (PolymorphicAI.HideInGrass), more tufts for cover.
-  const grass: Cell[] = [86, 90, 8, 9, 30, 84, 85, 99, 100].map((c) => ({ c, r: 4 }));
+  // The jungle's edge (40-74): terraces up from the beach, mooks waiting in the long grass, a watchtower.
+  ground(40, 47, 3);
+  put(42, 4, 'C');
+  ground(48, 57, 5);
+  put(50, 6, 'm');
+  put(54, 6, 'm');
+  ground(58, 74, 7);
+  put(59, 8, 'x');
+  put(60, 8, 'x');
+  fill(62, 62, 8, 12, 'b');
+  fill(66, 66, 8, 12, 'b');
+  fill(61, 67, 13, 13, 'b');
+  put(64, 8, 'm');
+  put(62, 14, 'c');
+  put(64, 14, 'z');
+  put(70, 8, 'k');
+  put(72, 8, 'm');
+
+  // The hill (75-112): a cave runs under it, full of mooks; a bazooka and suicide mooks keep the path over it.
+  ground(75, 112, 7);
+  fill(78, 108, 8, 14, 'd');
+  fill(78, 108, 8, 9, '.');
+  fill(90, 91, 10, 14, 's');
+  put(82, 8, 'm');
+  put(85, 8, 'x');
+  put(88, 8, 'm');
+  put(94, 8, 'c');
+  put(98, 8, 'm');
+  put(102, 8, 'k');
+  put(105, 8, 'm');
+  put(84, 15, 'z');
+  put(96, 15, 'm');
+  put(100, 15, 'k');
+  put(110, 8, 'C');
+
+  // The ravine (113-150): bottomless gaps between ledges held by mooks.
+  ground(113, 117, 7);
+  ground(120, 127, 7);
+  put(124, 8, 'm');
+  ground(130, 137, 7);
+  put(133, 8, 'z');
+  put(135, 8, 'c');
+  ground(140, 150, 7);
+  put(143, 8, 'm');
+  put(146, 8, 'k');
+  put(149, 8, 'C');
+
+  // The compound (151-200): a scout and a door, a two-floor guardhouse with a prisoner on its roof, barrels.
+  ground(151, 200, 7);
+  put(153, 8, 'o');
+  put(159, 8, 'D');
+  fill(163, 163, 8, 15, 'b');
+  fill(177, 177, 8, 15, 'b');
+  fill(163, 177, 11, 11, 'b');
+  fill(163, 177, 16, 16, 'b');
+  fill(163, 163, 8, 9, '.'); // the way in
+  fill(177, 177, 12, 13, '.'); // the upper floor's window
+  put(167, 8, 'm');
+  put(172, 8, 'm');
+  put(175, 8, 'x');
+  put(168, 12, 'm');
+  put(171, 12, 'z');
+  put(170, 17, 'c');
+  put(182, 8, 'm');
+  put(185, 8, 'x');
+  put(186, 8, 'x');
+  put(188, 8, 'm');
+  put(193, 8, 'k');
+  put(196, 8, 'm');
+  put(199, 8, 'C');
+
+  // The road up to the temple (201-245): terraces, long grass, a last scout and door.
+  ground(201, 212, 7);
+  put(205, 8, 'm');
+  put(209, 8, 'z');
+  ground(213, 222, 9);
+  put(216, 10, 'm');
+  put(219, 10, 'k');
+  put(221, 10, 'c');
+  ground(223, 245, 11);
+  put(226, 12, 'o');
+  put(229, 12, 'm');
+  put(234, 12, 'D');
+  put(238, 12, 'm');
+  put(241, 12, 'k');
+  put(244, 12, 'C');
+
+  // The hilltop (246-299): an open arena before the temple, white and blue with its dome; the flag in its hall.
+  ground(246, 299, 11);
+  put(266, 12, 'E');
+  fill(280, 296, 12, 18, 't');
+  fill(281, 295, 12, 15, '.');
+  fill(280, 280, 12, 14, '.'); // its doorway
+  fill(284, 292, 19, 19, 't');
+  fill(286, 290, 20, 20, 't');
+  put(288, 21, 't');
+  put(290, 12, 'F');
+  fill(299, 299, 12, ROWS - 1, 's');
+
+  // Long grass: mooks wait hidden in it (PolymorphicAI.HideInGrass), more tufts for cover.
+  const grass: Cell[] = [
+    ...[49, 50, 51, 53, 54, 55].map((c) => ({ c, r: 6 })),
+    ...[203, 204, 205, 206].map((c) => ({ c, r: 8 })),
+    ...[214, 215, 216, 217].map((c) => ({ c, r: 10 })),
+  ];
 
   // FlexPowerMapType.SpawnWithAllure: flexing (F) draws the mooks over to have a look
-  return { cols: COLS, rows: ROWS, tiles: grid.map((row) => row.join('')), parallax: hills(), grass, flexPower: 'allure' };
+  return { cols: COLS, rows: ROWS, tiles: grid.map((row) => row.join('')), parallax: jungle(), grass, flexPower: 'allure' };
 }
 
 /**
- * The Desert theme's background hills, spread along the level as a level designer places Parallax1/2/3
- * doodads. Spacing and heights are ours; each layer's art and parallax factor come from the ThemeHolder.
+ * The Jungle theme's background hills, spread along the island as a level designer places Parallax1/2/3 doodads.
+ * Spacing and heights are ours; each layer's art (near 3, mid 2, distant 3 variants) and parallax come from the
+ * ThemeHolder.
  */
-export function hills(): ParallaxDoodad[] {
+export function jungle(): ParallaxDoodad[] {
   const layers = [
-    { layer: 'distant', from: -800, to: 2700, step: 650, y: 148, variants: 3 },
-    { layer: 'mid', from: -480, to: 2400, step: 470, y: 47, variants: 3 },
-    { layer: 'near', from: -390, to: 2300, step: 430, y: 31, variants: 5 },
+    { layer: 'distant', from: -800, to: 5600, step: 300, y: 148, variants: 3 },
+    { layer: 'mid', from: -480, to: 5400, step: 420, y: 47, variants: 2 },
+    { layer: 'near', from: -390, to: 5300, step: 260, y: 31, variants: 3 },
   ] as const;
   const out: ParallaxDoodad[] = [];
   for (const l of layers) {
