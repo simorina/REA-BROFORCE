@@ -9,7 +9,7 @@ import { parseLevel, type LevelData } from './level';
 import { TEST_STATS } from './testStats';
 import { NO_CONTROLS, type Controls } from './types';
 import { damageUnit } from './units';
-import { createWorld, stepWorld, type World } from './world';
+import { createWorld, speaker, stepWorld, type World } from './world';
 
 const PILOT: BroDef = { ...BROLUSCONI, id: 'pilot' };
 const COLS = 40;
@@ -132,6 +132,13 @@ describe('Jeffrey Epstein, the boss', () => {
     const w = awake();
     play(w, {}, steps(0.9));
     expect(w.boss!.gunFrame).toBeGreaterThan(0);
+  });
+
+  it("his line hangs over his head, not the bro's", () => {
+    const w = awake();
+    const line = w.effects.find((e) => e.kind === 'speech' && e.text === BOSS.line)!;
+    expect(speaker(w, line)).toBe(w.boss);
+    expect(speaker(w, { kind: 'speech', x: 0, y: 0, age: 0, duration: 1, text: 'Ciao!' })).toBe(w.player);
   });
 
   it("can't be grabbed by Putin's judo", () => {

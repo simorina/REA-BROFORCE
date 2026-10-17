@@ -7,7 +7,7 @@ import { getColumn, getRow } from '../engine/map';
 import type { Jet } from '../engine/jet';
 import type { Tank } from '../engine/tank';
 import type { BlockKind, Projectile, Unit, UnitKind } from '../engine/types';
-import type { Effect, GameEvent, World } from '../engine/world';
+import { speaker, type Effect, type GameEvent, type World } from '../engine/world';
 import { blockFrame, jetFrameCentreY, loopFrame, prisonerFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
 import type { Assets, SheetKey } from './assets';
 import { Effects } from './fx/controller';
@@ -479,7 +479,8 @@ export class Renderer {
   }
 
   private drawEffect(e: Effect, w: World): void {
-    if (e.kind === 'speech') this.drawSpeech(e.text ?? '', w.player.x, w.player.y + 36);
+    const who = e.kind === 'speech' ? speaker(w, e) : null;
+    if (who) this.drawSpeech(e.text ?? '', who.x, who.y + 36);
   }
 
   private drawSpeech(text: string, x: number, y: number): void {

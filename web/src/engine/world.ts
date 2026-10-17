@@ -41,6 +41,12 @@ export interface Effect {
   age: number;
   duration: number;
   text?: string;
+  unit?: number; // the speaker a speech bubble hangs over (the bro's own lines name none)
+}
+
+/** Who a speech bubble hangs over: the unit it names, or the bro. */
+export function speaker(w: World, e: Effect): Unit | null {
+  return e.unit === undefined ? w.player : w.enemies.find((m) => m.id === e.unit) ?? null;
 }
 
 export interface Prisoner {

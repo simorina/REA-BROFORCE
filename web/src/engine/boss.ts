@@ -84,7 +84,7 @@ function wake(w: World, m: Unit, s: BossState): void {
   s.burstClock = BOSS.burstEvery[0] - BOSS.firstBurst;
   s.callClock = 0;
   m.facing = w.player.x < m.x ? -1 : 1;
-  w.effects.push({ kind: 'speech', x: m.x, y: m.y + 40, age: 0, duration: SPEECH_DURATION, text: BOSS.line });
+  w.effects.push({ kind: 'speech', x: m.x, y: m.y + 40, age: 0, duration: SPEECH_DURATION, text: BOSS.line, unit: m.id });
   w.events.push({ type: 'voice', text: BOSS.line, lang: 'en-US' });
 }
 
