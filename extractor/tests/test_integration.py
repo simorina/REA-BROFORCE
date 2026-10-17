@@ -57,6 +57,11 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     # the Goliath's walk cycle, one row of 128 x 70 frames cut out of its 1024 x 128 texture
     assert (sheets["goliath"]["frameW"], sheets["goliath"]["frameH"], sheets["goliath"]["rows"]) == (128, 70, 1)
     assert Image.open(tmp_path / "sprites" / "goliath.png").size == (1024, 70) and values["mech"]["health"] == 300
+    # the new enemies: Broforce's riot shield mook (its shield a texture of its own), grenadier and dog
+    assert values["mook_grenadier"]["health"] == 15 and values["dog"]["awareRunSpeed"] == 140.0
+    assert values["ai_dog"]["sightDelay"] == pytest.approx(0.22) and values["ai_mook_shield"]["delayBetweenFiring"] == pytest.approx(1.25)
+    assert values["grenade_mook"]["damage"] == 10 and values["grenade_mook"]["range"] == 42.0
+    assert sheets["dog"]["frameW"] == 32 and sheets["shield"]["frameW"] == 32 and sheets["grenade"]["frameW"] == 16
     assert values["block_sand"]["health"] > 0 and values["block_dirt"]["health"] > 0
 
 
@@ -67,6 +72,10 @@ def test_extracts_the_jungle_background_and_the_effects(tmp_path):
     assert bg["sky"]["parallax"] == [1.0, 1.0]
     assert bg["theme"] == "Themeholder Jungle" and round(bg["near"][0]["parallax"][0], 2) == 0.3
     assert [len(bg[k]) for k in ("near", "mid", "distant")] == [3, 2, 3]
+    for name, theme, folder in (("desert", "Themeholder Desert", "sprites/bg/desert/"), ("burning", "Themeholder Jungle Burning", "sprites/bg/burning/")):
+        other = json.loads((tmp_path / f"background_{name}.json").read_text(encoding="utf-8"))
+        assert other["theme"] == theme and other["sky"]["file"].startswith(folder)
+        assert all((tmp_path / l["file"]).is_file() for k in ("near", "mid", "distant") for l in other[k])
     assert (tmp_path / bg["distant"][0]["file"]).is_file()
     fx = json.loads((tmp_path / "effects.json").read_text(encoding="utf-8"))
     blood = fx["emitters"]["bloodBig"]

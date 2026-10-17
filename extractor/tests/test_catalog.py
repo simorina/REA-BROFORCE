@@ -2,11 +2,12 @@ from extractor.catalog import AI_FIELDS, MOOK_FIELDS, SPRITES, TEXTURES, UNIT_FI
 
 SPRITE_KEYS = ("bro_base", "bro_lee", "tank_hull", "tank_turret", "tank_shell", "tank_rocket", "mook", "mook_suicide", "mook_bazooka", "prisoner", "cage", "helicopter",
                "bullet", "rocket", "bomb", "marker", "block_dirt", "block_brick", "block_steel",
-               "block_barrel", "flagpole", "flag", "mook_scout", "jet_harrier", "rifle_gun", "block_sand", "goliath")
+               "block_barrel", "flagpole", "flag", "mook_scout", "jet_harrier", "rifle_gun", "block_sand", "goliath", "mook_shield", "mook_grenadier", "dog", "grenade", "shield")
 VALUE_KEYS = ("bro_base", "bro_lee", "tank", "tank_turret", "tank_shell", "tank_rocket", "mook", "mook_suicide", "mook_bazooka", "bullet", "rocket_mook", "bomb",
               "marker", "suicide_blast", "block_dirt", "block_brick", "block_steel", "block_barrel",
               "ai_mook", "ai_mook_suicide", "ai_mook_bazooka", "grass", "mook_scout", "ai_mook_scout", "path_mook",
-              "path_mook_scout", "path_mook_suicide", "path_mook_bazooka", "mook_door", "bro_soldier", "rifle_bullet", "block_sand", "mech")
+              "path_mook_scout", "path_mook_suicide", "path_mook_bazooka", "mook_door", "bro_soldier", "rifle_bullet", "block_sand", "mech", "mook_shield", "mook_grenadier", "dog", "ai_mook_shield",
+              "ai_mook_grenadier", "ai_dog", "path_mook_grenadier", "path_dog", "grenade_mook")
 
 
 def test_output_keys_are_unique():

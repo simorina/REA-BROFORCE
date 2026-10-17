@@ -1,6 +1,6 @@
 """Background, effects and doodads, read from Broforce's theme and scene bundles (read only).
 
-- background.json: the Jungle ThemeHolder's sky, BlueSky clouds and parallax hills, each with its
+- background.json (and background_desert.json, background_burning.json): a ThemeHolder's sky, BlueSky clouds and parallax hills, each with its
   ParallaxFollow factors and SpriteSM size/offset (Map.SetupLevel / Map.PlaceDoodad instantiate them).
 - effects.json: legacy particle emitters (EllipsoidParticleEmitter + ParticleRenderer + the custom
   ParticleCollisionAnimator), Puff sprite animations, the theme's particle colours, the blood colours,
@@ -24,7 +24,10 @@ from .unity import AssetNotFound
 BUNDLES = ("networkobjects.assetbundle", "sharedtextures.assetbundle", "sharedassets.assetbundle",
            "themeholders.assetbundle", "scenesmain.assetbundle")
 
-THEME = "Themeholder Jungle"  # the level is a tropical island
+THEME = "Themeholder Jungle"  # the island
+# file -> (ThemeHolder, sprite folder): each mission's background, the island's in background.json
+BACKGROUNDS = {"background.json": (THEME, "bg"), "background_desert.json": ("Themeholder Desert", "bg/desert"),
+               "background_burning.json": ("Themeholder Jungle Burning", "bg/burning")}
 EFFECTS_CONTROLLER = ("EffectsController", "EffectsContoller")  # sic
 EFFECTS_THEME = ("EffectsHolderTheme", "EffectsHollderThemeVietnam")  # sic
 
@@ -216,14 +219,14 @@ class Scene:
         return obj.read().m_GameObject.read()
 
 
-def _background(scene: Scene) -> dict:
-    theme = scene.find("ThemeHolder", THEME)
+def _background(scene: Scene, theme_name: str = THEME, folder: str = "bg") -> dict:
+    theme = scene.find("ThemeHolder", theme_name)
     tt = theme.read_typetree()
 
     def layer(obj) -> dict:
         go = scene.go_of(obj)
         pf = obj.read_typetree()
-        info = scene.sprite(go, "bg", crop=True)
+        info = scene.sprite(go, folder, crop=True)
         info.update({"name": go.m_Name, "parallax": [_num(pf["parallaxXM"]), _num(pf["parallaxYM"])]})
         return info
 
@@ -232,7 +235,7 @@ def _background(scene: Scene) -> dict:
         return [layer(p.deref()) for p in objs if p.m_PathID]
 
     scatter = ("None", "Stormy", "BlueSky")[tt["cloudScatterType"]]
-    return {"theme": THEME, "cloudScatter": scatter, "sky": layer(scene.field(theme, "sky")),
+    return {"theme": theme_name, "cloudScatter": scatter, "sky": layer(scene.field(theme, "sky")),
             "clouds": layers("parallaxClouds"), "near": layers("parallax1"), "mid": layers("parallax2"),
             "distant": layers("parallax3")}
 
@@ -474,7 +477,8 @@ def extract(streaming_assets: str, out) -> None:
     fx = scene.find(*EFFECTS_CONTROLLER)
     theme_fx = scene.find(*EFFECTS_THEME)
     holders = {"fx": fx, "theme": theme_fx}
-    out.write_json("background.json", _background(scene), f"ThemeHolder {THEME!r}")
+    for file, (theme_name, folder) in BACKGROUNDS.items():
+        out.write_json(file, _background(scene, theme_name, folder), f"ThemeHolder {theme_name!r}")
     ft, tt = fx.read_typetree(), theme_fx.read_typetree()
     effects = {
         "colors": {k: [_color(tt[f"{k}Color1"]), _color(tt[f"{k}Color2"])] for k in ("dirt", "flesh", "sand", "bone")},

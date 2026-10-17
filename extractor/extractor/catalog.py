@@ -54,6 +54,10 @@ SPRITES = (
     SpriteRef("mook_suicide", "MookSuicide", "ZMookSuicide", True),
     SpriteRef("mook_bazooka", "MookBazooka", "ZMookBazooka", True),
     SpriteRef("mook_scout", "ScoutMook", "ZMookScout", True),
+    SpriteRef("mook_shield", "MookRiotShield", "ZMookRiotShield", True),
+    SpriteRef("mook_grenadier", "MookGrenadier", "ZMook Grenadier", True),
+    SpriteRef("dog", "MookDog", "ZMookDog", True),
+    SpriteRef("grenade", "Grenade", "GrenadeEvilSmall Long fuse", False),  # the grenadier's long-fuse grenade
     SpriteRef("prisoner", "RescueBro", "Hobro", True),
     SpriteRef("cage", "Cage", "CageBig", True),
     SpriteRef("helicopter", "Helicopter", "Helicopter", True),
@@ -74,6 +78,7 @@ TEXTURES = (
     TextureRef("bullet", "Bullet Enemy"),
     TextureRef("flag", "AmericanFlagTiny"),
     TextureRef("rifle_gun", "Broniversal Soldier Gun Anim", frame=(32, 32)),
+    TextureRef("shield", "mook_shield_anim", frame=(32, 32)),  # the riot shield mook's shield (his "gun")
 )
 
 VALUES = (
@@ -96,6 +101,16 @@ VALUES = (
     ValuesRef("ai_mook_bazooka", "MookBazookaAi", "ZMookBazooka", AI_FIELDS),
     ValuesRef("mook_scout", "ScoutMook", "ZMookScout", MOOK_FIELDS + ("runSpeed",)),
     ValuesRef("ai_mook_scout", "ScoutAI", "ZMookScout", AI_FIELDS),
+    ValuesRef("mook_shield", "MookRiotShield", "ZMookRiotShield", MOOK_FIELDS),
+    ValuesRef("mook_grenadier", "MookGrenadier", "ZMook Grenadier", MOOK_FIELDS),
+    ValuesRef("dog", "MookDog", "ZMookDog", MOOK_FIELDS + ("awareRunSpeed",)),
+    ValuesRef("ai_mook_shield", "PolymorphicAI", "ZMookRiotShield", AI_FIELDS),
+    ValuesRef("ai_mook_grenadier", "MookBazookaAi", "ZMook Grenadier", AI_FIELDS),
+    ValuesRef("ai_dog", "DogAI", "ZMookDog", AI_FIELDS),
+    ValuesRef("path_mook_grenadier", "PathAgent", "ZMook Grenadier", PATH_FIELDS),
+    ValuesRef("path_dog", "PathAgent", "ZMookDog", PATH_FIELDS),
+    ValuesRef("grenade_mook", "Grenade", "GrenadeEvilSmall Long fuse",
+              ("bounceM", "frictionM", "gravityM", "damage", "range", "blastForce")),
     ValuesRef("path_mook", "PathAgent", "ZMook", PATH_FIELDS),
     ValuesRef("path_mook_scout", "PathAgent", "ZMookScout", PATH_FIELDS),
     ValuesRef("path_mook_suicide", "PathAgent", "ZMookSuicide", PATH_FIELDS),
