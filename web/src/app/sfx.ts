@@ -57,6 +57,8 @@ export function sfxFor(e: GameEvent): SfxName | null {
       return 'boom';
     case 'bossCall':
       return 'whistle';
+    case 'bossFled':
+      return 'pop';
     default:
       return null;
   }

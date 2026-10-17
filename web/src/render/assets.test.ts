@@ -36,6 +36,12 @@ describe('loadData', () => {
     expect(missingSheets(old)).toEqual(['trump']);
   });
 
+  it("the Goliath's sheet is required", () => {
+    const old: Record<string, unknown> = { ...sheets };
+    delete old.goliath;
+    expect(missingSheets(old)).toEqual(['goliath']);
+  });
+
   it("the island's sheets are required", () => {
     const old: Record<string, unknown> = { ...sheets };
     delete old.block_sand;

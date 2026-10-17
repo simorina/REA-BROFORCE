@@ -4,6 +4,7 @@ export interface HudState {
   portrait: string; // URL of the current bro's sheet
   fuel: number | null; // the jet's fuel, 0..1, while flying
   boss: number | null; // Epstein's health, 0..1, while he fights
+  bossName: string | null; // and who is fighting: Epstein, or his Goliath
 }
 
 export function createHudStore(initial: HudState) {
@@ -13,7 +14,7 @@ export function createHudStore(initial: HudState) {
     get: (): HudState => state,
     set(next: HudState): void {
       if (next.lives === state.lives && next.ammo === state.ammo && next.portrait === state.portrait && next.fuel === state.fuel
-        && next.boss === state.boss) return;
+        && next.boss === state.boss && next.bossName === state.bossName) return;
       state = next;
       for (const l of listeners) l();
     },

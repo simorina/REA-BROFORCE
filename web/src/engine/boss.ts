@@ -28,6 +28,12 @@ export const bossAlive = (w: World): boolean => w.boss !== null && !w.boss.dead 
 /** The level's last boss still stands: the Goliath when there is one, else Epstein himself. The flag waits for it. */
 export const levelBossAlive = (w: World): boolean => (w.mech ? !w.mech.destroyed : bossAlive(w));
 
+/** The HUD's name for the fighting boss. */
+export function bossName(w: World): string | null {
+  if (w.mech && w.mech.awake && !w.mech.destroyed) return 'JEFFREY EPSTEIN · GOLIATH';
+  return bossBar(w) === null ? null : 'JEFFREY EPSTEIN';
+}
+
 /** The HUD's bar: the fighting boss's health (in 40ths), nothing while he sleeps or once he is down. */
 export function bossBar(w: World): number | null {
   const mech = w.mech;

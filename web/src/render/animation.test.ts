@@ -3,7 +3,7 @@ import { TEST_STATS } from '../engine/testStats';
 import { makeUnit } from '../engine/units';
 import { TileMap, makeBlock } from '../engine/map';
 import { makeTank } from '../engine/tank';
-import { blockFrame, jetFrameCentreY, loopFrame, prisonerFrame, special2Frame, stripFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
+import { blockFrame, jetFrameCentreY, mechFrame, loopFrame, prisonerFrame, special2Frame, stripFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
 
 const bro = (patch: Partial<ReturnType<typeof makeUnit>>) =>
   Object.assign(makeUnit(1, 'bro', 'player', 0, 8, TEST_STATS.bros.bro_base), { onGround: true }, patch);
@@ -138,5 +138,11 @@ describe('blockFrame', () => {
     expect(blockFrame(m, 0, 1)).toBe(0); // the top: grass
     expect(blockFrame(m, 0, 0)).toBe(1); // covered: plain earth
     expect(blockFrame(m, 1, 0)).toBe(0);
+  });
+});
+
+describe('the Goliath', () => {
+  it('draws its turning frames: 0 facing right, 3 facing us, 6 facing left', () => {
+    expect([0, 2.6, 6, 7, -1].map(mechFrame)).toEqual([0, 3, 6, 6, 0]);
   });
 });

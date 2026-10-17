@@ -11,7 +11,7 @@ import {
   LIVES_START, PRISONER_RESCUE_DIST, RESCUE_INVULNERABLE, RESPAWN_DELAY, SPAWN_INVULNERABLE, SPECIAL2_TIME,
   SPEECH_DURATION, TILE, UNIT_BOX_HEIGHT, UNIT_WIDTH, BAZOOKA_RECOIL, DOOR_EXIT_INVULNERABLE, DOOR_FIRE_DAMAGE, SCOUT_WAVE_TIME,
   BOMB_FIRE_RANGE_M, SUICIDE_BURN_EXTRA, ALLURE_RANGE, FLEX_EVENT_FRAMES, FLEX_FRAME_RATE, FLEX_FRAMES, FLEX_HOLD,
-  FLEX_RESTART_FRAME, FLEX_SLOW_FRAMES, FLEX_SLOW_RATE, TANK_EXIT_YI,
+  FLEX_RESTART_FRAME, FLEX_SLOW_FRAMES, FLEX_SLOW_RATE, TANK_EXIT_YI, MECH,
 } from './constants';
 import { alarmDoor, collapseDoor, doorLostSupport, makeDoor, stepDoor, type DoorSpawn, type MookDoor } from './doors';
 import { applyBlast, barrelBlast, suicideBlast, type Blast } from './explosions';
@@ -45,9 +45,11 @@ export interface Effect {
   unit?: number; // the speaker a speech bubble hangs over (the bro's own lines name none)
 }
 
-/** Who a speech bubble hangs over: the unit it names, or the bro. */
-export function speaker(w: World, e: Effect): Unit | null {
-  return e.unit === undefined ? w.player : w.enemies.find((m) => m.id === e.unit) ?? null;
+/** Where a speech bubble hangs: over the unit (or the Goliath) it names, or over the bro. */
+export function speaker(w: World, e: Effect): { x: number; y: number } | null {
+  if (e.unit === undefined) return w.player;
+  if (w.mech && w.mech.id === e.unit) return { x: w.mech.x, y: w.mech.y + MECH.box.height - 30 };
+  return w.enemies.find((m) => m.id === e.unit) ?? null;
 }
 
 export interface Prisoner {

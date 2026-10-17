@@ -5,10 +5,11 @@ import {
 import type { ParallaxDoodad } from '../engine/level';
 import { getColumn, getRow } from '../engine/map';
 import type { Jet } from '../engine/jet';
+import type { Mech } from '../engine/mech';
 import type { Tank } from '../engine/tank';
 import type { BlockKind, Projectile, Unit, UnitKind } from '../engine/types';
 import { speaker, type Effect, type GameEvent, type World } from '../engine/world';
-import { blockFrame, jetFrameCentreY, loopFrame, prisonerFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
+import { blockFrame, jetFrameCentreY, loopFrame, mechFrame, prisonerFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
 import type { Assets, SheetKey } from './assets';
 import { Effects } from './fx/controller';
 import { particleFrame } from './fx/particles';
@@ -91,6 +92,7 @@ export class Renderer {
     this.drawPrisoners(w);
     for (const k of w.tanks) this.drawTank(k);
     for (const j of w.jets) this.drawJet(j);
+    if (w.mech && !w.mech.destroyed) this.drawMech(w.mech, w.time);
     for (const e of w.enemies) if (!e.exitDoor) this.drawUnit(e, w.time);
     const boarded = w.state === 'extracting' && w.extractionTime >= EXTRACTION_TIME / 2;
     if (!boarded && !w.driving) this.drawUnit(w.player, w.time);
@@ -337,6 +339,14 @@ export class Renderer {
     const flash = j.countdown >= 0 && j.countdown % 2 === 1;
     if (flash) this.ctx.filter = 'brightness(2.2)';
     this.sprite('jet_us', 0, 0, j.x, jetFrameCentreY(j.y, this.assets.sheets.jet_us.frameH), j.facing < 0);
+    if (flash) this.ctx.filter = 'none';
+  }
+
+  /** Epstein's Goliath: its turning frame, flashing when hit and flickering as it comes apart. */
+  private drawMech(m: Mech, time: number): void {
+    const flash = m.flash > 0 || (m.state === 'dying' && Math.floor(time * 20) % 2 === 0);
+    if (flash) this.ctx.filter = 'brightness(2.2)';
+    this.sprite('goliath', mechFrame(m.look), 0, m.x, m.y + this.assets.sheets.goliath.offsetY);
     if (flash) this.ctx.filter = 'none';
   }
 

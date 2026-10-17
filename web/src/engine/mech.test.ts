@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { BROLUSCONI } from '../bros';
 import type { BroDef } from './bro';
-import { bossBar } from './boss';
+import { bossBar, bossName } from './boss';
 import { FIXED_DT, MECH } from './constants';
 import type { LevelData } from './level';
 import { beginPattern } from './mech';
 import { TEST_STATS } from './testStats';
 import { NO_CONTROLS, type Controls, type Projectile } from './types';
-import { createWorld, stepWorld, type GameEvent, type World } from './world';
+import { createWorld, speaker, stepWorld, type GameEvent, type World } from './world';
 
 const PILOT: BroDef = { ...BROLUSCONI, id: 'pilot' };
 const COLS = 64;
@@ -156,6 +156,21 @@ describe("Epstein's Goliath", () => {
     expect(w.events).toContainEqual(expect.objectContaining({ type: 'bossDown' }));
     play(w, {}, 2);
     expect(w.state).toBe('extracting');
+  });
+
+  it('its line hangs over it', () => {
+    const w = awake();
+    const line = w.effects.find((e) => e.kind === 'speech' && e.text === MECH.line)!;
+    const at = speaker(w, line)!;
+    expect(at.x).toBe(w.mech!.x);
+    expect(at.y).toBeGreaterThan(w.mech!.y + MECH.box.height / 2);
+  });
+
+  it("the HUD names whichever Epstein is fighting", () => {
+    const w = awake();
+    expect(bossName(w)).toBe('JEFFREY EPSTEIN · GOLIATH');
+    w.mech!.destroyed = true;
+    expect(bossName(w)).toBeNull();
   });
 
   it("the HUD's bar follows its health once it's awake", () => {

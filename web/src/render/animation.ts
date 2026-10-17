@@ -65,6 +65,9 @@ export function blockFrame(map: TileMap, c: number, r: number): number {
   return map.get(c, r)?.kind === 'dirt' && map.get(c, r + 1) ? 1 : 0;
 }
 
+/** The Goliath's turning frames (its sheet turns it from right, 0, through facing us, 3, to left, 6). */
+export const mechFrame = (look: number): number => Math.min(6, Math.max(0, Math.round(look)));
+
 const JET_WHEELS = 8; // the Harrier frame's lowest opaque pixels (its wheels) sit 8 px above the frame's bottom
 
 /**

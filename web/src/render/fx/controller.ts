@@ -433,6 +433,10 @@ export class Effects {
       case 'explosion':
         this.explosion(e.source, e.x, e.y, e.range);
         return;
+      case 'bossFled':
+        // into the smoke
+        for (let i = 0; i < 6; i++) this.smoke(e.x + (i - 2.5) * 4, e.y + 4 + (i % 3) * 5, (i - 2.5) * 12, 30);
+        return;
       case 'airstrike':
         this.airstrikeCalled(e.x, e.y);
         return;
