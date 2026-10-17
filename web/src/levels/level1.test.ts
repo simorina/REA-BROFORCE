@@ -8,19 +8,19 @@ const parsed = parseLevel(level, TEST_STATS);
 const count = (k: string) => parsed.enemies.filter((e) => e.kind === k).length;
 
 describe("level 1: Epstein's island", () => {
-  it('is 300 x 22 with aligned rows, two and a half times the old level', () => {
-    expect(level.cols).toBe(300);
+  it('is 480 x 22 with aligned rows, four times the old level', () => {
+    expect(level.cols).toBe(480);
     expect(level.rows).toBe(22);
-    expect(level.tiles.every((row) => row.length === 300)).toBe(true);
+    expect(level.tiles.every((row) => row.length === 480)).toBe(true);
   });
 
-  it('has 23 mooks, 8 suicide mooks, 5 bazooka mooks, 3 scouts, 3 mook doors and 6 prisoners', () => {
-    expect(count('mook')).toBe(23);
-    expect(count('mook_suicide')).toBe(8);
-    expect(count('mook_bazooka')).toBe(5);
-    expect(count('mook_scout')).toBe(3);
-    expect(parsed.doors).toHaveLength(3);
-    expect(parsed.cages).toHaveLength(6);
+  it('has 31 mooks, 10 suicide mooks, 8 bazooka mooks, 4 scouts, 4 mook doors and 8 prisoners', () => {
+    expect(count('mook')).toBe(31);
+    expect(count('mook_suicide')).toBe(10);
+    expect(count('mook_bazooka')).toBe(8);
+    expect(count('mook_scout')).toBe(4);
+    expect(parsed.doors).toHaveLength(4);
+    expect(parsed.cages).toHaveLength(8);
   });
 
   it('starts on a sand beach and climbs into jungle earth, with a temple of white and blue bricks', () => {
@@ -47,21 +47,35 @@ describe("level 1: Epstein's island", () => {
     }
   });
 
-  it('has five checkpoints in order between the start and the flag', () => {
+  it('has seven checkpoints: before Epstein, between his two fights and before his Goliath', () => {
     const cs = parsed.checkpoints.map((c) => c.c).sort((a, b) => a - b); // the parser lists them row by row
-    expect(cs).toHaveLength(5);
+    expect(cs).toHaveLength(7);
     expect(cs[0]).toBeGreaterThan(parsed.player.c);
-    expect(cs[4]).toBeLessThan(parsed.boss!.c);
+    expect(cs.some((c) => c > parsed.boss!.c && c < parsed.mech!.c)).toBe(true);
+    expect(cs[6]).toBeLessThan(parsed.mech!.c);
   });
 
-  it('ends with Epstein under open sky (his guards drop in), the flag behind him', () => {
+  it('meets Epstein at his temple under open sky (his guards drop in)', () => {
     const b = parsed.boss!;
     for (let c = b.c - 4; c <= b.c + 4; c++) for (let r = b.r; r < level.rows; r++) expect(parsed.map.get(c, r)).toBeNull();
-    expect(parsed.flag.c).toBeGreaterThan(b.c);
+  });
+
+  it('ends with his Goliath on a steel pad under open sky, the flag behind it', () => {
+    const m = parsed.mech!;
+    expect(m.c).toBeGreaterThan(parsed.boss!.c);
+    for (let c = m.c - 6; c <= m.c + 6; c++) {
+      expect(parsed.map.get(c, m.r - 1)?.kind).toBe('steel');
+      for (let r = m.r; r < level.rows; r++) expect(parsed.map.get(c, r)).toBeNull();
+    }
+    expect(parsed.flag.c).toBeGreaterThan(m.c);
+  });
+
+  it("the secret base's ground floor runs through from side to side", () => {
+    for (const c of [334, 384]) for (const r of [4, 5]) expect(parsed.map.get(c, r)).toBeNull();
   });
 
   it('puts every entity in open air, standing on something solid', () => {
-    const all = [parsed.player, parsed.flag, parsed.boss!, ...parsed.enemies, ...parsed.cages, ...parsed.checkpoints, ...parsed.doors];
+    const all = [parsed.player, parsed.flag, parsed.boss!, parsed.mech!, ...parsed.enemies, ...parsed.cages, ...parsed.checkpoints, ...parsed.doors];
     for (const e of all) {
       expect(parsed.map.get(e.c, e.r)).toBeNull();
       expect(parsed.map.isSolid(e.c, e.r - 1)).toBe(true);
