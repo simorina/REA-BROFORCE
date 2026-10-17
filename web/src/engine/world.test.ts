@@ -407,13 +407,38 @@ describe('the roster (HeroController.SwapBro)', () => {
     expect(w.specialAmmo).toBe(1);
   });
 
-  it('a respawn keeps the current bro', () => {
-    const w = createWorld(EMPTY, TEST_STATS, [SECOND, BROLUSCONI], () => 0.5);
+  it('dying, he comes back as another bro picked at random, with his values and full specials', () => {
+    const THIRD: BroDef = { ...BROLUSCONI, id: 'third', base: 'bro_soldier' };
+    for (const [roll, next] of [[0.1, BROLUSCONI], [0.9, THIRD]] as const) {
+      const w = createWorld(EMPTY, TEST_STATS, [SECOND, BROLUSCONI, THIRD], () => roll);
+      w.specialAmmo = 0;
+      damageUnit(w.player, 1);
+      play(w, {}, 120);
+      expect(w.player.dead).toBe(false);
+      expect(w.bro).toBe(next);
+      expect(w.player.stats).toBe(TEST_STATS.bros[next.base]);
+      expect(w.specialAmmo).toBe(TEST_STATS.bros[next.base].specialAmmo);
+    }
+  });
+
+  it('never the bro who just died, whatever the roll', () => {
+    for (const roll of [0, 0.5, 0.999]) {
+      const w = createWorld(EMPTY, TEST_STATS, [SECOND, BROLUSCONI], () => roll);
+      const seen = [w.bro];
+      for (let death = 0; death < 2; death++) {
+        damageUnit(w.player, 1, true); // through the respawn shield
+        play(w, {}, 120);
+        expect(w.bro).not.toBe(seen[seen.length - 1]);
+        seen.push(w.bro);
+      }
+    }
+  });
+
+  it('with one bro he comes back as himself', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [SECOND], () => 0.5);
     damageUnit(w.player, 1);
     play(w, {}, 120);
-    expect(w.player.dead).toBe(false);
     expect(w.bro).toBe(SECOND);
-    expect(w.player.stats).toBe(TEST_STATS.bros.bro_lee);
   });
 });
 

@@ -95,7 +95,7 @@ spreading fire (only mooks escaping a collapsing door burn), homing rockets or c
 AddAction is a one-frame no-op and is dropped. Only MookGeneral/Satan ("evil" units) can block a checkpoint, so ours
 never are. `Map.ExplodeUnits` multiplies its `yI` argument for every unit it visits after a close one; the port keeps
 that boost per unit. Bullets skip corpses: every `Map.HitUnits` variant requires `health > 0`, whatever
-`Demonstration.projectilesHitWalls` says. A respawn keeps the current bro (Broforce brings in another one). The tank has no boost dash, hatch, flag or driver's head; there is no landing crush (its −600 fall cap never reaches FallDamage's −2000); an empty tank gibs past 60 damage instead of staying a husk; only enemy and neutral blasts hurt tanks.
+`Demonstration.projectilesHitWalls` says. A respawn brings in another bro, as Broforce does: ours is picked at random from the roster, never the one who just died, and comes with his own full specials. The tank has no boost dash, hatch, flag or driver's head; there is no landing crush (its −600 fall cap never reaches FallDamage's −2000); an empty tank gibs past 60 damage instead of staying a husk; only enemy and neutral blasts hurt tanks.
 
 ## Effects, background and more AI (second pass)
 

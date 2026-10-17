@@ -255,8 +255,12 @@ export function inGrass(w: World, x: number, y: number, range: number): boolean 
   return w.grass.some((g) => !g.destroyed && Math.abs(g.x - x) < range + width / 2 && Math.abs(g.y - y) < range + height / 2);
 }
 
+/** HeroController brings in a new bro after a death: ours is picked at random, never the one who just died. */
 function respawn(w: World): void {
   w.lives -= 1;
+  const others = w.roster.filter((b) => b !== w.bro);
+  if (others.length > 0) w.bro = others[Math.min(others.length - 1, Math.floor(w.rng() * others.length))];
+  w.specialAmmo = w.stats.bros[w.bro.base].specialAmmo; // he comes with his own specials
   w.player = makeUnit(w.nextId++, 'bro', 'player', w.spawn.x, w.spawn.y, w.stats.bros[w.bro.base]);
   w.player.invulnerable = SPAWN_INVULNERABLE;
   w.events.push({ type: 'respawn', x: w.spawn.x, y: w.spawn.y });
