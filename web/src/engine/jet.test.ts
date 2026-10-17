@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FIXED_DT } from './constants';
+import { FIXED_DT, JET_BOX } from './constants';
 import { NO_FLY, jetDrop, makeJet, stepJetBody } from './jet';
 import { TileMap, makeBlock } from './map';
 import { TEST_STATS } from './testStats';
@@ -46,7 +46,7 @@ describe('the jet', () => {
   it("it can't fly above the map's top row or out of its sides", () => {
     const j = Object.assign(makeJet(1, 160, 250, 1), { state: 'flying' as const, driven: true });
     for (let i = 0; i < 300; i++) stepJetBody(j, { dx: -1, dy: 1 }, ground(40, 20), FIXED_DT, 300);
-    expect(j.y + 20).toBeLessThanOrEqual(20 * 16 - 8);
+    expect(j.y + JET_BOX.height).toBeLessThanOrEqual(20 * 16 - 8);
     expect(j.x - 24).toBeGreaterThanOrEqual(-8);
   });
 

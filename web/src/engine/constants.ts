@@ -124,7 +124,7 @@ export const JUDO_ROW = 7; // ... lowerLeftPixel y = 32 * (8 + attackSpriteRow):
 // Design values (not in the original game). Tuned in playtesting; listed in docs/findings.md.
 export const TANK_DRIVER_SHIELD = 0.1; // the hidden driver can't be hit (renewed every step he is inside)
 export const TANK_EJECT_INVULNERABLE = 0.5; // the driver thrown clear by the gib outlives its blast
-export const JET_BOX = { halfWidth: 24, height: 20 }; // the Harrier's body in its 96x64 frame
+export const JET_BOX = { halfWidth: 24, height: 34 }; // the Harrier's landing gear and fuselage (it stands on its wheels)
 export const JET_FAST_DESCENT = 160; // the jet's way down before its last 48 px
 export const JET_ENTRY = 32; // it appears this far above the screen top
 export const JET_FLY = { x: 110, y: 80, accel: 400 }; // piloted flight (the Harrier was never player-driven)
