@@ -50,6 +50,16 @@ describe('the jet', () => {
     expect(j.x - 24).toBeGreaterThanOrEqual(-8);
   });
 
+  it('a landed jet whose ground is blown away comes down again', () => {
+    const map = ground();
+    const j = Object.assign(makeJet(1, 160, 8, 1), { state: 'landed' as const, onGround: true });
+    for (let c = 8; c <= 12; c++) map.set(c, 0, null); // the blocks under its box
+    stepJetBody(j, NO_FLY, map, FIXED_DT, 300);
+    stepJetBody(j, NO_FLY, map, FIXED_DT, 300);
+    expect(j.state).toBe('descending');
+    expect(j.y).toBeLessThan(8);
+  });
+
   it('leaving, it rises off the top of the screen and is gone', () => {
     const j = Object.assign(makeJet(1, 160, 8, 1), { state: 'leaving' as const });
     for (let i = 0; i < 400 && !j.exploded; i++) stepJetBody(j, NO_FLY, ground(), FIXED_DT, 200);

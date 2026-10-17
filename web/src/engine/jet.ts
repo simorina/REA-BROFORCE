@@ -96,7 +96,8 @@ export function stepJetBody(j: Jet, drive: JetDrive, map: TileMap, t: number, sc
   if (j.state === 'landed') {
     j.xI = 0;
     j.yI = 0;
-    j.onGround = true;
+    j.onGround = boxHits(map, j.x, j.y - 0.5);
+    if (!j.onGround) j.state = 'descending'; // its ground was blown away: it comes down again
     return;
   }
   // flying, piloted
