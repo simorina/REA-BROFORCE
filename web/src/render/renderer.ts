@@ -8,7 +8,7 @@ import type { Jet } from '../engine/jet';
 import type { Tank } from '../engine/tank';
 import type { BlockKind, Projectile, Unit, UnitKind } from '../engine/types';
 import type { Effect, GameEvent, World } from '../engine/world';
-import { jetFrameCentreY, loopFrame, prisonerFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
+import { blockFrame, jetFrameCentreY, loopFrame, prisonerFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
 import type { Assets, SheetKey } from './assets';
 import { Effects } from './fx/controller';
 import { particleFrame } from './fx/particles';
@@ -24,7 +24,7 @@ const ENEMY_SHEETS: Record<Exclude<UnitKind, 'bro'>, SheetKey> = {
   mook: 'mook', mook_suicide: 'mook_suicide', mook_bazooka: 'mook_bazooka', mook_scout: 'mook_scout',
 };
 const BLOCK_SHEETS: Record<BlockKind, SheetKey> = {
-  dirt: 'block_dirt', brick: 'block_brick', steel: 'block_steel', barrel: 'block_barrel',
+  dirt: 'block_dirt', sand: 'block_sand', brick: 'block_brick', temple: 'block_temple', steel: 'block_steel', barrel: 'block_barrel',
 };
 const WHITE_TEXTURE = 'sprites/fx/white.png';
 const quant = (v: number): number => Math.round(Math.min(1, Math.max(0, v)) * 31) / 31;
@@ -246,7 +246,7 @@ export class Renderer {
       for (let r = r0; r <= r1; r++) {
         const b = w.map.get(c, r);
         if (!b) continue;
-        this.sprite(BLOCK_SHEETS[b.kind], 0, 0, c * TILE, r * TILE);
+        this.sprite(BLOCK_SHEETS[b.kind], blockFrame(w.map, c, r), 0, c * TILE, r * TILE);
         // Block.Bloody: the block's blood spray on each face blood landed on (Desert Earth uses the brick's)
         const sides = this.effects.decals.get(b);
         if (!sides) continue;

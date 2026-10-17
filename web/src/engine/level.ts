@@ -35,7 +35,7 @@ export interface ParsedLevel {
   flag: Cell;
 }
 
-const BLOCKS: Record<string, BlockKind> = { d: 'dirt', b: 'brick', s: 'steel', x: 'barrel' };
+const BLOCKS: Record<string, BlockKind> = { d: 'dirt', a: 'sand', b: 'brick', t: 'temple', s: 'steel', x: 'barrel' };
 const ENEMIES: Record<string, EnemyKind> = { m: 'mook', k: 'mook_suicide', z: 'mook_bazooka', o: 'mook_scout' };
 
 export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {

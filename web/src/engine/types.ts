@@ -1,6 +1,6 @@
 export type Team = 'player' | 'enemy';
 export type BlastTeam = Team | 'neutral';
-export type BlockKind = 'dirt' | 'brick' | 'steel' | 'barrel';
+export type BlockKind = 'dirt' | 'sand' | 'brick' | 'temple' | 'steel' | 'barrel';
 export type UnitKind = 'bro' | 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout';
 export type EnemyKind = Exclude<UnitKind, 'bro'>;
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */

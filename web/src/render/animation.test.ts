@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { TEST_STATS } from '../engine/testStats';
 import { makeUnit } from '../engine/units';
+import { TileMap, makeBlock } from '../engine/map';
 import { makeTank } from '../engine/tank';
-import { jetFrameCentreY, loopFrame, prisonerFrame, special2Frame, stripFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
+import { blockFrame, jetFrameCentreY, loopFrame, prisonerFrame, special2Frame, stripFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
 
 const bro = (patch: Partial<ReturnType<typeof makeUnit>>) =>
   Object.assign(makeUnit(1, 'bro', 'player', 0, 8, TEST_STATS.bros.bro_base), { onGround: true }, patch);
@@ -125,5 +126,17 @@ describe('the tank (TankBroTank.Animate*, TankBroTankTurret.SetTurretFrame)', ()
 describe('the jet sprite', () => {
   it('stands on its wheels: the 64 px frame, whose lowest pixels are 8 up, is centred 24 above the jet', () => {
     expect(jetFrameCentreY(100, 64)).toBe(124);
+  });
+});
+
+describe('blockFrame', () => {
+  it('jungle earth shows its grass only under open air; other blocks have one frame', () => {
+    const m = new TileMap(2, 3);
+    m.set(0, 0, makeBlock('dirt', TEST_STATS));
+    m.set(0, 1, makeBlock('dirt', TEST_STATS));
+    m.set(1, 0, makeBlock('brick', TEST_STATS));
+    expect(blockFrame(m, 0, 1)).toBe(0); // the top: grass
+    expect(blockFrame(m, 0, 0)).toBe(1); // covered: plain earth
+    expect(blockFrame(m, 1, 0)).toBe(0);
   });
 });

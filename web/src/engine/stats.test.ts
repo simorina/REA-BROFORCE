@@ -3,6 +3,12 @@ import { parseValues } from './stats';
 import { RAW_VALUES, TEST_STATS } from './testStats';
 
 describe('parseValues', () => {
+  it("reads the beach sand's health; the temple is built of WallBrick1", () => {
+    const s = parseValues(RAW_VALUES);
+    expect(s.blocks.sand).toEqual({ health: 5 });
+    expect(s.blocks.temple).toEqual(s.blocks.brick);
+  });
+
   it("reads Broniversal Soldier as a bro and his rifle's bullet", () => {
     const s = parseValues(RAW_VALUES);
     expect(s.bros.bro_soldier).toMatchObject({ speed: 110, fireRate: 0.12, specialAmmo: 3, canHideInGrass: false });

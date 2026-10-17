@@ -247,7 +247,7 @@ export function parseEffects(raw: unknown): EffectsData {
   need(e.bubbles, ['!', '?', 'rambro'], 'effects.json bubbles');
   need(e.door as unknown as Record<string, unknown>, ['frame', 'frameDestroyed', 'inside', 'insideDestroyed', 'smoke', 'sparks', 'fire'],
     'effects.json door');
-  need(e.blocks, ['dirt', 'brick', 'steel', 'barrel'], 'effects.json blocks');
+  need(e.blocks, ['dirt', 'sand', 'brick', 'temple', 'steel', 'barrel'], 'effects.json blocks');
   return e;
 }
 

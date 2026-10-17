@@ -1,6 +1,7 @@
 import {
   CLIMB_FRAME_RATE, FLEX_FRAMES, FLEX_ROW, JUDO_COL, JUDO_FRAMES, JUDO_ROW, JUMP_FRAME_RATE, RUN_FRAME_RATE, TANK_RUN_FRAME_RATE,
 } from '../engine/constants';
+import type { TileMap } from '../engine/map';
 import type { Tank, Turret } from '../engine/tank';
 
 const PANIC_FRAME_RATE = 0.044455; // Mook.AnimateRunning while burning, blind or scared
@@ -57,6 +58,11 @@ export function loopFrame(time: number, frameRate: number, cols: number): number
 /** Hobro_anim: columns 0-3 are the standing idle; 4-5 are death poses, so the cage loop stays on 0-3. */
 export function prisonerFrame(time: number): number {
   return loopFrame(time, 0.15, 4);
+}
+
+/** Jungle earth (DirtBlock5) wears its grass (frame 0) only under open air; covered it is plain earth (frame 1). */
+export function blockFrame(map: TileMap, c: number, r: number): number {
+  return map.get(c, r)?.kind === 'dirt' && map.get(c, r + 1) ? 1 : 0;
 }
 
 const JET_WHEELS = 8; // the Harrier frame's lowest opaque pixels (its wheels) sit 8 px above the frame's bottom

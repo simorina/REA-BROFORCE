@@ -128,7 +128,9 @@ export function parseValues(raw: Raw): GameStats {
     },
     blocks: {
       dirt: { health: num(raw, 'block_dirt', 'health') },
+      sand: { health: num(raw, 'block_sand', 'health') },
       brick: { health: num(raw, 'block_brick', 'health') },
+      temple: { health: num(raw, 'block_brick', 'health') }, // the island's temple is WallBrick1, repainted
       steel: { health: num(raw, 'block_steel', 'health') },
       barrel: { health: num(raw, 'block_barrel', 'health') },
     },

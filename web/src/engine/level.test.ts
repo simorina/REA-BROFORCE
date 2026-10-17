@@ -17,6 +17,12 @@ describe('parseLevel', () => {
     expect(lvl.flag).toEqual({ c: 4, r: 2 });
   });
 
+  it("reads the island's beach sand ('a') and temple bricks ('t')", () => {
+    const lvl = parseLevel({ cols: 3, rows: 2, tiles: ['P.F', 'ats'] }, TEST_STATS);
+    expect(lvl.map.get(0, 0)?.kind).toBe('sand');
+    expect(lvl.map.get(1, 0)?.kind).toBe('temple');
+  });
+
   it('rejects unknown tiles and ragged rows', () => {
     expect(() => parseLevel({ ...tiny, tiles: ['...CF', 'P.mQ.', 'ddxss'] }, TEST_STATS)).toThrow("unknown tile 'Q'");
     expect(() => parseLevel({ ...tiny, tiles: ['...CF', 'P.mc', 'ddxss'] }, TEST_STATS)).toThrow('row 1 has 4 columns');
