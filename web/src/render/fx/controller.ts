@@ -433,6 +433,14 @@ export class Effects {
       case 'explosion':
         this.explosion(e.source, e.x, e.y, e.range);
         return;
+      case 'shieldHit':
+        // a bullet off the riot shield: a few sparks
+        this.sparkShower(e.x, e.y, 5, 1, 50, 0, 30, 0.3, 0.2);
+        return;
+      case 'shieldOff':
+        // MookRiotShield.DisarmShield: the shield goes flying (CreateShrapnel), in sparks
+        this.sparkShower(e.x, e.y + 8, 14, 3, 90, e.xI * 0.4, 200 * 0.3, 0.5, 0.3);
+        return;
       case 'bossFled':
         // into the smoke
         for (let i = 0; i < 6; i++) this.smoke(e.x + (i - 2.5) * 4, e.y + 4 + (i % 3) * 5, (i - 2.5) * 12, 30);

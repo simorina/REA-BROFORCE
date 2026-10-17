@@ -20,6 +20,13 @@ describe('sfx', () => {
     expect(sfxFor({ type: 'respawn', x: 0, y: 0 })).toBeNull();
   });
 
+  it('gives the new enemies their sounds: a clank on the shield, a bite, a lobbed grenade', () => {
+    expect(sfxFor({ type: 'shieldHit', x: 0, y: 0 })).toBe('clank');
+    expect(sfxFor({ type: 'shieldOff', x: 0, y: 0, xI: 0 })).toBe('crumble');
+    expect(sfxFor({ type: 'bite', x: 0, y: 0 })).toBe('bite');
+    expect(sfxFor({ type: 'shot', weapon: 'grenade', x: 0, y: 0, facing: 1 })).toBe('throw');
+  });
+
   it('pans with the position and fades sounds far off screen', () => {
     expect(placement(100, 100)).toEqual({ pan: 0, gain: 1 });
     expect(placement(400, 100).pan).toBeCloseTo(0.6);

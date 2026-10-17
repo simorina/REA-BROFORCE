@@ -319,6 +319,8 @@ export class Renderer {
     if (gun && !u.dead && !u.wallClimbing && !u.flex && !u.attack) {
       this.sprite(gun, u.gunFrame, 0, u.x, u.y + this.assets.sheets[key].offsetY, u.facing < 0);
     }
+    // MookRiotShield: the shield is his gun sprite, held until it is knocked away
+    if (u.shield > 0 && !u.dead) this.sprite('shield', 0, 0, u.x, u.y + this.assets.sheets[key].offsetY, u.facing < 0);
     if (b !== 1) this.ctx.filter = 'none';
   }
 
@@ -448,6 +450,9 @@ export class Renderer {
       case 'bomb':
       case 'jetBomb':
         this.sprite('bomb', 0, 0, p.x, p.y, false, angle);
+        break;
+      case 'grenade':
+        this.sprite('grenade', 0, 0, p.x, p.y, false, time * 12 * Math.sign(p.xI || 1)); // tumbling
         break;
       case 'marker':
         this.sprite('marker', 0, 0, p.x, p.y + 4);
