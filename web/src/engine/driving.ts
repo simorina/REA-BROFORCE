@@ -79,15 +79,20 @@ function outOfTank(w: World, k: Tank, disChargeYI: number): void {
   k.drive = NO_DRIVE;
 }
 
-/** Out of the jet: dropping from under it in the air, or beside it when it is down or there is no room below. */
+/**
+ * Out of the jet: dropping from under it in the air, else beside it (the way it faces, then the other), else on top
+ * of it. The first spot free of blocks wins (the map's sides count as walls); its own spot is always free.
+ */
 function outOfJet(w: World, j: Jet): void {
   const p = w.player;
-  let x = j.x;
-  let y = j.y - UNIT_HEIGHT;
-  if (j.onGround || unitHitsSolid(w.map, x, y)) {
-    x = j.x + j.facing * (JET_BOX.halfWidth + UNIT_HALF_WIDTH + 1);
-    y = j.y;
-  }
+  const side = JET_BOX.halfWidth + UNIT_HALF_WIDTH + 1;
+  const spots: Array<[number, number]> = [
+    ...(j.onGround ? [] : [[j.x, j.y - UNIT_HEIGHT] as [number, number]]),
+    [j.x + j.facing * side, j.y],
+    [j.x - j.facing * side, j.y],
+    [j.x, j.y + JET_BOX.height],
+  ];
+  const [x, y] = spots.find(([sx, sy]) => !unitHitsSolid(w.map, sx, sy)) ?? [j.x, j.y];
   p.x = x;
   p.y = y;
   p.xI = j.xI;

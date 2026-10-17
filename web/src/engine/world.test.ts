@@ -6,6 +6,7 @@ import type { LevelData } from './level';
 import { hitTank } from './driving';
 import type { Blast } from './explosions';
 import { makeJet } from './jet';
+import { unitHitsSolid } from './physics';
 import { fireMookBullet, throwBody } from './projectiles';
 import { makeTank } from './tank';
 import { TEST_STATS } from './testStats';
@@ -786,6 +787,30 @@ describe("Trump's jet", () => {
     expect(w.player.onGround).toBe(true);
     play(w, {}, 600);
     expect(w.jets).toHaveLength(0);
+  });
+
+  it("put out beside a jet facing the map's edge, he lands inside the map, on the other side", () => {
+    const w = createWorld(EMPTY, TEST_STATS, [PILOT], () => 0.5);
+    w.jets.push(Object.assign(makeJet(900, -8 + 24 + 1, 24, -1), { state: 'landed' as const, onGround: true }));
+    let prev = play(w, {}, 1); // boards it: he spawned overlapping it
+    expect(w.driving).toBe(w.jets[0]);
+    prev = play(w, { gesture: true }, 1, prev);
+    expect(w.driving).toBeNull();
+    expect(unitHitsSolid(w.map, w.player.x, w.player.y)).toBe(false);
+    expect(w.player.x).toBeGreaterThan(w.jets[0].x);
+    play(w, {}, 60, prev);
+    expect(w.player).toMatchObject({ y: 24, onGround: true, dead: false });
+  });
+
+  it('put out beside a jet facing a wall, he is not put inside the wall', () => {
+    const w = createWorld(level([[2, 'P'], [9, 'd'], [27, 'F']]), TEST_STATS, [PILOT], () => 0.5);
+    w.jets.push(Object.assign(makeJet(900, 112, 24, 1), { state: 'landed' as const, onGround: true }));
+    w.player.x = 112;
+    let prev = play(w, {}, 1);
+    expect(w.driving).toBe(w.jets[0]);
+    prev = play(w, { gesture: true }, 1, prev);
+    expect(unitHitsSolid(w.map, w.player.x, w.player.y)).toBe(false);
+    expect(w.player.x).toBeLessThan(112);
   });
 
   it('a jet over a pit sinks away and lets the pilot out', () => {
