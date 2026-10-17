@@ -36,6 +36,8 @@ def run(data_dir: str, out_dir: str, fetch_audio: bool = True) -> None:
             raise AssetNotFound(f"no SpriteSM frame for {ref.gameobject!r}; add a frame override in catalog.py")
         source = f"{ref.gameobject} ({ref.script})"
         file = f"sprites/{ref.key}.png"
+        if ref.whole_sheet and ref.strip:
+            image = image.crop((0, frame["y_top"], image.width, frame["y_top"] + frame["h"]))
         if ref.whole_sheet:
             out.write_png(file, image, source)
             sheets[ref.key] = sheet_entry(file, image.width, image.height, frame)

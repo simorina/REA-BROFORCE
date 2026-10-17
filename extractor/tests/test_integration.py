@@ -54,6 +54,9 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert Image.open(tmp_path / "sprites" / "block_dirt.png").size == (64, 16)  # the jungle earth strip, grass on frame 0
     assert sheets["block_dirt"]["cols"] == 4 and sheets["block_sand"]["frameW"] == 16
     assert sheets["block_temple"]["frameW"] == 16 and sheets["epstein"]["frameW"] == 32
+    # the Goliath's walk cycle, one row of 128 x 70 frames cut out of its 1024 x 128 texture
+    assert (sheets["goliath"]["frameW"], sheets["goliath"]["frameH"], sheets["goliath"]["rows"]) == (128, 70, 1)
+    assert Image.open(tmp_path / "sprites" / "goliath.png").size == (1024, 70) and values["mech"]["health"] == 300
     assert values["block_sand"]["health"] > 0 and values["block_dirt"]["health"] > 0
 
 

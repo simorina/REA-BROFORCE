@@ -9,6 +9,7 @@ class SpriteRef:
     gameobject: str          # prefab GameObject name (first match wins)
     whole_sheet: bool        # True: whole animation sheet; False: crop the prefab's SpriteSM frame
     frame: tuple[int, int, int, int] | None = None  # (x, y_top, w, h) for prefabs without SpriteSM
+    strip: bool = False      # whole sheet that is one row of frames starting at its SpriteSM y_top: cut that row out
 
 
 @dataclass(frozen=True)
@@ -57,6 +58,7 @@ SPRITES = (
     SpriteRef("cage", "Cage", "CageBig", True),
     SpriteRef("helicopter", "Helicopter", "Helicopter", True),
     SpriteRef("jet_harrier", "HarrierJet", "Jet Support Attack", True),
+    SpriteRef("goliath", "GoliathMech", "GoliathMech", True, strip=True),  # its walk cycle
     SpriteRef("rocket", "Rocket", "Rocket", False),
     SpriteRef("bomb", "RocketBombardment", "Rocket Bombardment", False),
     SpriteRef("marker", "GrenadeAirstrike", "Grenade Airstrike", False),
@@ -85,6 +87,7 @@ VALUES = (
               ("damage", "range", "blastForce", "blastForceExtraY", "life", "horizontalAcceleration", "crushWallLayers")),
     ValuesRef("bro_soldier", "BroniversalSoldier", "BroniversalSoldier", UNIT_FIELDS + ("extraFireDelay",)),
     ValuesRef("rifle_bullet", "BulletRambro", "Bullet Rambo", ("damage", "life")),
+    ValuesRef("mech", "GoliathMech", "GoliathMech", ("health",)),
     ValuesRef("mook", "MookTrooper", "ZMook", MOOK_FIELDS),
     ValuesRef("mook_suicide", "MookSuicide", "ZMookSuicide", MOOK_FIELDS),
     ValuesRef("mook_bazooka", "MookBazooka", "ZMookBazooka", MOOK_FIELDS),
