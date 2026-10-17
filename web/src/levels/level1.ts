@@ -124,9 +124,8 @@ export function buildLevel1(): LevelData {
   // The hilltop (246-299): an open arena before the temple, white and blue with its dome; the flag in its hall.
   ground(246, 299, 11);
   put(266, 12, 'E');
-  fill(280, 296, 12, 18, 't');
-  fill(281, 295, 12, 15, '.');
-  fill(280, 280, 12, 14, '.'); // its doorway
+  fill(280, 296, 16, 18, 't'); // the roof on its columns
+  for (const c of [280, 282, 284, 292, 294, 296]) fill(c, c, 12, 15, 't');
   fill(284, 292, 19, 19, 't');
   fill(286, 290, 20, 20, 't');
   put(288, 21, 't');
