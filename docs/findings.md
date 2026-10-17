@@ -200,3 +200,28 @@ from frame 20 on, and since `blockMovementForGesture` stays set the pose holds u
 `FlexPowerMapType.SpawnWithAllure` on level 1 gives the Alluring flex: each flex event calls
 `Map.AttractMooks(X, Y, 96, 30)`, so the mooks around come over for a look (`DoAttractedThink`). Blindness keeps no
 trigger: in the original it comes from flashbangs, stun damage and other bros' weapons, none of them Brolusconi's.
+
+## The campaign and three more enemies (fifth pass)
+
+Three missions on a world map: the desert (the first level, on sand), the burning jungle (new, 220 columns) and
+Epstein's island. The map is our own 2D art, not Broforce's globe; Broforce's helicopter flies from the mission done to
+the next, on `Helicopter.StartIdleAnim`'s idle frame (0 facing right, 4 facing left: the AnimatedTexture is off while
+it hovers, frames 1-3 and 5-7 are only its turn). The extraction helicopter in the levels now hovers on frame 0 too;
+it used to cycle through the turn and the sheet's empty frames. Progress is saved in localStorage; a loss retries the
+mission.
+
+`MookRiotShield`: the shield is his gun sprite (`mook_shield_anim`). `Damage` lets a hit through from behind
+(`direction == sign(localScale.x)`) and stops one at his face with `Knock(xI * 0.05, 15)`; an explosion, melee or
+more than 35 of `shieldDamage` disarms him (`DisarmShield`: the shield flies off as shrapnel). `FireWeapon` is
+empty: he never shoots. `MookGrenadier` (15 health) runs `MookBazookaAi` and lobs `GrenadeEvilSmall Long fuse`
+(bounceM 0.4, frictionM 0.44, gravityM 0.75, damage 10, range 42) from (X + dir 8, Y + 24) at (dir 130, 130),
+and `DropDeathGrenade` leaves one where he dies. `MookDog` (1 health) runs `DogAI` like a suicide mook, at
+`awareRunSpeed` 140 once alerted, and bites with `HitLivingUnits(3, Melee, 6, X, Y + 4)`. Design values: the
+throw's speed scales with the distance (0.5x to 1.5x at 160 units), a 1.5 s pause after a throw, a 2.5 s fuse and
+0.5 s between bites. Left out: the shield mook panicking or dropping his shield on fire.
+
+The burning jungle's ThemeHolder art is the jungle's blue; its look is `ColorShiftController` on the
+BackgroundCamera, which grades the background with an Amplify Color LUT per theme and weather
+(`colorMapBurningJungleDay` = `Preset_Burning_Jungle`; the jungle's is `Preset_Blank`, the desert has none). The
+extractor bakes that LUT into the burning background's sprites (32 slices of 32x32, blue across slices, red across,
+green up), so the sky comes out smoky while the level itself keeps its colours, as in the game.
