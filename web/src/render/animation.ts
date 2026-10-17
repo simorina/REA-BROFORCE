@@ -74,6 +74,11 @@ const JET_WHEELS = 8; // the Harrier frame's lowest opaque pixels (its wheels) s
  * Where the jet's frame is centred. Broforce's Harrier hangs from a pivot in mid-air (it only hovers), so its SpriteSM
  * offset would sink our landed jet's wheels 12 px into the ground; ours stands on them at its y.
  */
+/** Helicopter.StartIdleAnim: hovering, the AnimatedTexture is off on its idle frame (GetDirection: 4 faces left). */
+export function helicopterFrame(facing: 1 | -1): number {
+  return facing < 0 ? 4 : 0;
+}
+
 export function jetFrameCentreY(y: number, frameH: number): number {
   return y + frameH / 2 - JET_WHEELS;
 }

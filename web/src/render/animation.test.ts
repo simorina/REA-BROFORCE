@@ -3,7 +3,7 @@ import { TEST_STATS } from '../engine/testStats';
 import { makeUnit } from '../engine/units';
 import { TileMap, makeBlock } from '../engine/map';
 import { makeTank } from '../engine/tank';
-import { blockFrame, jetFrameCentreY, mechFrame, loopFrame, prisonerFrame, special2Frame, stripFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
+import { blockFrame, helicopterFrame, jetFrameCentreY, mechFrame, loopFrame, prisonerFrame, special2Frame, stripFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
 
 const bro = (patch: Partial<ReturnType<typeof makeUnit>>) =>
   Object.assign(makeUnit(1, 'bro', 'player', 0, 8, TEST_STATS.bros.bro_base), { onGround: true }, patch);
@@ -144,5 +144,12 @@ describe('blockFrame', () => {
 describe('the Goliath', () => {
   it('draws its turning frames: 0 facing right, 3 facing us, 6 facing left', () => {
     expect([0, 2.6, 6, 7, -1].map(mechFrame)).toEqual([0, 3, 6, 6, 0]);
+  });
+});
+
+describe('the extraction helicopter', () => {
+  it('hovers on its idle frame instead of cycling through its turn (Helicopter.StartIdleAnim): 0 faces right, 4 left', () => {
+    expect(helicopterFrame(1)).toBe(0);
+    expect(helicopterFrame(-1)).toBe(4);
   });
 });

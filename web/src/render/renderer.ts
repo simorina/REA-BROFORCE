@@ -9,7 +9,7 @@ import type { Mech } from '../engine/mech';
 import type { Tank } from '../engine/tank';
 import type { BlockKind, Projectile, Unit, UnitKind } from '../engine/types';
 import { speaker, type Effect, type GameEvent, type World } from '../engine/world';
-import { blockFrame, jetFrameCentreY, loopFrame, mechFrame, prisonerFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
+import { blockFrame, helicopterFrame, jetFrameCentreY, loopFrame, mechFrame, prisonerFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
 import type { Assets, SheetKey } from './assets';
 import { Effects } from './fx/controller';
 import { particleFrame } from './fx/particles';
@@ -531,6 +531,6 @@ export class Renderer {
     const leave = Math.max(0, w.extractionTime - half);
     const x = w.flag.x - 220 * (1 - arrive);
     const y = w.flag.y + 48 + 72 * (1 - arrive) + leave * 120;
-    this.sprite('helicopter', loopFrame(w.time, 0.03, this.assets.sheets.helicopter.cols), 0, x, y);
+    this.sprite('helicopter', helicopterFrame(1), 0, x, y); // it flies in from the left
   }
 }

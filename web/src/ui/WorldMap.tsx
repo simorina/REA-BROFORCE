@@ -6,6 +6,7 @@ import { fitCanvas } from '../render/layout';
 import { MAP_H, MAP_W, drawWorldMap, type MapMission } from '../render/worldmap';
 
 const SCALE = 3;
+const MAP_CHROME = 250; // the title, the message, the mission line and the buttons around the map
 
 interface Props {
   assets: Assets;
@@ -25,11 +26,11 @@ export function WorldMap({ assets, done, message, onPlay, onMenu }: Props) {
   const flight = useRef<{ from: Spot; to: Spot; start: number }>({
     from: flightStart(unlocked), to: MISSIONS[unlocked].map, start: performance.now(),
   });
-  const [size, setSize] = useState(() => fitCanvas(window.innerWidth, window.innerHeight - 120));
+  const [size, setSize] = useState(() => fitCanvas(window.innerWidth - 32, window.innerHeight - MAP_CHROME));
   const themes = useMemo(() => MISSIONS.map((m) => m.build().theme ?? 'jungle'), []);
 
   useEffect(() => {
-    const onResize = () => setSize(fitCanvas(window.innerWidth, window.innerHeight - 120));
+    const onResize = () => setSize(fitCanvas(window.innerWidth - 32, window.innerHeight - MAP_CHROME));
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);

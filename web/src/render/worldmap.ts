@@ -1,4 +1,5 @@
 import type { LevelTheme } from '../engine/level';
+import { helicopterFrame } from './animation';
 
 /** The world map's own art (ours, not Broforce's globe): sea, land, the route, the missions and the helicopter. */
 export const MAP_W = 400;
@@ -186,7 +187,7 @@ function markers(ctx: CanvasRenderingContext2D, scene: MapScene, time: number): 
   });
 }
 
-/** Broforce's helicopter in profile (frame 0 faces right), its rotor a blur above, bobbing while it waits. */
+/** Broforce's helicopter on its idle frame for the way it flies, its rotor a blur above, bobbing while it waits. */
 function helicopter(ctx: CanvasRenderingContext2D, scene: MapScene, art: HeliArt | null, time: number): void {
   const h = scene.heli;
   const c = px(h);
@@ -197,8 +198,7 @@ function helicopter(ctx: CanvasRenderingContext2D, scene: MapScene, art: HeliArt
   const y = c.y - 20 + bob;
   ctx.save();
   ctx.translate(x, y);
-  if (h.facing < 0) ctx.scale(-1, 1);
-  if (art) ctx.drawImage(art.image, 0, 0, art.frameW, art.frameH, -w / 2, -ht / 2, w, ht);
+  if (art) ctx.drawImage(art.image, helicopterFrame(h.facing) * art.frameW, 0, art.frameW, art.frameH, -w / 2, -ht / 2, w, ht);
   // the rotor, spinning
   const span = 20 + Math.abs(Math.sin(time * 40)) * 8;
   ctx.fillStyle = 'rgba(40, 40, 40, 0.55)';
