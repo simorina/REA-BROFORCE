@@ -42,3 +42,11 @@ pre { text-align: left; background: #221d19; padding: 12px; white-space: pre-wra
 .bro-card .portrait { display: block; }
 .mission { color: var(--accent); margin: 0 0 8px; }
 .hint { opacity: 0.6; font-size: 12px; margin: 0 0 14px; }
+
+.worldmap { max-width: none; padding: 12px 16px; }
+.worldmap h1 { margin: 4px 0 8px; letter-spacing: 2px; }
+.map-canvas { margin: 0 auto; border: 2px solid #2a3b4d; }
+.map-canvas canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.map-message { color: var(--accent); font-weight: bold; margin: 4px 0 8px; }
+.map-mission { margin: 10px 0 8px; }
+.worldmap .hint { opacity: 0.7; font-size: 0.85em; }

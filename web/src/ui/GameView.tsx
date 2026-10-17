@@ -14,7 +14,7 @@ import type { Jet } from '../engine/jet';
 import { NO_CONTROLS, type Controls } from '../engine/types';
 import { bossBar, bossName } from '../engine/boss';
 import { createWorld, stepWorld } from '../engine/world';
-import { buildLevel1 } from '../levels/level1';
+import type { LevelData } from '../engine/level';
 import { broSheet, type Assets } from '../render/assets';
 import { fitCanvas } from '../render/layout';
 import { Renderer } from '../render/renderer';
@@ -26,13 +26,14 @@ for (const b of BROS) broSheet(b); // every bro's sheet must be one the extracto
 interface Props {
   assets: Assets;
   broId: string;
+  buildLevel: () => LevelData; // the mission's level
   voice: boolean;
   sound: boolean;
   onEnd: (result: 'won' | 'lost', broName: string) => void;
   onMenu: () => void;
 }
 
-export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) {
+export function GameView({ assets, broId, buildLevel, voice, sound, onEnd, onMenu }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const roster = useMemo(() => rosterStartingWith(broId), [broId]);
   const portraitOf = useCallback((b: BroDef) => `/${assets.sheets[broSheet(b)].file}`, [assets]);
@@ -53,7 +54,7 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
   useEffect(() => {
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
-    const level = buildLevel1();
+    const level = buildLevel();
     const world = createWorld(level, assets.stats, roster);
     const renderer = new Renderer(ctx, assets, SCALE, () => broSheet(world.bro), () => (world.bro.weapon === 'rifle' ? 'rifle_gun' : null), level.parallax, Math.random, level.theme);
     const keyboard = new Keyboard();
@@ -136,7 +137,7 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
       document.removeEventListener('visibilitychange', onVisibility);
       window.clearTimeout(endTimer);
     };
-  }, [assets, voice, sound, onEnd, hud, pause, roster, portraitOf]);
+  }, [assets, buildLevel, voice, sound, onEnd, hud, pause, roster, portraitOf]);
 
   return (
     <div className="game" style={{ width: size.width, height: size.height }}>

@@ -7,4 +7,8 @@ describe('the end screen', () => {
     expect(endMessage('won', 'Silvio Brolusconi')).toBe("Silvio Brolusconi è salito sull'elicottero.");
     expect(endMessage('lost', 'Vladimir Putin')).toBe('Hai finito le vite.');
   });
+
+  it('after the island, the campaign is over', () => {
+    expect(endMessage('won', 'Donald Trump', true)).toBe("Donald Trump è salito sull'elicottero. Epstein è sconfitto: campagna completata!");
+  });
 });
