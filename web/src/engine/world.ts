@@ -11,7 +11,7 @@ import {
   LIVES_START, PRISONER_RESCUE_DIST, RESCUE_INVULNERABLE, RESPAWN_DELAY, SPAWN_INVULNERABLE, SPECIAL2_TIME,
   SPEECH_DURATION, TILE, UNIT_BOX_HEIGHT, UNIT_WIDTH, BAZOOKA_RECOIL, DOOR_EXIT_INVULNERABLE, DOOR_FIRE_DAMAGE, SCOUT_WAVE_TIME,
   BOMB_FIRE_RANGE_M, SUICIDE_BURN_EXTRA, ALLURE_RANGE, FLEX_EVENT_FRAMES, FLEX_FRAME_RATE, FLEX_FRAMES, FLEX_HOLD,
-  FLEX_RESTART_FRAME, FLEX_SLOW_FRAMES, FLEX_SLOW_RATE, TANK_EXIT_YI, GUN_FRAME_RATE,
+  FLEX_RESTART_FRAME, FLEX_SLOW_FRAMES, FLEX_SLOW_RATE, TANK_EXIT_YI,
 } from './constants';
 import { alarmDoor, collapseDoor, doorLostSupport, makeDoor, stepDoor, type DoorSpawn, type MookDoor } from './doors';
 import { applyBlast, barrelBlast, suicideBlast, type Blast } from './explosions';
@@ -26,7 +26,7 @@ import {
 } from './driving';
 import { stepJudo } from './judo';
 import { SPECIAL_KITS, WEAPON_KITS } from './kits';
-import { damageUnit, makeUnit, runFiring } from './units';
+import { damageUnit, makeUnit, runFiring, runGun } from './units';
 import { bossAlive, bossDown, makeBoss, stepBoss } from './boss';
 import type { Jet } from './jet';
 import type { Tank } from './tank';
@@ -331,13 +331,7 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
       p.fireCooldown = p.stats.fireRate;
     }
     stepJudo(w, p, t, blasts);
-    if (p.gunFrame > 0) { // TestVanDammeAnim.RunGun
-      p.gunCounter += t;
-      if (p.gunCounter > GUN_FRAME_RATE) {
-        p.gunCounter -= GUN_FRAME_RATE;
-        p.gunFrame--;
-      }
-    }
+    runGun(p, t);
     if (controls.special && !prev.special && w.specialAmmo > 0) {
       w.specialAmmo -= 1;
       const thrown = SPECIAL_KITS[w.bro.special](w.nextId++, p, controls.down);

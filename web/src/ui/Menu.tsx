@@ -62,6 +62,7 @@ export function Menu({ bros, selected, portraits, voice, sound, onSelect, onTogg
           </button>
         ))}
       </div>
+      <p className="mission">Livello 1: l'isola di Jeffrey Epstein. Arriva al tempio e sconfiggilo.</p>
       <p className="hint">← → per scegliere il bro (salvare un prigioniero ti passa all'altro)</p>
       <table className="controls">
         <tbody>

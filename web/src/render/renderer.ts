@@ -311,8 +311,8 @@ export class Renderer {
     const image = disarmed ? this.assets.files[this.assets.effects.scoutDisarmed] : undefined;
     // SpriteSM offset: the 32x32 frame is centred offsetY above the feet.
     this.sprite(key, f.col, f.row, u.x, u.y + this.assets.sheets[key].offsetY, u.facing < 0, 0, image);
-    // the bro's gun on top of him (TestVanDammeAnim.gunSprite: same pivot as the body), muzzle frames from gunFrame
-    const gun = u.kind === 'bro' ? this.playerGun() : null;
+    // the bro's (and the boss's) gun on top of him (TestVanDammeAnim.gunSprite: same pivot as the body), muzzle frames from gunFrame
+    const gun = u.kind === 'bro' ? this.playerGun() : u.kind === 'boss' ? 'rifle_gun' : null;
     if (gun && !u.dead && !u.wallClimbing && !u.flex && !u.attack) {
       this.sprite(gun, u.gunFrame, 0, u.x, u.y + this.assets.sheets[key].offsetY, u.facing < 0);
     }

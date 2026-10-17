@@ -1,5 +1,5 @@
 import { makeAiState } from './ai';
-import { FIRE_START_LIMIT, GIB_THRESHOLD, UNIT_BOX_HEIGHT, UNIT_WIDTH } from './constants';
+import { FIRE_START_LIMIT, GIB_THRESHOLD, GUN_FRAME_RATE, UNIT_BOX_HEIGHT, UNIT_WIDTH } from './constants';
 import type { Team, Unit, UnitKind, UnitStats } from './types';
 
 export function makeUnit(id: number, kind: UnitKind, team: Team, x: number, y: number, stats: UnitStats): Unit {
@@ -31,6 +31,16 @@ export function damageUnit(u: Unit, amount: number, ignoreInvulnerable = false):
   u.deadTime = 0;
   u.wallClimbing = false;
   return true;
+}
+
+/** TestVanDammeAnim.RunGun: after a shot the gun shows its muzzle frames 3, 2, 1 for 0.0334 s each. */
+export function runGun(u: Unit, t: number): void {
+  if (u.gunFrame <= 0) return;
+  u.gunCounter += t;
+  if (u.gunCounter > GUN_FRAME_RATE) {
+    u.gunCounter -= GUN_FRAME_RATE;
+    u.gunFrame--;
+  }
 }
 
 /** TestVanDammeAnim.Knock: half the push goes to xI and half to xIBlast; heroes fly up less. */

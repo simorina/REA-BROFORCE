@@ -12,6 +12,12 @@ export function Hud({ store }: { store: HudStore }) {
           <span key={i} className="pip" />
         ))}
       </div>
+      {hud.boss !== null && (
+        <div className="boss" aria-label={`Jeffrey Epstein: ${Math.round(hud.boss * 100)}%`}>
+          <span className="boss-name">JEFFREY EPSTEIN</span>
+          <span className="boss-bar"><span style={{ width: `${hud.boss * 100}%` }} /></span>
+        </div>
+      )}
       {hud.fuel !== null && (
         <div className="fuel" aria-label={`Carburante: ${Math.round(hud.fuel * 100)}%`}>
           <span style={{ width: `${hud.fuel * 100}%` }} />

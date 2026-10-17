@@ -3,6 +3,7 @@ import { BROLUSCONI } from '../bros';
 import type { BroDef } from './bro';
 import { screenMaxY } from './camera';
 import { BOSS, FIXED_DT } from './constants';
+import { bossBar } from './boss';
 import { judoTarget } from './judo';
 import { parseLevel, type LevelData } from './level';
 import { TEST_STATS } from './testStats';
@@ -111,6 +112,26 @@ describe('Jeffrey Epstein, the boss', () => {
     const x1 = w.boss!.x;
     play(w, {}, steps(0.5));
     expect(w.boss!.x).toBeGreaterThan(x1);
+  });
+
+  it("the HUD's bar shows his health only while he fights", () => {
+    const w = createWorld(arena(), TEST_STATS, [PILOT], () => 0.5);
+    expect(bossBar(w)).toBeNull(); // asleep
+    w.player.invulnerable = 1e9;
+    w.player.x = w.boss!.x - 100;
+    play(w, {}, 1);
+    expect(bossBar(w)).toBe(1);
+    damageUnit(w.boss!, BOSS.health / 4);
+    expect(bossBar(w)).toBe(0.75);
+    damageUnit(w.boss!, BOSS.health);
+    expect(bossBar(w)).toBeNull();
+    expect(bossBar(createWorld(arena([[2, 'P'], [36, 'F']]), TEST_STATS, [PILOT], () => 0.5))).toBeNull(); // no boss
+  });
+
+  it('his gun flashes with each shot', () => {
+    const w = awake();
+    play(w, {}, steps(0.9));
+    expect(w.boss!.gunFrame).toBeGreaterThan(0);
   });
 
   it("can't be grabbed by Putin's judo", () => {

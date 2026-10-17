@@ -5,7 +5,7 @@ import { cellLeft } from './map';
 import { NO_INTENT, stepUnit } from './physics';
 import { fireAimedBullet } from './projectiles';
 import type { BossState, EnemyKind, GameStats, Unit, UnitStats } from './types';
-import { damageUnit, makeUnit } from './units';
+import { damageUnit, makeUnit, runGun } from './units';
 import type { World } from './world';
 
 /** Jeffrey Epstein, the island's boss: a mook's body with the boss's health, and his own mind instead of a mook's. */
@@ -21,6 +21,13 @@ export function makeBoss(id: number, x: number, y: number, stats: GameStats): Un
 }
 
 export const bossAlive = (w: World): boolean => w.boss !== null && !w.boss.dead;
+
+/** The HUD's bar: his health (in 40ths) while he fights, nothing while he sleeps or once he is down. */
+export function bossBar(w: World): number | null {
+  const b = w.boss;
+  if (!b || b.dead || !b.boss?.awake) return null;
+  return Math.round((b.health / BOSS.health) * 40) / 40;
+}
 
 /** One fixed step of the living boss: asleep until the bro comes near, then he keeps his distance, fires bursts at him
  *  and calls his guards in. */
@@ -60,11 +67,14 @@ export function stepBoss(w: World, m: Unit, t: number): void {
         s.shots--;
         s.shotTimer += BOSS.shotGap;
         w.projectiles.push(fireAimedBullet(w.nextId++, m, p.x, p.y + 8, BOSS.bulletSpeed, BOSS.maxAim, w.stats));
+        m.gunFrame = 3;
+        m.gunCounter = 0;
         w.events.push({ type: 'shot', weapon: 'bullet', x: m.x, y: m.y, facing: m.facing });
       }
     }
   }
   stepUnit(m, { ...NO_INTENT, dir }, w.map, t, w.time);
+  runGun(m, t);
   if (s.awake) m.facing = p.x < m.x ? -1 : 1; // he backs off facing the bro
   if (m.y < -64) damageUnit(m, m.health);
 }

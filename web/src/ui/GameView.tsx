@@ -12,6 +12,7 @@ import { JET_FUEL, LIVES_START } from '../engine/constants';
 import { VIEW_H, VIEW_W } from '../engine/camera';
 import type { Jet } from '../engine/jet';
 import { NO_CONTROLS, type Controls } from '../engine/types';
+import { bossBar } from '../engine/boss';
 import { createWorld, stepWorld } from '../engine/world';
 import { buildLevel1 } from '../levels/level1';
 import { broSheet, type Assets } from '../render/assets';
@@ -36,7 +37,7 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
   const roster = useMemo(() => rosterStartingWith(broId), [broId]);
   const portraitOf = useCallback((b: BroDef) => `/${assets.sheets[broSheet(b)].file}`, [assets]);
   const hud = useMemo(
-    () => createHudStore({ lives: LIVES_START, ammo: assets.stats.bros[roster[0].base].specialAmmo, portrait: portraitOf(roster[0]), fuel: null }),
+    () => createHudStore({ lives: LIVES_START, ammo: assets.stats.bros[roster[0].base].specialAmmo, portrait: portraitOf(roster[0]), fuel: null, boss: null }),
     [assets, roster, portraitOf],
   );
   const pause = useMemo(() => createPause(), []);
@@ -104,6 +105,7 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
         hud.set({
           lives: world.lives, ammo: world.specialAmmo, portrait: portraitOf(world.bro),
           fuel: world.driving?.kind === 'jet' ? Math.round(((world.driving as Jet).fuel / JET_FUEL) * 20) / 20 : null,
+          boss: bossBar(world),
         });
         if (!ended && (world.state === 'won' || world.state === 'lost')) {
           ended = true;

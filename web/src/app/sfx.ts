@@ -53,7 +53,10 @@ export function sfxFor(e: GameEvent): SfxName | null {
     case 'doorCollapse':
       return 'crumble';
     case 'doorBlast':
+    case 'bossDown':
       return 'boom';
+    case 'bossCall':
+      return 'whistle';
     default:
       return null;
   }
