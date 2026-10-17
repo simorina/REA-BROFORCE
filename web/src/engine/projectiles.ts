@@ -54,6 +54,15 @@ export function fireRifleBullet(id: number, u: Unit, stats: GameStats, rng: () =
     -RIFLE.jitter + rng() * RIFLE.jitter * 2, stats.rifle.life);
 }
 
+/** A bullet aimed at (tx, ty) from (X + dir*10, Y + 8), within maxAim of level (the boss's; mooks fire level). */
+export function fireAimedBullet(id: number, u: Unit, tx: number, ty: number, speed: number, maxAim: number,
+  stats: GameStats): Projectile {
+  const ox = u.x + u.facing * 10;
+  const oy = u.y + 8;
+  const a = Math.max(-maxAim, Math.min(maxAim, Math.atan2(ty - oy, Math.abs(tx - ox))));
+  return make(id, 'bullet', u.team, ox, oy, u.facing * Math.cos(a) * speed, Math.sin(a) * speed, stats.bullet.life);
+}
+
 export function kickFootball(id: number, u: Unit): Projectile {
   return make(id, 'football', u.team, u.x + u.facing * 8, u.y + 8, u.facing * FOOTBALL.kickX, FOOTBALL.kickY, FOOTBALL.fuse);
 }

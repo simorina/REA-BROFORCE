@@ -21,7 +21,7 @@ import { clampBubbleLeft } from './layout';
 import { parallaxCentre, placeBackground, type BgInstance } from './parallax';
 
 const ENEMY_SHEETS: Record<Exclude<UnitKind, 'bro'>, SheetKey> = {
-  mook: 'mook', mook_suicide: 'mook_suicide', mook_bazooka: 'mook_bazooka', mook_scout: 'mook_scout',
+  mook: 'mook', mook_suicide: 'mook_suicide', mook_bazooka: 'mook_bazooka', mook_scout: 'mook_scout', boss: 'epstein',
 };
 const BLOCK_SHEETS: Record<BlockKind, SheetKey> = {
   dirt: 'block_dirt', sand: 'block_sand', brick: 'block_brick', temple: 'block_temple', steel: 'block_steel', barrel: 'block_barrel',

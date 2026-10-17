@@ -132,6 +132,25 @@ export const JET_ROCKET_COOLDOWN = 0.4; // rockets instead of its heavy bullets,
 export const JET_BOMB = { oy: -4, yI: -50, cooldown: 0.5 };
 export const JET_FUEL = 20;
 export const JET_LEAVE_SPEED = 80; // an empty, dry jet rises away
+/** Jeffrey Epstein, the island's boss. His guard call is MookGeneral.UseSpecial's; everything else is ours. */
+export const BOSS = {
+  health: 120,
+  speed: 60,
+  line: 'Nobody leaves my island!',
+  wake: { x: 176, y: 96 }, // the bro this close wakes him
+  near: 56, // he backs off from the bro closer than this ...
+  far: 128, // ... and comes after him past this
+  burst: 3,
+  shotGap: 0.12,
+  firstBurst: 0.8, // after waking
+  burstEvery: [1.6, 1.0] as const, // calm, enraged (under half health)
+  callEvery: [8, 5] as const,
+  callTime: 0.5, // waving them in, standing still
+  maxGuards: 6, // alive at once
+  guardSuicide: [0, 0.33] as const, // odds of a suicide mook among the guards (Map.MapData.suicideMookSpawnProbability)
+  bulletSpeed: 260,
+  maxAim: 0.5, // radians above or below level
+};
 export const FOOTBALL = {
   kickX: 220, kickY: 160, bounceM: 0.7, frictionM: 0.85, maxBounces: 3, fuse: 1.6,
   damage: 5, range: 32, blastForce: 20, blastForceExtraY: 300,

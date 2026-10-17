@@ -19,7 +19,8 @@ export function startJudo(p: Unit): void {
 export function judoTarget(enemies: readonly Unit[], p: Unit): Unit | null {
   const x = p.x + p.facing * JUDO_HIT.x;
   const y = p.y + JUDO_HIT.y;
-  return enemies.find((m) => !m.dead && m.invulnerable <= 0 && inHitBox(m, x, y, JUDO_HIT.range)) ?? null;
+  // the boss is too big a fish to throw
+  return enemies.find((m) => !m.dead && m.kind !== 'boss' && m.invulnerable <= 0 && inHitBox(m, x, y, JUDO_HIT.range)) ?? null;
 }
 
 /**

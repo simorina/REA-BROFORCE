@@ -27,6 +27,7 @@ import {
 import { stepJudo } from './judo';
 import { SPECIAL_KITS, WEAPON_KITS } from './kits';
 import { damageUnit, makeUnit, runFiring } from './units';
+import { bossAlive, bossDown, makeBoss, stepBoss } from './boss';
 import type { Jet } from './jet';
 import type { Tank } from './tank';
 import { vehicleInBlast, type Vehicle } from './vehicle';
@@ -73,7 +74,7 @@ export type GameEvent =
   | { type: 'block'; x: number; y: number; kind: BlockKind; damage: number }
   | { type: 'hit'; x: number; y: number; hitY: number; xI: number; yI: number }
   | { type: 'death'; x: number; y: number; xI: number; yI: number }
-  | { type: 'kill'; x: number; y: number; kind: EnemyKind; xI: number; yI: number }
+  | { type: 'kill'; x: number; y: number; kind: Exclude<UnitKind, 'bro'>; xI: number; yI: number }
   | { type: 'gib'; x: number; y: number; team: Team; kind: UnitKind; xI: number; yI: number }
   | { type: 'alert'; x: number; y: number }
   | { type: 'rescue'; x: number; y: number }
@@ -87,6 +88,8 @@ export type GameEvent =
   | { type: 'boardTank'; x: number; y: number }
   | { type: 'exitTank'; x: number; y: number }
   | { type: 'boardJet'; x: number; y: number }
+  | { type: 'bossCall'; x: number; y: number } // Epstein waves his guards in
+  | { type: 'bossDown'; x: number; y: number }
   | { type: 'exitJet'; x: number; y: number }
   | { type: 'gunSwitch'; x: number; y: number };
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
@@ -109,6 +112,7 @@ export interface World {
   doorPoints: DoorPoint[]; // the doors as ScoutMookInterestPoints
   tanks: Tank[]; // TankBroTank vehicles on the map
   jets: Jet[]; // Trump's jets
+  boss: Unit | null; // Jeffrey Epstein, when the level has him (also among the enemies)
   driving: Vehicle | null; // what the player is in
   reboard: Vehicle | null; // the vehicle just left: no boarding it until he stands clear of it
   flexPower: 'allure' | null; // PlayerInventory.flexPowers: what flexing does
@@ -137,6 +141,8 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
   const spawn = { x: cellX(parsed.player.c), y: feetY(parsed.player.r) };
   const player = makeUnit(nextId++, 'bro', 'player', spawn.x, spawn.y, stats.bros[bro.base]);
   const enemies = parsed.enemies.map((e) => makeUnit(nextId++, e.kind, 'enemy', cellX(e.c), feetY(e.r), stats.units[e.kind]));
+  const boss = parsed.boss ? makeBoss(nextId++, cellX(parsed.boss.c), feetY(parsed.boss.r), stats) : null;
+  if (boss) enemies.push(boss);
   const doors = parsed.doors.map((d) => makeDoor(d.c, d.r, parsed.map, stats.door));
   const camera = { x: spawn.x, y: spawn.y };
   followCamera(camera, spawn, parsed.map, 1);
@@ -152,7 +158,7 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
     prisoners: parsed.cages.map((c) => ({ x: cellX(c.c), y: feetY(c.r), freed: false })),
     checkpoints: parsed.checkpoints.map((c) => ({ x: cellX(c.c), y: feetY(c.r), activated: false, raisedAt: 0 })),
     grass: parsed.grass.map((c) => ({ x: cellX(c.c), y: c.r * TILE, health: stats.grass.health, destroyed: false })),
-    doors, doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], driving: null, reboard: null, flexPower: level.flexPower ?? null,
+    doors, doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, driving: null, reboard: null, flexPower: level.flexPower ?? null,
     flag: { x: cellX(parsed.flag.c), y: feetY(parsed.flag.r) },
     lives: LIVES_START, specialAmmo: stats.bros[bro.base].specialAmmo, respawnTimer: 0,
     state: 'playing', extractionTime: 0, time: 0, nextId, camera, events: [], laughIndex: 0,
@@ -360,7 +366,8 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
   boardVehicles(w);
   checkCheckpoints(w);
   alertMooks(w, p.x, p.y, ALERT_TOUCH, ALERT_TOUCH); // TestVanDammeAnim.AlertNearbyMooks, every frame
-  if (Math.abs(p.x - w.flag.x) < FLAG_REACH && Math.abs(p.y - w.flag.y) < FLAG_REACH * 2) {
+  // the flag is locked while the island's boss lives
+  if (Math.abs(p.x - w.flag.x) < FLAG_REACH && Math.abs(p.y - w.flag.y) < FLAG_REACH * 2 && !bossAlive(w)) {
     const k = w.driving;
     if (k) {
       exitVehicle(w, TANK_EXIT_YI);
@@ -383,9 +390,15 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
     const ai = m.ai;
     if (m.dead) {
       m.deadTime += t;
+      if (m.kind === 'boss' && !m.gibbed) bossDown(w, m, blasts);
       // MookSuicide.Update: a killed suicide mook goes off 0.7 s later, whatever killed it
       if (m.kind === 'mook_suicide' && ai && !ai.exploded && (ai.deathFuse -= t) <= 0) explodeSuicide(w, m, blasts);
       if (!m.gibbed) stepUnit(m, NO_INTENT, w.map, t, w.time);
+      stepBurning(w, m, t);
+      continue;
+    }
+    if (m.kind === 'boss') {
+      stepBoss(w, m, t);
       stepBurning(w, m, t);
       continue;
     }
@@ -594,7 +607,7 @@ function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
 /** Map.DisturbWildLife: mooks within the noise range plus their own hearing range hear it. */
 function makeNoise(w: World, x: number, y: number, range: number): void {
   for (const m of w.enemies) {
-    if (m.dead) continue;
+    if (m.dead || !m.ai) continue;
     if (Math.abs(m.x - x) < range + m.stats.hearingX && Math.abs(m.y - y) < range + m.stats.hearingY) {
       hearSound(m, w.stats.ai[m.kind as EnemyKind], w.rng, x, y);
     }
@@ -646,7 +659,7 @@ function reportUnits(w: World): void {
         // Map.ForgetPlayer(..., amuseMooks): each laugh bumps the shared laugh index
         for (const m of w.enemies) playerDied(m, w.rng, m.ai?.mental === 'alerted' ? ++w.laughIndex : 0);
       } else {
-        w.events.push({ type: 'kill', x: u.x, y: u.y, kind: u.kind as EnemyKind, xI: u.xI, yI: u.yI });
+        w.events.push({ type: 'kill', x: u.x, y: u.y, kind: u.kind as Exclude<UnitKind, 'bro'>, xI: u.xI, yI: u.yI });
         if (u.originDoor >= 0) w.doors[u.originDoor].mookCount--; // Mook.Death: MookDoor.RemoveMook
         u.originDoor = -1;
       }

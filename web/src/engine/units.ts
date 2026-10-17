@@ -14,6 +14,7 @@ export function makeUnit(id: number, kind: UnitKind, team: Team, x: number, y: n
     burstLeft: 0, burstCounter: 0, gunFrame: 0, gunCounter: 0,
     dead: false, deadTime: 0, gibbed: false, reported: { death: false, gib: false }, animTime: 0,
     ai: team === 'enemy' ? makeAiState(id) : null,
+    boss: null,
   };
 }
 

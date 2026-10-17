@@ -1,8 +1,8 @@
 export type Team = 'player' | 'enemy';
 export type BlastTeam = Team | 'neutral';
 export type BlockKind = 'dirt' | 'sand' | 'brick' | 'temple' | 'steel' | 'barrel';
-export type UnitKind = 'bro' | 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout';
-export type EnemyKind = Exclude<UnitKind, 'bro'>;
+export type EnemyKind = 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout';
+export type UnitKind = 'bro' | EnemyKind | 'boss';
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
 export const BRO_BASES = ['bro_base', 'bro_lee', 'bro_soldier'] as const;
 export type BroBase = (typeof BRO_BASES)[number];
@@ -12,6 +12,18 @@ export interface Block {
   kind: BlockKind;
   health: number;
   replacement?: Block; // Block.replaceOnCollapse: what takes its place when it is destroyed
+}
+
+/** The island's boss (see boss.ts). */
+export interface BossState {
+  awake: boolean; // asleep until the bro comes near
+  enraged: boolean; // under half health: faster bursts and calls, suicide mooks among his guards
+  burstClock: number;
+  shots: number; // left in the current burst
+  shotTimer: number;
+  callClock: number;
+  calling: number; // -1, or how long he has been waving his guards in
+  guards: number[]; // the ids of the guards he called
 }
 
 export interface UnitStats {
@@ -252,6 +264,7 @@ export interface Unit {
   reported: { death: boolean; gib: boolean }; // the world has announced these
   animTime: number;
   ai: AiState | null;
+  boss: BossState | null; // Jeffrey Epstein's mind, on the boss only
 }
 
 export interface Projectile {
