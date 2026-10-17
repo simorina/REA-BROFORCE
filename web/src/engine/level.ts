@@ -15,6 +15,9 @@ export interface ParallaxDoodad {
 }
 
 /** tiles[0] is the TOP row. */
+/** The ThemeHolder a level's background comes from. */
+export type LevelTheme = 'jungle' | 'desert' | 'burning';
+
 export interface LevelData {
   cols: number;
   rows: number;
@@ -22,6 +25,7 @@ export interface LevelData {
   parallax?: ParallaxDoodad[];
   grass?: Cell[]; // long grass that can share a cell with a unit ('g' tiles add more)
   flexPower?: 'allure'; // Map.MapData.flexPowerType: SpawnWithAllure gives the bro the Alluring flex
+  theme?: LevelTheme; // the background (jungle when unset)
 }
 
 export interface ParsedLevel {

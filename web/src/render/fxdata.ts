@@ -274,8 +274,8 @@ export function parseBackground(raw: unknown): BackgroundData {
   return b;
 }
 
-/** Every image file the effects and background reference. */
-export function effectFiles(fx: EffectsData, bg: BackgroundData): string[] {
+/** Every image file the effects and the backgrounds reference. */
+export function effectFiles(fx: EffectsData, ...backgrounds: BackgroundData[]): string[] {
   const files = new Set<string>();
   for (const e of Object.values(fx.emitters)) files.add(e.texture);
   for (const p of [...Object.values(fx.puffs), ...Object.values(fx.twoLayerPuffs), ...Object.values(fx.bubbles)]) files.add(p.file);
@@ -288,6 +288,6 @@ export function effectFiles(fx: EffectsData, bg: BackgroundData): string[] {
   files.add(fx.rangePop.file);
   files.add(fx.plume.file);
   for (const b of [fx.suicide, fx.airstrike]) for (const s of [b.shrapnel, ...b.smoke]) files.add(s.file);
-  for (const s of [bg.sky, ...bg.clouds, ...bg.near, ...bg.mid, ...bg.distant]) files.add(s.file);
+  for (const bg of backgrounds) for (const s of [bg.sky, ...bg.clouds, ...bg.near, ...bg.mid, ...bg.distant]) files.add(s.file);
   return [...files].sort();
 }

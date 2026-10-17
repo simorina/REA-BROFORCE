@@ -31,6 +31,7 @@ export function buildLevel1(): LevelData {
   fill(22, 28, 4, 4, 'a');
   fill(24, 26, 5, 5, 'a');
   put(25, 6, 'c');
+  put(20, 4, 'q');
   put(31, 4, 'o');
   put(34, 4, 'k');
   put(37, 4, 'D');
@@ -41,6 +42,7 @@ export function buildLevel1(): LevelData {
   ground(48, 57, 5);
   put(50, 6, 'm');
   put(54, 6, 'm');
+  put(56, 6, 'h');
   ground(58, 74, 7);
   put(59, 8, 'x');
   put(60, 8, 'x');
@@ -68,12 +70,14 @@ export function buildLevel1(): LevelData {
   put(84, 15, 'z');
   put(96, 15, 'm');
   put(100, 15, 'k');
+  put(106, 15, 'n');
   put(110, 8, 'C');
 
   // The ravine (113-150): bottomless gaps between ledges held by mooks.
   ground(113, 117, 7);
   ground(120, 127, 7);
   put(124, 8, 'm');
+  put(126, 8, 'q');
   ground(130, 137, 7);
   put(133, 8, 'z');
   put(135, 8, 'c');
@@ -99,10 +103,13 @@ export function buildLevel1(): LevelData {
   put(168, 12, 'm');
   put(171, 12, 'z');
   put(170, 17, 'c');
+  put(174, 17, 'n');
+  put(180, 8, 'q');
   put(182, 8, 'm');
   put(185, 8, 'x');
   put(186, 8, 'x');
   put(188, 8, 'm');
+  put(190, 8, 'h');
   put(193, 8, 'k');
   put(196, 8, 'm');
   put(199, 8, 'C');
@@ -110,6 +117,7 @@ export function buildLevel1(): LevelData {
   // The road up to the temple (201-245): terraces, long grass, a last scout and door.
   ground(201, 212, 7);
   put(205, 8, 'm');
+  put(207, 8, 'h');
   put(209, 8, 'z');
   ground(213, 222, 9);
   put(216, 10, 'm');
@@ -119,6 +127,7 @@ export function buildLevel1(): LevelData {
   put(226, 12, 'o');
   put(229, 12, 'm');
   put(234, 12, 'D');
+  put(236, 12, 'n');
   put(238, 12, 'm');
   put(241, 12, 'k');
   put(244, 12, 'C');
@@ -138,6 +147,7 @@ export function buildLevel1(): LevelData {
   put(308, 10, 'm');
   ground(312, 317, 7);
   put(314, 8, 'z');
+  put(316, 8, 'n');
   ground(318, 323, 5);
   put(320, 6, 'k');
   ground(324, 329, 3);
@@ -156,8 +166,10 @@ export function buildLevel1(): LevelData {
   fill(350, 350, 6, 7, 'b'); // a low wall to duck under
   put(338, 4, 'm');
   put(343, 4, 'm');
+  put(345, 4, 'h');
   put(347, 4, 'x');
   put(354, 4, 'z');
+  put(356, 4, 'q');
   put(358, 4, 'c');
   put(362, 4, 'm');
   put(366, 4, 'x');
@@ -170,6 +182,7 @@ export function buildLevel1(): LevelData {
   put(352, 9, 'z');
   put(360, 9, 'c');
   put(372, 9, 'm');
+  put(368, 9, 'q');
   put(390, 4, 'C');
 
   // The pad (396-479): a steel floor under open sky, Epstein's Goliath on it, the flag at its far end.
@@ -186,7 +199,7 @@ export function buildLevel1(): LevelData {
   ];
 
   // FlexPowerMapType.SpawnWithAllure: flexing (F) draws the mooks over to have a look
-  return { cols: COLS, rows: ROWS, tiles: grid.map((row) => row.join('')), parallax: jungle(), grass, flexPower: 'allure' };
+  return { cols: COLS, rows: ROWS, tiles: grid.map((row) => row.join('')), parallax: jungle(), grass, flexPower: 'allure', theme: 'jungle' };
 }
 
 /**

@@ -55,7 +55,7 @@ export function GameView({ assets, broId, voice, sound, onEnd, onMenu }: Props) 
     if (!ctx) return;
     const level = buildLevel1();
     const world = createWorld(level, assets.stats, roster);
-    const renderer = new Renderer(ctx, assets, SCALE, () => broSheet(world.bro), () => (world.bro.weapon === 'rifle' ? 'rifle_gun' : null), level.parallax);
+    const renderer = new Renderer(ctx, assets, SCALE, () => broSheet(world.bro), () => (world.bro.weapon === 'rifle' ? 'rifle_gun' : null), level.parallax, Math.random, level.theme);
     const keyboard = new Keyboard();
     keyboard.attach(window);
     const sfx = new Sfx(sound);

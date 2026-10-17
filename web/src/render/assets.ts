@@ -2,6 +2,7 @@ import { parseValues } from '../engine/stats';
 import type { GameStats } from '../engine/types';
 import { unpackTexture, type ShaderTexture } from './fx/pixelShader';
 import type { ShurikenData } from './fx/shuriken';
+import type { LevelTheme } from '../engine/level';
 import { effectFiles, parseBackground, parseEffects, parseShuriken, type BackgroundData, type EffectsData } from './fxdata';
 
 export interface SheetInfo {
@@ -25,7 +26,7 @@ export interface Assets {
   images: Record<SheetKey, HTMLImageElement>;
   stats: GameStats;
   effects: EffectsData;
-  background: BackgroundData;
+  backgrounds: Record<LevelTheme, BackgroundData>;
   files: Record<string, HTMLImageElement>; // effect and background textures by game-data path
   shuriken: ShurikenData;
   shaderTextures: Record<string, ShaderTexture>; // the PixelExplosion textures by name, as raw RGBA
@@ -67,9 +68,14 @@ export interface GameData {
   sheets: Record<SheetKey, SheetInfo>;
   stats: GameStats;
   effects: EffectsData;
-  background: BackgroundData;
+  backgrounds: Record<LevelTheme, BackgroundData>;
   shuriken: ShurikenData;
 }
+
+/** Each level theme's ThemeHolder background, as the extractor writes it. */
+const BACKGROUND_FILES: Record<LevelTheme, string> = {
+  jungle: '/background.json', desert: '/background_desert.json', burning: '/background_burning.json',
+};
 
 export async function loadData(fetcher: typeof fetch = fetch): Promise<GameData> {
   const sheets = (await fetchJson('/sheets.json', fetcher)) as Record<string, SheetInfo>;
@@ -77,12 +83,14 @@ export async function loadData(fetcher: typeof fetch = fetch): Promise<GameData>
   if (missing.length > 0) throw new MissingGameDataError(`sheets.json lacks: ${missing.join(', ')}`);
   const raw = (await fetchJson('/values.json', fetcher)) as Record<string, Record<string, unknown>>;
   const effects = await fetchJson('/effects.json', fetcher);
-  const background = await fetchJson('/background.json', fetcher);
+  const rawBackgrounds = await Promise.all(
+    (Object.entries(BACKGROUND_FILES) as Array<[LevelTheme, string]>).map(async ([t, f]) => [t, await fetchJson(f, fetcher)] as const));
   const shuriken = await fetchJson('/shuriken.json', fetcher);
   try {
     return {
       sheets: sheets as Record<SheetKey, SheetInfo>, stats: parseValues(raw), effects: parseEffects(effects),
-      background: parseBackground(background), shuriken: parseShuriken(shuriken),
+      backgrounds: Object.fromEntries(rawBackgrounds.map(([t, b]) => [t, parseBackground(b)])) as Record<LevelTheme, BackgroundData>,
+      shuriken: parseShuriken(shuriken),
     };
   } catch (e) {
     throw new MissingGameDataError(e instanceof Error ? e.message : String(e));
@@ -111,13 +119,13 @@ async function loadShaderTexture(file: string): Promise<ShaderTexture> {
 }
 
 export async function loadAssets(): Promise<Assets> {
-  const { sheets, stats, effects, background, shuriken } = await loadData();
+  const { sheets, stats, effects, backgrounds, shuriken } = await loadData();
   const entries = await Promise.all(SHEET_KEYS.map(async (k) => [k, await loadImage(`/${sheets[k].file}`)] as const));
-  const files = await Promise.all(effectFiles(effects, background).map(async (f) => [f, await loadImage(`/${f}`)] as const));
+  const files = await Promise.all(effectFiles(effects, ...Object.values(backgrounds)).map(async (f) => [f, await loadImage(`/${f}`)] as const));
   const textures = await Promise.all(Object.entries(shuriken.textures)
     .map(async ([name, t]) => [name, await loadShaderTexture(t.file)] as const));
   return {
-    sheets, stats, effects, background, images: Object.fromEntries(entries) as Record<SheetKey, HTMLImageElement>,
+    sheets, stats, effects, backgrounds, images: Object.fromEntries(entries) as Record<SheetKey, HTMLImageElement>,
     files: Object.fromEntries(files), shuriken, shaderTextures: Object.fromEntries(textures),
   };
 }

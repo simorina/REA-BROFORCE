@@ -23,6 +23,16 @@ describe("level 1: Epstein's island", () => {
     expect(parsed.cages).toHaveLength(8);
   });
 
+  it('has the new enemies too: 4 riot shield mooks, 4 grenadiers and 5 dogs', () => {
+    expect(count('mook_shield')).toBe(4);
+    expect(count('mook_grenadier')).toBe(4);
+    expect(count('dog')).toBe(5);
+  });
+
+  it('is the jungle-themed final mission', () => {
+    expect(level.theme).toBe('jungle');
+  });
+
   it('starts on a sand beach and climbs into jungle earth, with a temple of white and blue bricks', () => {
     expect(parsed.map.get(parsed.player.c, parsed.player.r - 1)?.kind).toBe('sand');
     const kinds = new Set<string>();

@@ -2,7 +2,7 @@ import { VIEW_H, VIEW_W } from '../engine/camera';
 import {
   BUBBLE_TIME, EXTRACTION_TIME, FLAG_RAISE_TIME, INVULNERABLE_FLASH, SHAKE_AMOUNT, SHAKE_TIME, TILE,
 } from '../engine/constants';
-import type { ParallaxDoodad } from '../engine/level';
+import type { LevelTheme, ParallaxDoodad } from '../engine/level';
 import { getColumn, getRow } from '../engine/map';
 import type { Jet } from '../engine/jet';
 import type { Mech } from '../engine/mech';
@@ -49,9 +49,10 @@ export class Renderer {
     private readonly playerGun: () => SheetKey | null, // his gun drawn over him, if he carries one
     parallax: readonly ParallaxDoodad[] = [],
     rng: () => number = Math.random,
+    theme: LevelTheme = 'jungle', // the level's background
   ) {
     this.effects = new Effects(assets.effects, rng, assets.shuriken);
-    this.background = placeBackground(assets.background, parallax, rng);
+    this.background = placeBackground(assets.backgrounds[theme], parallax, rng);
   }
 
   private sheetOf = (kind: UnitKind): string => (kind === 'bro' ? this.playerSheet() : ENEMY_SHEETS[kind]);

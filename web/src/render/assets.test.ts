@@ -12,6 +12,12 @@ const fakeFetch = (replies: Record<string, Reply>) =>
   }) as unknown as typeof fetch;
 
 const SHURIKEN = { systems: { tiny: [], small: [], medium: [], large: [], fireTrail: [] }, textures: {} };
+const themed = (folder: string) => ({ ...TEST_BACKGROUND, sky: { ...TEST_BACKGROUND.sky, file: `sprites/bg/${folder}/Sky.png` } });
+const BACKGROUNDS = {
+  '/background.json': { status: 200, body: JSON.stringify(TEST_BACKGROUND) },
+  '/background_desert.json': { status: 200, body: JSON.stringify(themed('desert')) },
+  '/background_burning.json': { status: 200, body: JSON.stringify(themed('burning')) },
+};
 const sheets = Object.fromEntries(SHEET_KEYS.map((k) => [k, { file: `sprites/${k}.png`, frameW: 16, frameH: 16, offsetY: 0, cols: 1, rows: 1 }]));
 
 describe('loadData', () => {
@@ -69,13 +75,36 @@ describe('loadData', () => {
       '/sheets.json': { status: 200, body: JSON.stringify(sheets) },
       '/values.json': { status: 200, body: JSON.stringify(RAW_VALUES) },
       '/effects.json': { status: 200, body: JSON.stringify(TEST_EFFECTS) },
-      '/background.json': { status: 200, body: JSON.stringify(TEST_BACKGROUND) },
+      ...BACKGROUNDS,
       '/shuriken.json': { status: 200, body: JSON.stringify(SHURIKEN) },
     }));
     expect(data.stats).toEqual(TEST_STATS);
     expect(data.shuriken.systems.medium).toEqual([]);
     expect(data.effects.emitters.bloodBig.collision?.gravity).toBe(400);
-    expect(effectFiles(data.effects, data.background)).toContain('sprites/fx/BloodRed.png');
+    expect(effectFiles(data.effects, data.backgrounds.jungle)).toContain('sprites/fx/BloodRed.png');
+  });
+
+  it('loads a background for each level theme: the island jungle, the desert and the burning jungle', async () => {
+    const data = await loadData(fakeFetch({
+      '/sheets.json': { status: 200, body: JSON.stringify(sheets) },
+      '/values.json': { status: 200, body: JSON.stringify(RAW_VALUES) },
+      '/effects.json': { status: 200, body: JSON.stringify(TEST_EFFECTS) },
+      ...BACKGROUNDS,
+      '/shuriken.json': { status: 200, body: JSON.stringify(SHURIKEN) },
+    }));
+    expect(data.backgrounds.jungle.sky.file).toBe(TEST_BACKGROUND.sky.file);
+    expect(data.backgrounds.desert.sky.file).toBe('sprites/bg/desert/Sky.png');
+    expect(data.backgrounds.burning.sky.file).toBe('sprites/bg/burning/Sky.png');
+    expect(effectFiles(data.effects, ...Object.values(data.backgrounds))).toEqual(
+      expect.arrayContaining(['sprites/bg/desert/Sky.png', 'sprites/bg/burning/Sky.png']));
+    const { ['/background_burning.json']: _, ...withoutBurning } = BACKGROUNDS;
+    await expect(loadData(fakeFetch({
+      '/sheets.json': { status: 200, body: JSON.stringify(sheets) },
+      '/values.json': { status: 200, body: JSON.stringify(RAW_VALUES) },
+      '/effects.json': { status: 200, body: JSON.stringify(TEST_EFFECTS) },
+      ...withoutBurning,
+      '/shuriken.json': { status: 200, body: JSON.stringify(SHURIKEN) },
+    }))).rejects.toBeInstanceOf(MissingGameDataError);
   });
 
   it('rejects HTML served for JSON (the dev server fallback when game-data is missing)', async () => {
@@ -93,7 +122,7 @@ describe('loadData', () => {
       '/sheets.json': { status: 200, body: JSON.stringify(sheets) },
       '/values.json': { status: 200, body: JSON.stringify(RAW_VALUES) },
       '/effects.json': { status: 200, body: JSON.stringify({ ...TEST_EFFECTS, puffs: {} }) },
-      '/background.json': { status: 200, body: JSON.stringify(TEST_BACKGROUND) },
+      ...BACKGROUNDS,
       '/shuriken.json': { status: 200, body: JSON.stringify(SHURIKEN) },
     }))).rejects.toThrow('effects.json puffs lacks');
   });
