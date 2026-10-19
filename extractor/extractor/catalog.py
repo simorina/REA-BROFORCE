@@ -48,6 +48,7 @@ SPRITES = (
     SpriteRef("bro_lee", "BroLee", "BroLee", True),
     SpriteRef("bro_in_black", "Brononymous", "Brononymous", True),  # Bro In Black
     SpriteRef("bro_brodock", "ColJamesBrodock", "Col James Brodock", True),  # repainted into Che Guevara
+    SpriteRef("bro_ellen", "EllenRipbro", "EllenRipbro", True),  # repainted into Giorgia Meloni
     SpriteRef("tank_hull", "TankBroTank", "TankBrosTank", True),
     SpriteRef("tank_turret", "TankBroTankTurret", "Turret", True),
     SpriteRef("tank_shell", "HeavyShell", "Shell Heavy Tankbro", True),
@@ -88,6 +89,13 @@ TEXTURES = (
     TextureRef("dirty_harry_gun", "DirtyHarry_Gun_anim", frame=(32, 32)),  # repainted into Samuel's revolver_gun
     TextureRef("rambro_gun", "RAMBRO_gun_anim", frame=(32, 32)),  # Rambro's M60, repainted into Che's m60_gun
     TextureRef("shield", "mook_shield_anim", frame=(32, 32)),  # the riot shield mook's shield (his "gun")
+    TextureRef("ba_gun", "BABROACUS_gun_anim", frame=(32, 32)),  # B.A. Broracus's flamethrower, repainted into Meloni's
+    TextureRef("flame_1", "flamethrower_bullet1", frame=(32, 32)),  # FlameThrower Bullet 1-3's flames: green, white, red
+    TextureRef("flame_2", "flamethrower_bullet2", frame=(32, 32)),
+    TextureRef("flame_3", "flamethrower_bullet3", frame=(32, 32)),
+    TextureRef("flamewall_1", "FlameWallTestFlame7", frame=(32, 32)),  # Flame Wall Puff Test 1-3: the same tricolour
+    TextureRef("flamewall_2", "FlameWallTestFlame4rendered", frame=(32, 32)),
+    TextureRef("flamewall_3", "FlameWallTestFlame5", frame=(32, 32)),
 )
 
 VALUES = (
@@ -95,6 +103,13 @@ VALUES = (
     ValuesRef("bro_lee", "BroLee", "BroLee", UNIT_FIELDS),
     ValuesRef("bro_in_black", "Brononymous", "Brononymous", UNIT_FIELDS),
     ValuesRef("bro_rambro", "Rambro", "Rambo", UNIT_FIELDS),  # Che plays as Rambro
+    ValuesRef("bro_ellen", "EllenRipbro", "EllenRipbro", UNIT_FIELDS),  # Meloni plays as Ellen Ripbro
+    ValuesRef("flamethrower", "BaBroracus", "BA_Broracus2", ("fireRate",)),  # ... with B.A. Broracus's flamethrower
+    ValuesRef("flame_bullet", "FlameBullet", "FlameThrower Bullet 1", ("life", "damage", "projectileSize")),
+    ValuesRef("flame_anim", "AnimatedTexture", "Flame1", ("frames", "frameRate")),
+    ValuesRef("flame_wall", "FlameWallExplosion", "flameWallExplosion",
+              ("maxCollumns", "maxRows", "totalExplosions", "explosionRate", "damageAmount", "maxPuffDelay", "yExplosionOffset")),
+    ValuesRef("flame_wall_puff", "Puff", "Flame Wall Puff Test", ("frameRate", "frames")),
     ValuesRef("molotov", "GrenadeMolotov", "Grenade Molotove", ("range", "size", "gravityM")),
     ValuesRef("molotov_fire", "GrenadeMolotovFire", "Grenade Molotov Fire", ("range", "size", "gravityM", "life")),
     ValuesRef("cricket", "NoisyCricket", "NoisyCricket", ("life", "damage", "range", "blastForce", "projectileSize")),

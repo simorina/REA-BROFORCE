@@ -3,6 +3,7 @@ from PIL import Image
 from extractor.catalog import SPRITES, TEXTURES
 from extractor.repaint import HULL_MAP, PALETTE_MAP, PUTIN_HAIR, PUTIN_MAP, RECIPES, RU_FLAG, TRUMP_MAP, TURRET_MAP, repaint, stealth
 from extractor.repaint import CHE_GUN_MAP, CHE_MAP, CHE_STAR, EPSTEIN_MAP, SAMUEL_GUN_MAP, TEMPLE_MAP
+from extractor.repaint import FLAME_GREEN, FLAME_RED, FLAME_WHITE, MELONI_GUN_MAP, MELONI_MAP
 
 
 def test_maps_known_colours_and_keeps_alpha():
@@ -208,3 +209,42 @@ def test_rambros_bare_arms_on_the_m60_take_ches_olive_sleeves():
     assert out.getpixel((0, 0)) == (0x54, 0x65, 0x3A, 255)
     assert out.getpixel((1, 0)) == (0x1E, 0x1E, 0x1E, 255)
     assert any(r.key == "m60_gun" and r.source == "rambro_gun" for r in RECIPES)
+
+
+def test_ellen_ripbro_becomes_meloni_blonde_in_a_navy_suit_and_dark_shoes():
+    img = Image.new("RGBA", (6, 1))
+    for x, rgb in enumerate([(0x21, 0x14, 0x0A), (0xD7, 0xD2, 0xBC), (0x26, 0x93, 0xD2), (0xDB, 0xE7, 0xED), (0x96, 0x2E, 0x35),
+                             (0xC3, 0x86, 0x6D)]):  # hair, top, trousers, sneaker, sneaker stripe, skin
+        img.putpixel((x, 0), (*rgb, 255))
+    out = repaint(img, MELONI_MAP)
+    r, g, b, _ = out.getpixel((0, 0))
+    assert r > 180 and g > 140 and b < 120  # blonde
+    for x in (1, 2):
+        r, g, b, _ = out.getpixel((x, 0))
+        assert b > r and b > g and r + g + b < 300  # navy
+    assert sum(out.getpixel((3, 0))[:3]) < 200 and sum(out.getpixel((4, 0))[:3]) < 200  # dark shoes
+    assert out.getpixel((5, 0)) == (0xC3, 0x86, 0x6D, 255)  # her skin stays
+    assert any(r.key == "meloni" and r.source == "bro_ellen" for r in RECIPES)
+
+
+def test_ba_broracus_hands_on_the_flamethrower_take_melonis_skin():
+    img = Image.new("RGBA", (2, 1))
+    img.putpixel((0, 0), (0x68, 0x47, 0x2C, 255))  # B.A.'s hand
+    img.putpixel((1, 0), (0x1E, 0x1E, 0x1E, 255))  # the flamethrower stays
+    out = repaint(img, MELONI_GUN_MAP)
+    assert out.getpixel((0, 0)) == (0xC3, 0x86, 0x6D, 255)
+    assert out.getpixel((1, 0)) == (0x1E, 0x1E, 0x1E, 255)
+    assert any(r.key == "flamethrower_gun" and r.source == "ba_gun" for r in RECIPES)
+
+
+def test_the_flames_burn_in_the_tricolour_hottest_lightest():
+    hot, mid, cool = (0xFF, 0xE2, 0x00), (0xFF, 0x90, 0x00), (0xFF, 0x3E, 0x00)
+    assert FLAME_GREEN(mid) == (0x00, 0x92, 0x46) and FLAME_RED(mid) == (0xCE, 0x2B, 0x37)  # the flag's green and red
+    assert FLAME_WHITE(hot) == (0xFF, 0xFF, 0xFF)
+    for tone in (FLAME_GREEN, FLAME_WHITE, FLAME_RED):
+        assert sum(tone(hot)) > sum(tone(mid)) > sum(tone(cool))
+    img = Image.new("RGBA", (1, 1), (*hot, 200))
+    assert repaint(img, {}, tone=FLAME_GREEN).getpixel((0, 0))[3] == 200
+    pairs = {(r.key, r.source) for r in RECIPES}
+    assert {("flame_green", "flame_1"), ("flame_white", "flame_2"), ("flame_red", "flame_3"),
+            ("flamewall_green", "flamewall_1"), ("flamewall_white", "flamewall_2"), ("flamewall_red", "flamewall_3")} <= pairs

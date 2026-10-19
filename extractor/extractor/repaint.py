@@ -186,6 +186,42 @@ class Star:
 
 CHE_STAR = Star(band=(0x30, 0x3A, 0x21), color=(0xD4, 0x20, 0x20))
 
+# Ellen Ripbro -> Giorgia Meloni: her dark curls blonde, the khaki top and blue trousers a navy suit, the white and red
+# sneakers dark shoes (her skin stays)
+MELONI_MAP: dict[RGB, RGB] = {
+    (0x21, 0x14, 0x0A): (0xC9, 0xA0, 0x4A),
+    (0x46, 0x2A, 0x13): (0xEE, 0xD4, 0x8A),
+    (0xD7, 0xD2, 0xBC): (0x2B, 0x3A, 0x63),
+    (0xA6, 0x98, 0x7B): (0x1D, 0x28, 0x46),
+    (0x26, 0x93, 0xD2): (0x26, 0x33, 0x54),
+    (0x26, 0x7D, 0xBA): (0x22, 0x2E, 0x4D),
+    (0x27, 0x5B, 0x96): (0x1B, 0x24, 0x40),
+    (0xDB, 0xE7, 0xED): (0x2A, 0x2A, 0x30),
+    (0x96, 0x2E, 0x35): (0x14, 0x14, 0x18),
+}
+# B.A. Broracus's hands on his flamethrower -> hers
+MELONI_GUN_MAP: dict[RGB, RGB] = {
+    (0x68, 0x47, 0x2C): (0xC3, 0x86, 0x6D),
+    (0x71, 0x4E, 0x31): (0xD7, 0x94, 0x79),
+    (0x7E, 0x58, 0x38): (0xE9, 0xA6, 0x8C),
+}
+
+
+def flame_tone(cool: RGB, mid: RGB, hot: RGB):
+    """Broforce's flames are pure red-to-yellow (R 255, B 0): their green says how hot a pixel is, from #FF3E00 to
+    #FFE200. The tone keeps that heat and paints it from `cool` through `mid` to `hot`."""
+    def tone(rgb: RGB) -> RGB:
+        t = max(0.0, min(1.0, (rgb[1] - 0x3E) / (0xE2 - 0x3E)))
+        a, b, k = (cool, mid, t * 2) if t < 0.5 else (mid, hot, t * 2 - 1)
+        return tuple(round(a[i] + (b[i] - a[i]) * k) for i in range(3))
+    return tone
+
+
+# the tricolour: the flag's green (#009246) and red (#CE2B37) at mid heat
+FLAME_GREEN = flame_tone((0x05, 0x5A, 0x2A), (0x00, 0x92, 0x46), (0x9B, 0xE8, 0x8A))
+FLAME_WHITE = flame_tone((0x9A, 0xA6, 0xB8), (0xDD, 0xE2, 0xEA), (0xFF, 0xFF, 0xFF))
+FLAME_RED = flame_tone((0x7A, 0x0B, 0x14), (0xCE, 0x2B, 0x37), (0xFF, 0x9E, 0x8E))
+
 
 @dataclass(frozen=True)
 class Recipe:
@@ -210,6 +246,14 @@ RECIPES = (
     Recipe("revolver_gun", "dirty_harry_gun", SAMUEL_GUN_MAP),
     Recipe("che", "bro_brodock", CHE_MAP, star=CHE_STAR),
     Recipe("m60_gun", "rambro_gun", CHE_GUN_MAP),
+    Recipe("meloni", "bro_ellen", MELONI_MAP),
+    Recipe("flamethrower_gun", "ba_gun", MELONI_GUN_MAP),
+    Recipe("flame_green", "flame_1", {}, tone=FLAME_GREEN),
+    Recipe("flame_white", "flame_2", {}, tone=FLAME_WHITE),
+    Recipe("flame_red", "flame_3", {}, tone=FLAME_RED),
+    Recipe("flamewall_green", "flamewall_1", {}, tone=FLAME_GREEN),
+    Recipe("flamewall_white", "flamewall_2", {}, tone=FLAME_WHITE),
+    Recipe("flamewall_red", "flamewall_3", {}, tone=FLAME_RED),
 )
 
 

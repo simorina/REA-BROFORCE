@@ -63,6 +63,14 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert sheets["m60_gun"]["file"] == "sprites/m60_gun.png" and sheets["molotov"]["frameW"] == 16  # its little fires show only as flames
     assert values["bro_rambro"]["originalSpecialAmmo"] == 6 and values["bro_rambro"]["fireRate"] == pytest.approx(0.1)
     assert values["molotov"]["range"] == 64.0 and values["molotov_fire"]["range"] == 48.0 and values["molotov_fire"]["life"] == 1.0
+    # Giorgia Meloni: Ellen Ripbro repainted, B.A. Broracus's flamethrower, Ellen's flame wall, the flames in the tricolour
+    assert sheets["meloni"]["file"] == "sprites/meloni.png" and sheets["meloni"]["frameW"] == 32
+    assert sheets["flamethrower_gun"]["frameW"] == 32 and sheets["flame_green"]["cols"] == 16 and sheets["flamewall_red"]["cols"] == 32
+    assert values["bro_ellen"]["speed"] == 110.0 and values["bro_ellen"]["originalSpecialAmmo"] == 3
+    assert values["flamethrower"]["fireRate"] == pytest.approx(0.1) and values["flame_bullet"]["life"] == pytest.approx(0.35)
+    assert values["flame_bullet"]["damage"] == 1 and values["flame_anim"]["frames"] == 10
+    assert values["flame_wall"]["maxCollumns"] == 14 and values["flame_wall"]["maxRows"] == 3 and values["flame_wall"]["damageAmount"] == 3
+    assert values["flame_wall_puff"]["frames"] == 20
     assert values["rifle_bullet"]["damage"] == 1
     assert sheets["trump"]["frameW"] == 32 and sheets["rifle_gun"]["frameW"] == 32 and sheets["rifle_gun"]["rows"] == 2
     assert sheets["blade_gun"]["frameW"] == 32 and sheets["blade_gun"]["cols"] == 32 and sheets["blade_gun"]["rows"] == 2
