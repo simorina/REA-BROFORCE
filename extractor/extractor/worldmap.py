@@ -468,11 +468,14 @@ def extract(streaming_assets: str, out) -> None:
     helicopter = _model(scene, w, cache, heli_parts, scene.world(body[3]))
     flag_part = next(((p, r, m, t) for p, r, m, t in _all_renderers(scene) if (m.m_Name or "").startswith(FLAG_MESH)), None)
     flag = _model(scene, w, cache, [flag_part], scene.world(flag_part[3])) if flag_part else []
+    frames = {"helicopter": _right_handed_matrix(scene.world(body[3]))}  # where and how big they stand in the scene
+    if flag_part:
+        frames["flag"] = _right_handed_matrix(scene.world(flag_part[3]))
     globe_water = next(o.read() for o in scene.env.objects if o.type.name == "Mesh" and o.peek_name() == "globeWater")
     data.update({
         "radius": round(globe_water.m_LocalAABB.m_Extent.x, 4),
         "materials": w.materials, "groups": groups, "territories": territories,
-        "models": {"helicopter": helicopter, "flag": flag},
+        "models": {"helicopter": helicopter, "flag": flag}, "modelFrames": frames,
         "icons": {k: w.texture(_texture(scene, n)) for k, n in (("terror", "WorldMap Terror Icon"), ("arrow", "WorldmapArrow"),
                                                                  ("glow", "worldGlow"))},
     })

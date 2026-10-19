@@ -109,6 +109,7 @@ def test_extracts_the_jungle_background_and_the_effects(tmp_path):
     assert {"Custom/Fake3D", "Custom/Fake3DTree", "Custom/PixelWater", "Custom/MapBorder"} <= shaders
     assert [p["name"] for p in globe["models"]["helicopter"]] == ["WorldMap_Helicopter", "Helicopter_MainRotor", "Helicopter_SideRotor"]
     assert globe["models"]["flag"] and (tmp_path / globe["lightmap"]["file"]).is_file()
+    assert len(globe["modelFrames"]["helicopter"]) == 16 and len(globe["modelFrames"]["flag"]) == 16
     assert all((tmp_path / f).is_file() for f in globe["icons"].values())
     fx = json.loads((tmp_path / "effects.json").read_text(encoding="utf-8"))
     blood = fx["emitters"]["bloodBig"]
