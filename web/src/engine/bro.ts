@@ -1,8 +1,8 @@
 import { BRO_BASES, type BroBase } from './types';
 
 /** A custom bro is data: his sheet shares TestVanDammeAnim's layout, and his physics are his `base` prefab's. */
-export const WEAPONS = ['football', 'judo', 'rifle', 'cricket', 'blade', 'rpg', 'm60'] as const;
-export const SPECIALS = ['airstrike', 'tank', 'jet', 'neuralyzer', 'glaive', 'nuke', 'django', 'molotov'] as const;
+export const WEAPONS = ['football', 'judo', 'rifle', 'cricket', 'blade', 'rpg', 'm60', 'flamethrower'] as const;
+export const SPECIALS = ['airstrike', 'tank', 'jet', 'neuralyzer', 'glaive', 'nuke', 'django', 'molotov', 'flamewall'] as const;
 export type WeaponId = (typeof WEAPONS)[number];
 export type SpecialId = (typeof SPECIALS)[number];
 

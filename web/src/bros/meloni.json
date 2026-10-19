@@ -1,0 +1,10 @@
+{
+  "id": "meloni",
+  "name": "Giorgia Meloni",
+  "sheet": "meloni",
+  "base": "bro_ellen",
+  "weapon": "flamethrower",
+  "special": "flamewall",
+  "voiceLine": "Io sono Giorgia!",
+  "voiceLang": "it-IT"
+}

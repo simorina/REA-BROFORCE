@@ -9,6 +9,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   blade: 'Katana di Blade: fendente ravvicinato che affetta nemici e deflette proiettili',
   rpg: 'Lanciarazzi RPG: razzo balistico diretto a forte impatto',
   m60: 'Mitragliatrice M60 di Rambro: raffica continua tenendo premuto',
+  flamethrower: 'Lanciafiamme di B.A. Broracus a fiamme tricolori: a corto raggio, dà fuoco ai nemici',
 };
 const SPECIAL_HINT: Record<SpecialId, string> = {
   airstrike: 'Attacco aereo (con ↓ lo lanci corto)',
@@ -19,6 +20,7 @@ const SPECIAL_HINT: Record<SpecialId, string> = {
   nuke: 'Missile ICBM: attacco nucleare dal cielo a distruzione totale',
   django: 'Django: per 12 secondi diventi Django, col revolver (sei colpi, poi ricarica) e la sua musica',
   molotov: 'Molotov: esplode dove cade, dà fuoco ai nemici vicini e sparge quattro fiammelle',
+  flamewall: 'Muro di fuoco di Ellen Ripbro: un fronte di fiamme tricolori avanza per 14 blocchi, alto 3',
 };
 
 interface Props {

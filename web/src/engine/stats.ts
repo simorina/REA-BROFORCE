@@ -97,7 +97,7 @@ export function parseValues(raw: Raw): GameStats {
     },
     bros: {
       bro_base: unit(raw, 'bro_base', true), bro_lee: unit(raw, 'bro_lee', true), bro_soldier: unit(raw, 'bro_soldier', true),
-      bro_in_black: unit(raw, 'bro_in_black', true), bro_rambro: unit(raw, 'bro_rambro', true),
+      bro_in_black: unit(raw, 'bro_in_black', true), bro_rambro: unit(raw, 'bro_rambro', true), bro_ellen: unit(raw, 'bro_ellen', true),
     },
     ai: {
       mook: ai(raw, 'ai_mook'), mook_suicide: ai(raw, 'ai_mook_suicide'), mook_bazooka: ai(raw, 'ai_mook_bazooka'),
@@ -145,6 +145,18 @@ export function parseValues(raw: Raw): GameStats {
     molotovFire: {
       range: num(raw, 'molotov_fire', 'range'), size: num(raw, 'molotov_fire', 'size'),
       gravityM: num(raw, 'molotov_fire', 'gravityM'), life: num(raw, 'molotov_fire', 'life'),
+    },
+    flamethrower: { fireRate: num(raw, 'flamethrower', 'fireRate') },
+    flame: {
+      life: num(raw, 'flame_bullet', 'life'), damage: num(raw, 'flame_bullet', 'damage'), size: num(raw, 'flame_bullet', 'projectileSize'),
+      frames: num(raw, 'flame_anim', 'frames'), frameRate: num(raw, 'flame_anim', 'frameRate'),
+    },
+    flameWall: {
+      columns: num(raw, 'flame_wall', 'maxCollumns'), rows: num(raw, 'flame_wall', 'maxRows'),
+      explosions: num(raw, 'flame_wall', 'totalExplosions'), rate: num(raw, 'flame_wall', 'explosionRate'),
+      damage: num(raw, 'flame_wall', 'damageAmount'), puffDelay: num(raw, 'flame_wall', 'maxPuffDelay'),
+      puffY: num(raw, 'flame_wall', 'yExplosionOffset'),
+      puffFrames: num(raw, 'flame_wall_puff', 'frames'), puffFrameRate: num(raw, 'flame_wall_puff', 'frameRate'),
     },
     revolver: {
       damage: num(raw, 'revolver_bullet', 'damage'), life: num(raw, 'revolver_bullet', 'life'),

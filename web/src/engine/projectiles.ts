@@ -1,12 +1,12 @@
 import {
   AIRSTRIKE_FUSE, AIRSTRIKE_ROCKETS, AIRSTRIKE_SPEED_MIN, AIRSTRIKE_SPEED_RAND, AIRSTRIKE_THROW,
-  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, FOOTBALL, CRICKET, GRAVITY, GRENADE_EXTRA_Y, GRENADE_FUSE, M60, MOLOTOV, MOLOTOV_FIRE, NEURALISER, REVOLVER, GRENADIER, GRENADIER_REACH, HEAVY_SHELL_DIP, JET_BOMB, JET_ROCKET, JUDO_THROW, SHIELD, MOOK_BULLET_SPEED, RIFLE, TANK_CANNON, TANK_ROCKET_CRUSH, TANK_SHELL,
+  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, FLAME_WALL, FLAMETHROWER, FOOTBALL, CRICKET, GRAVITY, GRENADE_EXTRA_Y, GRENADE_FUSE, M60, MOLOTOV, MOLOTOV_FIRE, NEURALISER, REVOLVER, GRENADIER, GRENADIER_REACH, HEAVY_SHELL_DIP, JET_BOMB, JET_ROCKET, JUDO_THROW, SHIELD, MOOK_BULLET_SPEED, RIFLE, TANK_CANNON, TANK_ROCKET_CRUSH, TANK_SHELL,
   TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT,
 } from './constants';
 import { barrelBlast, cricketBlast, rocketBlast, shellBlast, suicideBlast, type Blast } from './explosions';
 import { TileMap, getColumn, getRow } from './map';
 import { damageUnit, inHitBox, knock } from './units';
-import type { BlockKind, EnemyKind, GameStats, Projectile, ProjectileKind, RocketStats, Team, Unit } from './types';
+import type { BlockKind, EnemyKind, FlameWall, GameStats, Projectile, ProjectileKind, RocketStats, Team, Unit } from './types';
 import { vehicleAt, type Vehicle } from './vehicle';
 import { mechAt, type Mech } from './mech';
 
@@ -26,7 +26,11 @@ export type ProjectileEvent =
   | { type: 'callNuke'; x: number; y: number }
   | { type: 'hitVehicle'; vehicle: Vehicle; damage: number }
   | { type: 'hitMech'; damage: number }
-  | { type: 'shieldHit'; unit: Unit; x: number; y: number; broke: boolean };
+  | { type: 'shieldHit'; unit: Unit; x: number; y: number; broke: boolean }
+  | { type: 'scorch'; x: number; y: number; range: number; damage: number; xI: number } // Map.HitUnits(.., Fire, ..): mooks catch fire
+  | { type: 'quench'; x: number; y: number; range: number } // Map.HitProjectiles(.., Fire, ..): the shots around go out
+  | { type: 'flameWallPuff'; x: number; y: number; variant: number; delay: number; dir: 1 | -1; xI: number }
+  | { type: 'wallShake'; x: number; y: number }; // FlameWallExplosion.RunPoints: SortOfFollow.Shake(0.2)
 
 export interface ProjectileWorld {
   map: TileMap;
@@ -34,6 +38,7 @@ export interface ProjectileWorld {
   stats: GameStats;
   vehicles?: readonly Vehicle[];
   mech?: Mech | null; // Epstein's Goliath: the bro's shots stop on it
+  rng?: () => number; // the world's: which flame puffs, and when
 }
 
 const hitsMech = (w: ProjectileWorld, p: Projectile): boolean => p.team === 'player' && mechAt(w.mech, p.x, p.y);
@@ -156,6 +161,26 @@ export function throwMolotov(id: number, u: Unit, ducking: boolean): Projectile 
   return make(id, 'molotov', u.team, u.x + u.facing * p.ox, u.y + p.oy, u.facing * p.x, p.y, MOLOTOV.fuse);
 }
 
+/** BaBroracus.UseFire / FireWeapon: two flames, each one of FlameThrower Bullet 1-3 at random, on top of her own speed. */
+export function fireFlames(nextId: () => number, u: Unit, stats: GameStats, rng: () => number): Projectile[] {
+  return FLAMETHROWER.shots.map((s) => {
+    const yI = rng() * s.spread * 2 - s.spread;
+    const p = make(nextId(), 'flame', u.team, u.x + u.facing * FLAMETHROWER.ox, u.y + s.oy, u.facing * s.speed + u.xI, yI, stats.flame.life);
+    p.variant = Math.min(FLAMETHROWER.variants - 1, Math.floor(rng() * FLAMETHROWER.variants));
+    return p;
+  });
+}
+
+/** EllenRipbro.UseSpecial: a FlameWallExplosion from (X + dir*5, Y + 9), spreading the way she faces. */
+export function makeFlameWall(id: number, u: Unit): Projectile {
+  const p = make(id, 'flameWall', u.team, u.x + u.facing * FLAME_WALL.ox, u.y + FLAME_WALL.oy, 0, 0, Infinity);
+  p.wall = {
+    col: getColumn(p.x), row: getRow(p.y), dir: u.facing, started: false, minC: 0, maxC: 0, minR: 0, maxR: 0,
+    points: [], used: new Set(), counter: 0, left: 0, time: 0, maxTime: 0,
+  };
+  return p;
+}
+
 /** GrenadeMolotov.Death: four little fires from (X, Y + 2), up and around (Point3OnCircle), at 210-260. */
 export function molotovFlames(nextId: () => number, x: number, y: number, stats: GameStats, rng: () => number, team: Team = 'player'): Projectile[] {
   const a0 = MOLOTOV.firstAngle - rng() * MOLOTOV.firstAngleRand;
@@ -263,11 +288,18 @@ export function unitAt(units: readonly Unit[], x: number, y: number, notTeam: Te
 }
 
 function hitBlock(p: Projectile, w: ProjectileWorld, damage: number, events: ProjectileEvent[]): void {
-  const c = getColumn(p.x);
-  const r = getRow(p.y);
+  damageBlock(w, getColumn(p.x), getRow(p.y), damage, events);
+}
+
+function damageBlock(w: ProjectileWorld, c: number, r: number, damage: number, events: ProjectileEvent[]): void {
   const kind = w.map.damage(c, r, damage);
   if (kind) events.push({ type: 'block', c, r, kind, damage });
   if (kind === 'barrel') events.push({ type: 'explode', blast: barrelBlast(c * TILE, r * TILE, w.stats.barrelRange) });
+}
+
+/** Fire on a block: earth, brick and steel don't burn; a barrel goes up. */
+function burnBlock(w: ProjectileWorld, c: number, r: number, damage: number, events: ProjectileEvent[]): void {
+  if (w.map.get(c, r)?.kind === 'barrel') damageBlock(w, c, r, damage, events);
 }
 
 function bounce(p: Projectile, map: TileMap, t: number, bounceM: number, frictionM: number, gravityM = 1): void {
@@ -298,6 +330,120 @@ function fall(p: Projectile, t: number, gravityM: number): { x: number; y: numbe
   p.x += p.xI * t;
   p.y += p.yI * t;
   return was;
+}
+
+/**
+ * FlameBullet: it flies straight. Reaching mooks it sets them alight (HitUnits: Map.HitUnits(1, Fire, 8)) and goes out;
+ * a wall puts it out too (Projectile.HitWall), with fire damage only a barrel minds.
+ */
+function stepFlame(p: Projectile, w: ProjectileWorld, t: number, events: ProjectileEvent[]): void {
+  p.x += p.xI * t;
+  p.y += p.yI * t;
+  if (w.map.blockAt(p.x, p.y)) {
+    burnBlock(w, getColumn(p.x), getRow(p.y), w.stats.flame.damage, events);
+    p.dead = true;
+  } else if (hitsMech(w, p)) {
+    events.push({ type: 'hitMech', damage: w.stats.flame.damage });
+    p.dead = true;
+  } else if (w.units.some((u) => !u.dead && u.team !== p.team && u.invulnerable <= 0 && inHitBox(u, p.x, p.y, FLAMETHROWER.hitRange))) {
+    events.push({ type: 'scorch', x: p.x, y: p.y, range: FLAMETHROWER.hitRange, damage: w.stats.flame.damage, xI: p.xI });
+    p.dead = true;
+  } else if (p.life <= 0) {
+    p.dead = true;
+  }
+}
+
+const cellKey = (c: number, r: number) => c * 4096 + r;
+
+/** FlameWallExplosion.Setup with a forced direction, then Start: the band it may burn, and its first cell. */
+function startWall(f: FlameWall, w: ProjectileWorld): boolean {
+  const s = w.stats.flameWall;
+  if (f.dir > 0) {
+    f.minC = f.col;
+    f.maxC = Math.min(f.col + s.columns + 1, w.map.cols);
+  } else {
+    f.maxC = f.col + 1;
+    f.minC = Math.max(0, f.col - s.columns);
+  }
+  f.minR = f.row;
+  f.maxR = f.row + s.rows;
+  f.left = s.explosions;
+  f.maxTime = s.explosions * s.rate;
+  if (f.col < f.minC || f.col >= f.maxC || f.row < f.minR || f.row >= f.maxR) return false;
+  f.points = [{ c: f.col, r: f.row, dc: 0 }];
+  return true;
+}
+
+/**
+ * FlameWallExplosion.RunPoints: each burning cell spreads its way to the free cells beside it, level and a row up or
+ * down (CreateFlashBangPoint takes the diagonal step with the cell's own sideways direction, so the start's column
+ * fills upward), never into a cell already burnt. A cell that won't take the fire is ground: if a barrel, it goes up.
+ */
+function runPoints(f: FlameWall, w: ProjectileWorld, events: ProjectileEvent[]): void {
+  const s = w.stats.flameWall;
+  const rng = w.rng ?? (() => 0.5);
+  const next: FlameWall['points'] = [];
+  let spread = false;
+  const create = (c: number, r: number, dc: number, dr: number) => {
+    const nc = c + dc;
+    const nr = r + dr;
+    f.used.add(cellKey(nc, nr));
+    next.push({ c: nc, r: nr, dc });
+    spread = true;
+    const x = nc * TILE;
+    const bottom = nr * TILE - TILE / 2;
+    const variant = Math.min(2, Math.floor(rng() * 3));
+    events.push({ type: 'flameWallPuff', x, y: bottom + FLAME_WALL.puffY, variant, delay: rng() * s.puffDelay, dir: dc < 0 ? -1 : 1, xI: dc * FLAME_WALL.drift });
+    events.push({ type: 'scorch', x, y: bottom + FLAME_WALL.hitY, range: FLAME_WALL.hitRange, damage: s.damage, xI: dc * FLAME_WALL.hitXI });
+    events.push({ type: 'quench', x: c * TILE, y: r * TILE, range: FLAME_WALL.quenchRange });
+    f.left--;
+  };
+  // the cell `side` and `dr` from p: checked there, made with p's own sideways direction for the diagonals (as in Broforce)
+  const tryCell = (p: FlameWall['points'][number], side: number, dr: number) => {
+    const nc = p.c + side;
+    const nr = p.r + dr;
+    if (f.used.has(cellKey(nc, nr))) return;
+    if (!w.map.get(nc, nr)) create(p.c, p.r, dr === 0 ? side : p.dc, dr);
+    else burnBlock(w, nc, nr, s.damage, events);
+  };
+  for (const p of f.points) {
+    for (const side of [-1, 1]) {
+      const allowed = side < 0
+        ? p.dc <= 0 && p.c - 1 >= f.minC && f.dir !== 1
+        : p.dc >= 0 && p.c + 1 < f.maxC && f.dir !== -1;
+      if (!allowed) continue;
+      tryCell(p, side, 0);
+      if (p.r - 1 >= f.minR) tryCell(p, side, -1);
+      if (p.r + 1 < f.maxR) tryCell(p, side, 1);
+    }
+  }
+  f.points = next;
+  if (spread) events.push({ type: 'wallShake', x: f.col * TILE, y: f.row * TILE });
+  else f.maxTime = 0;
+}
+
+/** FlameWallExplosion: Start on its first step, then Update: a spread every explosionRate, gone when the fire is out. */
+function stepFlameWall(p: Projectile, w: ProjectileWorld, t: number, events: ProjectileEvent[]): void {
+  const f = p.wall;
+  if (!f) {
+    p.dead = true;
+    return;
+  }
+  if (!f.started) {
+    f.started = true;
+    if (!startWall(f, w)) {
+      p.dead = true;
+      return;
+    }
+    runPoints(f, w, events);
+  }
+  f.time += t;
+  f.counter += Math.min(t, FLAME_WALL.maxStep);
+  if (f.counter >= w.stats.flameWall.rate) {
+    f.counter -= w.stats.flameWall.rate;
+    runPoints(f, w, events);
+  }
+  if (f.time > f.maxTime || f.left <= 0) p.dead = true;
 }
 
 /** GrenadeMolotov: it bursts on the first mook it reaches (setting him alight) or the first thing it hits. */
@@ -541,6 +687,12 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
       break;
     case 'molotovFire':
       stepMolotovFire(p, w, t, events);
+      break;
+    case 'flame':
+      stepFlame(p, w, t, events);
+      break;
+    case 'flameWall':
+      stepFlameWall(p, w, t, events);
       break;
     case 'neuraliser':
       stepNeuraliser(p, w, t, events);

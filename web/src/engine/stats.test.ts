@@ -28,6 +28,16 @@ describe('parseValues', () => {
     expect(s.molotovFire).toEqual({ range: 48, size: 3, gravityM: 1, life: 1 });
   });
 
+  it("reads Ellen Ripbro as a bro, B.A. Broracus's flamethrower and its flames, and Ellen's flame wall", () => {
+    const s = parseValues(RAW_VALUES);
+    expect(s.bros.bro_ellen).toMatchObject({ speed: 110, jumpForce: 260, specialAmmo: 3, canWallClimb: true, canDash: true });
+    expect(s.flamethrower).toEqual({ fireRate: 0.1 });
+    expect(s.flame).toEqual({ life: 0.35, damage: 1, size: 8, frames: 10, frameRate: 0.0334 });
+    expect(s.flameWall).toEqual({
+      columns: 14, rows: 3, explosions: 50, rate: 0.11, damage: 3, puffDelay: 0.04, puffY: 4, puffFrames: 20, puffFrameRate: 0.0234,
+    });
+  });
+
   it('maps values.json onto GameStats', () => {
     expect(parseValues(RAW_VALUES)).toEqual(TEST_STATS);
   });

@@ -74,7 +74,7 @@ export class Renderer {
         this.grass.push(w.grass, u);
       }
       this.grass.step(dt);
-      shake = w.effects.reduce((s, e) => (e.kind === 'shake' && e.age >= 0 ? Math.max(s, 1 - e.age / SHAKE_TIME) : s), 0);
+      shake = w.effects.reduce((s, e) => (e.kind === 'shake' && e.age >= 0 ? Math.max(s, (e.strength ?? 1) * (1 - e.age / SHAKE_TIME)) : s), 0);
     }
     this.viewX = w.camera.x + (Math.random() * 2 - 1) * SHAKE_AMOUNT * shake;
     this.viewY = w.camera.y + (Math.random() * 2 - 1) * SHAKE_AMOUNT * shake;

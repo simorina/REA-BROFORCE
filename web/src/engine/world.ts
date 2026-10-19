@@ -5,7 +5,7 @@ import {
 import type { BroDef } from './bro';
 import { followCamera, isVisible, screenMaxY, type Camera } from './camera';
 import {
-  ALERT_TOUCH, BAZOOKA_FIRE_DELAY, CHECKPOINT_FAST_SPEED, CHECKPOINT_RANGE_X, CHECKPOINT_RANGE_X_FAST,
+  ALERT_TOUCH, BAZOOKA_FIRE_DELAY, FLAME_WALL_SHAKE, SHAKE_TIME, CHECKPOINT_FAST_SPEED, CHECKPOINT_RANGE_X, CHECKPOINT_RANGE_X_FAST,
   CHECKPOINT_RANGE_Y, CHECKPOINT_SPAWN_UP, CHECKPOINT_Y_OFFSET, CORPSE_TIME, EXPLOSION_DURATION, EXTRACTION_TIME,
   FLAG_REACH, GRENADE_PANIC_RANGE, GRENADE_PANIC_RATE, GRENADE_PANIC_TIME, GRENADE_WARNING_LIFE, HALF_TILE,
   LIVES_START, PRISONER_RESCUE_DIST, RESCUE_INVULNERABLE, RESPAWN_DELAY, SPAWN_INVULNERABLE, SPECIAL2_TIME,
@@ -42,6 +42,7 @@ export interface Effect {
   y: number;
   age: number;
   duration: number;
+  strength?: number; // a shake's, of a big blast's (1 when not given)
   text?: string;
   unit?: number; // the speaker a speech bubble hangs over (the bro's own lines name none)
 }
@@ -78,7 +79,7 @@ export interface Grass {
 /** What happened during a step, for sound, particles and the voice line. Positions are world units. */
 export type GameEvent =
   | { type: 'voice'; text: string; lang: string }
-  | { type: 'shot'; weapon: ProjectileKind | 'judo' | 'blade' | 'cricket' | 'revolver' | 'm60'; x: number; y: number; facing: 1 | -1 }
+  | { type: 'shot'; weapon: ProjectileKind | 'judo' | 'blade' | 'cricket' | 'revolver' | 'm60' | 'flamethrower'; x: number; y: number; facing: 1 | -1 }
   | { type: 'explosion'; x: number; y: number; big: boolean; source: Blast['source']; range: number }
   | { type: 'airstrike'; x: number; y: number } // GrenadeAirstrike.Death: the marker calls the strike in
   | { type: 'block'; x: number; y: number; kind: BlockKind; damage: number }
@@ -107,6 +108,7 @@ export type GameEvent =
   | { type: 'cricketBeam'; x: number; y: number } // the Noisy Cricket's trail
   | { type: 'django'; x: number; y: number } // Samuel becomes Django
   | { type: 'molotovBurst'; x: number; y: number } // Che's Molotov goes up
+  | { type: 'flameWallPuff'; x: number; y: number; variant: number; delay: number; dir: 1 | -1; xI: number } // a cell of the wall catching fire
   | { type: 'exitJet'; x: number; y: number }
   | { type: 'gunSwitch'; x: number; y: number };
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
@@ -574,6 +576,29 @@ function burnAround(w: World, source: Unit | null, x: number, y: number, range: 
   }
 }
 
+/**
+ * Map.HitUnits with DamageType.Fire, from the flamethrower's flames and the flame wall: the mooks in range catch fire
+ * (Mook.Damage), and Epstein, who has no mook mind to catch fire with, takes the damage.
+ */
+function scorchUnits(w: World, x: number, y: number, range: number, damage: number, xI: number): void {
+  for (const m of w.enemies) {
+    if (m.dead || m.invulnerable > 0 || !inArea(m, x, y, range, range)) continue;
+    if (m.ai) {
+      setOnFire(w, m, damage, xI);
+    } else {
+      damageUnit(m, damage);
+      w.events.push({ type: 'hit', x: m.x, y: m.y, hitY: y, xI, yI: 0 });
+    }
+  }
+}
+
+/** Map.HitProjectiles with fire (FlameWallExplosion.damageProjectiles): the mooks' bullets in range go out. */
+function quenchShots(w: World, x: number, y: number, range: number): void {
+  for (const p of w.projectiles) {
+    if (p.team === 'enemy' && p.kind === 'bullet' && !p.dead && Math.abs(p.x - x) <= range && Math.abs(p.y - y) <= range) p.dead = true;
+  }
+}
+
 /** Map.HitLivingUnits with DamageType.Fire: every living mook in range catches fire (Mook.Damage). */
 function fireUnits(w: World, x: number, y: number, range: number, damage: number, xI: number): void {
   for (const m of w.enemies) {
@@ -637,7 +662,7 @@ function explodeSuicide(w: World, m: Unit, blasts: Blast[]): void {
 }
 
 function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
-  const pw = { map: w.map, units: [w.player, ...w.enemies], stats: w.stats, vehicles: allVehicles(w), mech: w.mech };
+  const pw = { map: w.map, units: [w.player, ...w.enemies], stats: w.stats, vehicles: allVehicles(w), mech: w.mech, rng: w.rng };
   for (const p of w.projectiles) {
     // Grenade.RunWarnings: in its last half second a grenade sends the mooks around it running
     if (p.kind !== 'marker' || p.dead || p.life >= GRENADE_WARNING_LIFE) continue;
@@ -674,6 +699,14 @@ function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
         fireUnits(w, ev.x, ev.y, ev.range, ev.damage, ev.xI);
       } else if (ev.type === 'flameFx') {
         w.events.push({ type: 'flame', x: ev.x, y: ev.y });
+      } else if (ev.type === 'scorch') {
+        scorchUnits(w, ev.x, ev.y, ev.range, ev.damage, ev.xI);
+      } else if (ev.type === 'quench') {
+        quenchShots(w, ev.x, ev.y, ev.range);
+      } else if (ev.type === 'flameWallPuff') {
+        w.events.push(ev);
+      } else if (ev.type === 'wallShake') {
+        w.effects.push({ kind: 'shake', x: ev.x, y: ev.y, age: 0, duration: SHAKE_TIME, strength: FLAME_WALL_SHAKE });
       } else if (ev.type === 'molotov') {
         // GrenadeMolotov.Death: Map.HitLivingUnits(3, Fire, 12) and four little fires
         fireUnits(w, ev.x, ev.y, MOLOTOV.burst, MOLOTOV.burstDamage, 0);

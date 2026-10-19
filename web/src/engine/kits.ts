@@ -3,8 +3,8 @@ import { startJudo } from './judo';
 import { CRICKET, REVOLVER, RIFLE } from './constants';
 import { getColumn, getRow } from './map';
 import {
-  fireM60Bullet, fireNoisyCricket, fireRevolverBullet, fireRifleBullet, fireRpgRocket, throwMolotov, kickFootball, throwGlaive,
-  throwJetMarker, throwMarker, throwNukeMarker, throwTankMarker, useNeuraliser,
+  fireFlames, fireM60Bullet, fireNoisyCricket, fireRevolverBullet, fireRifleBullet, fireRpgRocket, makeFlameWall, throwMolotov,
+  kickFootball, throwGlaive, throwJetMarker, throwMarker, throwNukeMarker, throwTankMarker, useNeuraliser,
 } from './projectiles';
 import type { Projectile, Unit } from './types';
 import { damageUnit, knock, runFiring } from './units';
@@ -50,6 +50,14 @@ function shootM60(w: World, p: Unit): void {
   p.gunFrame = 3;
   p.gunCounter = 0;
   w.events.push({ type: 'shot', weapon: 'm60', x: p.x, y: p.y, facing: p.facing });
+}
+
+/** BaBroracus.UseFire / FireWeapon: Meloni's flamethrower squirts two flames, on its firing frame. */
+function squirtFlames(w: World, p: Unit): void {
+  w.projectiles.push(...fireFlames(() => w.nextId++, p, w.stats, w.rng));
+  p.gunFrame = 3;
+  p.gunCounter = 0;
+  w.events.push({ type: 'shot', weapon: 'flamethrower', x: p.x, y: p.y, facing: p.facing });
 }
 
 /** Blade's signature katana slash: slices blocks and enemies, and deflects enemy bullets. */
@@ -124,6 +132,13 @@ export const WEAPON_KITS: Record<WeaponId, WeaponKit> = {
     repeat: false,
     fire: slashBlade,
   },
+  flamethrower: {
+    repeat: true,
+    fire: squirtFlames,
+    step(w, p, fire, t) {
+      if (runFiring(p, fire, t, w.stats.flamethrower.fireRate)) squirtFlames(w, p); // BaBroracus.RunFiring at B.A.'s fireRate
+    },
+  },
   rpg: {
     repeat: true,
     fire(w, p) {
@@ -180,4 +195,5 @@ export const SPECIAL_KITS: Record<SpecialId, (id: number, p: Unit, ducking: bool
   nuke: throwNukeMarker,
   django: () => null,
   molotov: throwMolotov,
+  flamewall: makeFlameWall,
 };

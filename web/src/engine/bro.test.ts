@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BROLUSCONI, BROS, CHE, KIM, PUTIN, SAMUEL, TRUMP, WILL_SMITH, rosterStartingWith } from '../bros';
+import { BROLUSCONI, BROS, CHE, KIM, MELONI, PUTIN, SAMUEL, TRUMP, WILL_SMITH, rosterStartingWith } from '../bros';
 import { parseBro } from './bro';
 
 const valid = {
@@ -57,15 +57,22 @@ describe('bro definitions', () => {
     });
   });
 
+  it("Giorgia Meloni plays as Ellen Ripbro: B.A. Broracus's flamethrower and, for a special, Ellen's flame wall", () => {
+    expect(MELONI).toEqual({
+      id: 'meloni', name: 'Giorgia Meloni', sheet: 'meloni', base: 'bro_ellen', weapon: 'flamethrower', special: 'flamewall',
+      voiceLine: 'Io sono Giorgia!', voiceLang: 'it-IT',
+    });
+  });
+
   it('rosterStartingWith puts the chosen bro first and keeps the cycle order', () => {
-    expect(BROS).toEqual([BROLUSCONI, PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE]);
-    expect(rosterStartingWith('putin')).toEqual([PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE, BROLUSCONI]);
-    expect(rosterStartingWith('brolusconi')).toEqual([BROLUSCONI, PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE]);
-    expect(rosterStartingWith('kim')).toEqual([KIM, WILL_SMITH, SAMUEL, CHE, BROLUSCONI, PUTIN, TRUMP]);
+    expect(BROS).toEqual([BROLUSCONI, PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE, MELONI]);
+    expect(rosterStartingWith('putin')).toEqual([PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE, MELONI, BROLUSCONI]);
+    expect(rosterStartingWith('brolusconi')).toEqual([BROLUSCONI, PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE, MELONI]);
+    expect(rosterStartingWith('kim')).toEqual([KIM, WILL_SMITH, SAMUEL, CHE, MELONI, BROLUSCONI, PUTIN, TRUMP]);
   });
 
   it('rosterStartingWith falls back to the first bro for an unknown id', () => {
-    expect(rosterStartingWith('ghost')).toEqual([BROLUSCONI, PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE]);
+    expect(rosterStartingWith('ghost')).toEqual([BROLUSCONI, PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE, MELONI]);
   });
 
   it('rejects unknown weapons and specials', () => {

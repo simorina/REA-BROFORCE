@@ -4,9 +4,9 @@ export type BlockKind = 'dirt' | 'sand' | 'brick' | 'temple' | 'steel' | 'barrel
 export type EnemyKind = 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout' | 'mook_shield' | 'mook_grenadier' | 'dog';
 export type UnitKind = 'bro' | EnemyKind | 'boss';
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
-export const BRO_BASES = ['bro_base', 'bro_lee', 'bro_soldier', 'bro_in_black', 'bro_rambro'] as const;
+export const BRO_BASES = ['bro_base', 'bro_lee', 'bro_soldier', 'bro_in_black', 'bro_rambro', 'bro_ellen'] as const;
 export type BroBase = (typeof BRO_BASES)[number];
-export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket' | 'rifle' | 'jetBomb' | 'grenade' | 'cricket' | 'neuraliser' | 'revolver' | 'molotov' | 'molotovFire';
+export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket' | 'rifle' | 'jetBomb' | 'grenade' | 'cricket' | 'neuraliser' | 'revolver' | 'molotov' | 'molotovFire' | 'flame' | 'flameWall';
 
 export interface Block {
   kind: BlockKind;
@@ -112,6 +112,19 @@ export interface TankStats {
   cannonFireSpeed: number; // TankBroTankTurret.cannonFireSpeed
 }
 
+/** FlameWallExplosion: a fire that spreads cell by cell, `columns` ahead and `rows` up, a step every `rate` s. */
+export interface FlameWallStats {
+  columns: number; // maxCollumns
+  rows: number; // maxRows
+  explosions: number; // totalExplosions: no more cells than this
+  rate: number; // explosionRate
+  damage: number; // damageAmount, Fire
+  puffDelay: number; // maxPuffDelay
+  puffY: number; // yExplosionOffset
+  puffFrames: number; // Flame Wall Puff Test's frames and frameRate
+  puffFrameRate: number;
+}
+
 export interface GameStats {
   units: Record<EnemyKind, UnitStats>;
   bros: Record<BroBase, UnitStats>; // Double Bro Seven (bro_base) and BroLee (bro_lee)
@@ -133,6 +146,9 @@ export interface GameStats {
   revolver: { damage: number; life: number; maxPenetrations: number; projectileSize: number }; // "Bullet DirtyBrory"
   molotov: { range: number; size: number; gravityM: number }; // "Grenade Molotove"
   molotovFire: { range: number; size: number; gravityM: number; life: number }; // "Grenade Molotov Fire"
+  flamethrower: { fireRate: number }; // B.A. Broracus's (BaBroracus.fireRate): Meloni's
+  flame: { life: number; damage: number; size: number; frames: number; frameRate: number }; // FlameThrower Bullet, its AnimatedTexture
+  flameWall: FlameWallStats; // Ellen Ripbro's flameWallExplosion and its Flame Wall Puff
   mech: { health: number }; // GoliathMech
   blocks: Record<BlockKind, { health: number }>;
   barrelRange: number;
@@ -312,6 +328,33 @@ export interface Projectile {
   flame?: { counter: number; count: number }; // a 'molotovFire': GrenadeMolotovFire.flameCounter / flameCount
   dip?: number; // HeavyShell.dipCounter
   crush?: number; // RocketMassive.crushWallLayers left
+  variant?: number; // a 'flame': which of FlameThrower Bullet 1-3 it is (drawn green, white, red)
+  wall?: FlameWall; // a 'flameWall': FlameWallExplosion's spread
+}
+
+/** A cell of a FlameWallExplosion that caught fire (FlashBangPoint): `dc` is the way it spread, sideways. */
+export interface FlamePoint {
+  c: number;
+  r: number;
+  dc: number;
+}
+
+/** FlameWallExplosion's state: its band of cells, the cells burning at its front and those already burnt. */
+export interface FlameWall {
+  col: number;
+  row: number;
+  dir: 1 | -1; // forceDirection
+  started: boolean;
+  minC: number;
+  maxC: number; // exclusive
+  minR: number;
+  maxR: number; // exclusive
+  points: FlamePoint[]; // activeGridPoints
+  used: Set<number>; // usedGridPoints
+  counter: number;
+  left: number; // explosionsRemaining
+  time: number;
+  maxTime: number;
 }
 
 export interface Controls {

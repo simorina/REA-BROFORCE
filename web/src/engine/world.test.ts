@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BROLUSCONI, CHE, SAMUEL, WILL_SMITH } from '../bros';
+import { BROLUSCONI, CHE, MELONI, SAMUEL, WILL_SMITH } from '../bros';
 import type { BroDef } from './bro';
 import { DJANGO, FIXED_DT, SHIELD } from './constants';
 import type { LevelData } from './level';
@@ -922,6 +922,75 @@ describe('Che Guevara (Rambro, with a Molotov)', () => {
     }
     expect(flames).toBe(4);
     expect(m.burnTime).toBeGreaterThan(0);
+  });
+});
+
+describe("Giorgia Meloni (Ellen Ripbro, with B.A. Broracus's flamethrower)", () => {
+  it("is Ellen Ripbro: her prefab's values and three specials", () => {
+    const w = createWorld(EMPTY, TEST_STATS, [MELONI], () => 0.5);
+    expect(w.player.stats).toEqual(TEST_STATS.bros.bro_ellen);
+    expect(w.specialAmmo).toBe(3);
+  });
+
+  it('holding the trigger, the flamethrower squirts two flames ten times a second (BaBroracus.fireRate 0.1)', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [MELONI], () => 0.5);
+    const seen = new Set<number>();
+    let shots = 0;
+    for (let i = 0; i < Math.round(1 / FIXED_DT); i++) {
+      play(w, { fire: true }, 1);
+      for (const p of w.projectiles) if (p.kind === 'flame') seen.add(p.id);
+      shots += w.events.filter((e) => e.type === 'shot' && e.weapon === 'flamethrower').length;
+      w.events.length = 0;
+    }
+    expect(shots).toBeGreaterThanOrEqual(10);
+    expect(shots).toBeLessThanOrEqual(11);
+    expect(seen.size).toBe(shots * 2);
+    expect(w.player.gunFrame).toBeGreaterThan(0);
+  });
+
+  it('her flames set the mooks ahead alight', () => {
+    const w = createWorld(level([[2, 'P'], [4, 'm'], [27, 'F']]), TEST_STATS, [MELONI], () => 0.5);
+    const [m] = w.enemies;
+    w.player.facing = 1;
+    play(w, { fire: true }, 20);
+    expect(m.burnTime > 0 || m.dead).toBe(true);
+  });
+
+  it('they burn Epstein too, who has no mook mind to catch fire with', () => {
+    const w = createWorld(level([[2, 'P'], [4, 'E'], [27, 'F']]), TEST_STATS, [MELONI], () => 0.5);
+    const boss = w.boss;
+    expect(boss).not.toBeNull();
+    const before = boss!.health;
+    w.player.facing = 1;
+    play(w, { fire: true }, 20);
+    expect(boss!.health).toBeLessThan(before);
+  });
+
+  it('her special lays a wall of fire the way she faces: a special gone, her line said, the mooks in it alight', () => {
+    const w = createWorld(level([[2, 'P'], [7, 'm'], [27, 'F']]), TEST_STATS, [MELONI], () => 0.5);
+    const [m] = w.enemies;
+    w.player.facing = 1;
+    play(w, { special: true }, 1);
+    expect(w.specialAmmo).toBe(2);
+    expect(w.projectiles.filter((p) => p.kind === 'flameWall')).toHaveLength(1);
+    expect(w.events.some((e) => e.type === 'voice' && e.text === 'Io sono Giorgia!' && e.lang === 'it-IT')).toBe(true);
+    play(w, {}, 60);
+    expect(m.burnTime > 0 || m.dead).toBe(true);
+    expect(w.events.some((e) => e.type === 'flameWallPuff')).toBe(true);
+  });
+
+  it("the wall puts out the mooks' shots in its way", () => {
+    const w = createWorld(EMPTY, TEST_STATS, [MELONI], () => 0.5);
+    w.player.facing = 1;
+    const shooter = makeUnit(w.nextId++, 'mook', 'enemy', 64, 24, TEST_STATS.units.mook);
+    const shot = fireMookBullet(w.nextId++, shooter, TEST_STATS, () => 0.5);
+    Object.assign(shot, { x: 48, y: 32, xI: 0, yI: 0 }); // hanging in a cell the fire spreads from on its second step
+    w.projectiles.push(shot);
+    play(w, { special: true }, 1);
+    play(w, {}, 9);
+    expect(shot.dead).toBe(true);
+    expect(shot.life).toBeGreaterThan(0); // put out, not spent
+    expect(w.player.dead).toBe(false); // and it never reached her
   });
 });
 

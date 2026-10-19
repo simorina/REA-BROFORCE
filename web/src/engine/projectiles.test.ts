@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { FIXED_DT } from './constants';
 import { TileMap, makeBlock } from './map';
 import {
-  fireBigRocket, fireM60Bullet, fireMookBullet, fireNoisyCricket, fireRevolverBullet, fireShell, molotovFlames, throwMolotov, kickFootball, spawnAirstrike, stepProjectile,
-  throwBody, throwMarker, useNeuraliser, type ProjectileEvent, type ProjectileWorld,
+  fireBigRocket, fireFlames, fireM60Bullet, fireMookBullet, fireNoisyCricket, fireRevolverBullet, fireShell, makeFlameWall, molotovFlames,
+  throwMolotov, kickFootball, spawnAirstrike, stepProjectile, throwBody, throwMarker, useNeuraliser, type ProjectileEvent, type ProjectileWorld,
 } from './projectiles';
 import { TEST_STATS } from './testStats';
 import { makeUnit } from './units';
@@ -263,6 +263,121 @@ describe("Che Guevara's M60 (Rambro) and Molotov (GrenadeMolotov)", () => {
     expect(ranges).toContain(16);
     expect(ranges.at(-1)).toBe(24);
     expect(f.dead).toBe(true);
+  });
+});
+
+describe("Giorgia Meloni's flamethrower (BaBroracus, FlameThrower Bullet) and flame wall (EllenRipbro, FlameWallExplosion)", () => {
+  const meloni = (x = 50, y = 8, facing: 1 | -1 = 1) => {
+    const u = makeUnit(1, 'bro', 'player', x, y, TEST_STATS.bros.bro_ellen);
+    u.facing = facing;
+    return u;
+  };
+  const rolls = (...values: number[]) => () => values.shift() ?? 0.5;
+  let next = 10;
+  const ids = () => next++;
+  type Scorch = Extract<ProjectileEvent, { type: 'scorch' }>;
+  const scorches = (evs: ProjectileEvent[]) => evs.filter((e): e is Scorch => e.type === 'scorch');
+  const cells = (evs: ProjectileEvent[]) => scorches(evs).map((e) => [e.x / 16, (e.y + 5) / 16]);
+
+  it('each squirt is two flames from (x + 11, y + 6 and 7) at 120 and 150 on top of her own speed (BaBroracus.UseFire)', () => {
+    const u = meloni();
+    u.xI = 30;
+    const [a, b] = fireFlames(ids, u, TEST_STATS, rolls(0.5, 0, 0.5, 0.99));
+    expect([a.kind, a.team, a.x, a.y, a.xI, a.yI, a.life, a.variant]).toEqual(['flame', 'player', 61, 14, 150, 0, 0.35, 0]);
+    expect([b.x, b.y, b.xI, b.yI, b.variant]).toEqual([61, 15, 180, 0, 2]); // a random one of the three flames
+    const [c, d] = fireFlames(ids, meloni(50, 8, -1), TEST_STATS, rolls(0, 0.5, 1 - 1e-9, 0.5));
+    expect([c.x, c.xI, c.yI, d.xI]).toEqual([39, -120, -30, -150]); // up to 30 and 35 off level
+    expect(d.yI).toBeCloseTo(35);
+    expect(c.variant).toBe(1);
+  });
+
+  it('a flame flies straight for its 0.35 s and goes out', () => {
+    const [f] = fireFlames(ids, meloni(), TEST_STATS, rolls(0.5, 0));
+    steps(f, world(new TileMap(40, 10)), 20);
+    expect(f.dead).toBe(false);
+    expect(f.x).toBeCloseTo(61 + 120 * 20 / 60);
+    expect(f.y).toBe(14);
+    steps(f, world(new TileMap(40, 10)), 2);
+    expect(f.dead).toBe(true);
+  });
+
+  it('a flame sets the mooks it reaches alight and goes out (FlameBullet.HitUnits: Map.HitUnits(1, Fire, 8))', () => {
+    const [f] = fireFlames(ids, meloni(), TEST_STATS, rolls(0.5, 0));
+    const evs = steps(f, world(new TileMap(40, 10), [mook(80, 8)]), 30);
+    expect(scorches(evs)).toHaveLength(1);
+    expect(scorches(evs)[0]).toMatchObject({ range: 8, damage: 1, xI: 120 });
+    expect(f.dead).toBe(true);
+  });
+
+  it('a flame goes out on a wall without chipping it, but sets a barrel off', () => {
+    const map = new TileMap(40, 10);
+    map.set(5, 1, makeBlock('dirt', TEST_STATS));
+    const [f] = fireFlames(ids, meloni(50, 8), TEST_STATS, rolls(0.5, 0));
+    const evs = steps(f, world(map), 30);
+    expect(f.dead).toBe(true);
+    expect(evs.some((e) => e.type === 'block')).toBe(false);
+    expect(map.get(5, 1)?.health).toBe(TEST_STATS.blocks.dirt.health);
+    map.set(5, 1, makeBlock('barrel', TEST_STATS));
+    const [g] = fireFlames(ids, meloni(50, 8), TEST_STATS, rolls(0.5, 0));
+    const blew = steps(g, world(map), 30);
+    expect(blew.some((e) => e.type === 'explode')).toBe(true);
+  });
+
+  it('the flame wall starts at (x + 5, y + 9) and burns the cell ahead and the one over its start at once', () => {
+    const wall = makeFlameWall(ids(), meloni());
+    expect([wall.kind, wall.team]).toEqual(['flameWall', 'player']);
+    const first = stepProjectile(wall, world(floorMap()), FIXED_DT);
+    expect(cells(first).sort()).toEqual([[3, 2], [4, 1]]); // column of x 55, row of y 17; rows count up
+  });
+
+  it('it spreads a cell further every 0.11 s, three rows high and fourteen columns out, 44 cells, then is gone', () => {
+    const wall = makeFlameWall(ids(), meloni());
+    const w = world(floorMap());
+    const evs = stepProjectile(wall, w, FIXED_DT);
+    expect(cells(steps(wall, w, 5))).toEqual([]); // 0.1 s: not yet
+    const second = steps(wall, w, 2);
+    expect(cells(second).sort()).toEqual([[3, 3], [4, 2], [5, 1], [5, 2]]);
+    evs.push(...second, ...steps(wall, w, 600));
+    const all = cells(evs);
+    expect(all).toHaveLength(44);
+    expect(Math.min(...all.map((c) => c[0]))).toBe(3);
+    expect(Math.max(...all.map((c) => c[0]))).toBe(17); // its start's column and 14 more
+    expect(new Set(all.map((c) => c[1]))).toEqual(new Set([1, 2, 3]));
+    expect(scorches(evs).every((e) => e.range === 12 && e.damage === 3)).toBe(true);
+    expect(wall.dead).toBe(true);
+  });
+
+  it('it stops at a wall and goes the way she faces', () => {
+    const map = floorMap();
+    for (let r = 1; r <= 3; r++) map.set(8, r, makeBlock('dirt', TEST_STATS));
+    const wall = makeFlameWall(ids(), meloni());
+    const evs = steps(wall, world(map), 600);
+    expect(Math.max(...cells(evs).map((c) => c[0]))).toBe(7);
+    const left = makeFlameWall(ids(), meloni(300, 8, -1));
+    const back = cells(steps(left, world(floorMap()), 600));
+    expect(Math.max(...back.map((c) => c[0]))).toBe(18); // getColumn(295)
+    expect(Math.min(...back.map((c) => c[0]))).toBe(4); // 14 columns back
+  });
+
+  it('every burning cell puffs one of the three flames and puts out the shots around it', () => {
+    const wall = makeFlameWall(ids(), meloni());
+    const evs = stepProjectile(wall, world(floorMap()), FIXED_DT);
+    const puffs = evs.filter((e) => e.type === 'flameWallPuff');
+    expect(puffs).toHaveLength(2);
+    for (const p of puffs) {
+      if (p.type !== 'flameWallPuff') continue;
+      expect([0, 1, 2]).toContain(p.variant);
+      expect(p.delay).toBeGreaterThanOrEqual(0);
+      expect(p.delay).toBeLessThan(0.04);
+    }
+    expect(evs.filter((e) => e.type === 'quench').every((e) => e.type === 'quench' && e.range === 9)).toBe(true);
+  });
+
+  it('a barrel in its way goes up', () => {
+    const map = floorMap();
+    map.set(6, 1, makeBlock('barrel', TEST_STATS));
+    const evs = steps(makeFlameWall(ids(), meloni()), world(map), 600);
+    expect(evs.some((e) => e.type === 'explode')).toBe(true);
   });
 });
 

@@ -130,6 +130,13 @@ export const REVOLVER = {
 };
 // Rambro's M60, Che's: TestVanDammeAnim.UseFire, from (X + dir * 10, Y + 8) at 400, Random.Range(-20, 20) off level
 export const M60 = { ox: 10, oy: 8, speed: 400, jitter: 20 };
+// BaBroracus.UseFire / FireWeapon: two flames a squirt, from (X + dir*11, Y + 6) at dir*120 + xI, up to 30 off level, and
+// (X + dir*11, Y + 7) at dir*150 + xI, up to 35 off; FlameBullet.HitUnits: Map.HitUnits(.., Fire, 8, X, Y, ..)
+export const FLAMETHROWER = { ox: 11, shots: [{ oy: 6, speed: 120, spread: 30 }, { oy: 7, speed: 150, spread: 35 }], variants: 3, hitRange: 8 };
+// EllenRipbro.UseSpecial: the FlameWallExplosion from (X + dir*5, Y + 9). FlameWallExplosion.CreateFlashBangPoint: each cell
+// hurts what is 12 around (its centre, its bottom + 3) and puts out the shots 9 around the cell it spread from; its puff
+// sits on the cell's bottom + 4 and drifts at dc*66; HitUnits' xI is dc*25. Update steps at most 0.0334 s.
+export const FLAME_WALL = { ox: 5, oy: 9, hitRange: 12, hitY: 3, quenchRange: 9, puffY: 4, drift: 66, hitXI: 25, maxStep: 0.0334 };
 // GrenadeMolotov: RunMovement / Death; GrenadeMolotovFire: Update / Death. The fuse is ours (it bursts on contact anyway).
 export const MOLOTOV = {
   fuse: 4, touch: 24, touchDamage: 1, burst: 12, burstDamage: 3, flameY: 2,
@@ -229,3 +236,5 @@ export const CAMERA_LERP = 6;
 export const CAMERA_Y_OFFSET = 40;
 export const SHAKE_TIME = 0.2;
 export const SHAKE_AMOUNT = 2;
+// ours: the flame wall shakes the screen each time it spreads (SortOfFollow.Shake(0.2)); a fifth of our 2-pixel shake would not show
+export const FLAME_WALL_SHAKE = 0.5;
