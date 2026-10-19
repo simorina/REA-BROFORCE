@@ -1,6 +1,7 @@
 import math
 
-from extractor.worldmap import apply_dir, apply_point, color_bytes, lightmap_uv, mat_mul, queue_order, right_handed, territory_of, trs
+from extractor.worldmap import (apply_dir, apply_point, color_bytes, glow_color, lightmap_uv, mat_mul, quad_in_camera, queue_order,
+                                right_handed, territory_key, territory_of, trs)
 
 
 def close(a, b, eps=1e-6):
@@ -52,3 +53,21 @@ def test_render_queues_order_like_unitys():
 def test_vertex_colours_pack_into_bytes():
     assert color_bytes((1.0, 0.5, 0.0, 0.25)) == (255, 128, 0, 64)
     assert color_bytes(None) == (255, 255, 255, 255)
+
+
+def test_a_territory_is_keyed_by_its_outline_or_else_its_terrain():
+    assert territory_key("vietnamOutline", "vietnamTerrain") == "vietnam"
+    assert territory_key(None, "afghanistanTerrainMuscle") == "afghanistan"
+    assert territory_key(None, "timebroChallengeTerrain") == "timebro"
+
+
+def test_an_additive_particle_glow_doubles_its_tint_as_unitys_shader_does():
+    assert close(glow_color("Particles/Additive", {"_TintColor": (0.036, 0.164, 0.169, 0.502)}), (0.072, 0.328, 0.338, 1.004))
+    assert close(glow_color("Custom/backgroundTransparent", {"_Color": (0.058, 0.163, 0.353, 0.443)}), (0.058, 0.163, 0.353, 0.443))
+
+
+def test_a_quad_childed_to_the_camera_sits_ahead_of_it_at_its_scaled_size():
+    camera = trs((0, 0, -16.68), (0, 0, 0, 1), (1, 1, 1))
+    quad = trs((0, 0, -5.94), (0, 0, 0, 1), (0.288, 0.288, 0.288))
+    q = quad_in_camera(camera, quad, 15.0)
+    assert abs(q["distance"] - 10.74) < 1e-6 and abs(q["size"] - 8.64) < 1e-6

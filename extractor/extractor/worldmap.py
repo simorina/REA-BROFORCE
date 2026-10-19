@@ -3,7 +3,8 @@
 The scene's meshes are baked into world space (right-handed, z flipped for three.js) and merged by material:
 worldmap/globe.bin holds the vertex arrays and indices, worldmap/globe.json says where each group's arrays are,
 with the materials (Custom/Fake3D and friends: textures, colours, floats), the lightmap, the camera, fog and light,
-the helicopter and the US flag as models in their own frames, and each territory's direction from the centre.
+the helicopter and the US flag as models in their own frames, each territory's centre and landing zone (its border
+as groups of its own, shown only while it's selected), and the glows the main camera carries.
 """
 import json
 import math
@@ -29,6 +30,7 @@ SKIP_MESHES = re.compile(r"^(standardMook|xeno|xenoTail|alienEgg|Crate 3D|USFlag
 SKIP_SHADERS = ("Particles/", "Unlit/", "Mobile/Particles", "Custom/GeneralUI", "Custom/Portal", "Custom/wavingFlag",
                 "Custom/TransparentGrass", "Custom/HeatHaze")
 OUTLINE = re.compile(r"^([a-z][A-Za-z]*)Outline$")
+TERRAIN_SUFFIX = re.compile(r"(Challenge)?Terrain(Muscle)?$")
 
 
 # ---- maths (Unity's row-major 4x4, column vectors) ----
@@ -113,6 +115,25 @@ def color_bytes(c) -> tuple:
 def territory_of(mesh_name: str):
     m = OUTLINE.match(mesh_name or "")
     return m.group(1) if m else None
+
+
+def territory_key(outline_name, go_name: str) -> str:
+    """A WorldTerritory3D's name: its outline's ("vietnamOutline" is vietnam), or else its terrain object's."""
+    return territory_of(outline_name) or TERRAIN_SUFFIX.sub("", go_name)
+
+
+def glow_color(shader, colors: dict) -> tuple:
+    """What a glow's shader multiplies its texture by: Particles/Additive doubles its _TintColor, the others take _Color."""
+    if shader == "Particles/Additive":
+        return tuple(2 * v for v in colors["_TintColor"])
+    return tuple(colors.get("_Color", (1.0, 1.0, 1.0, 1.0)))
+
+
+def quad_in_camera(camera: list, quad: list, extent: float) -> dict:
+    """A quad childed to the camera: how far ahead of it (along its z) and how wide (its mesh's extent, scaled)."""
+    local = mat_mul(_inverse4(camera), quad)
+    scale = math.sqrt(sum(local[i][0] ** 2 for i in range(3)))
+    return {"distance": local[2][3], "size": 2 * extent * scale}
 
 
 # ---- the scene ----
@@ -339,9 +360,8 @@ def _wanted(mesh_name: str, go_name: str, shader) -> bool:
     return not (shader and shader.startswith(SKIP_SHADERS))
 
 
-def _globe(scene: _Scene, w: _Writer, cache: dict):
+def _globe(scene: _Scene, w: _Writer, cache: dict) -> list:
     groups: dict[tuple, _Geometry] = {}
-    territories: dict[str, list] = {}
     for path, r, mesh, tr in _renderer_parts(scene, GLOBE_ROOT):
         go_name = path[-1]
         h, subs = _mesh_handler(mesh, cache)
@@ -350,12 +370,7 @@ def _globe(scene: _Scene, w: _Writer, cache: dict):
         first = sbi.firstSubMesh if batched else 0
         count = sbi.subMeshCount if batched else len(subs)
         matrix = IDENTITY if batched else scene.world(tr)  # static batching baked the vertices into world space
-        name = territory_of(mesh.m_Name)
-        if name:  # the territory's centre, seen from the globe's
-            pts = [apply_point(matrix, v) for v in h.m_Vertices]
-            c = [sum(p[k] for p in pts) / len(pts) for k in range(3)]
-            length = math.sqrt(sum(v * v for v in c)) or 1.0
-            territories[name] = [round(v / length, 6) for v in right_handed(c)]
+        border = territory_of(go_name)  # WorldTerritory3D.ShowTerritoryBorders shows it only while selected
         lightmapped = r.m_LightmapIndex == 0
         st = r.m_LightmapTilingOffset
         lst = (st.x, st.y, st.z, st.w) if lightmapped else None
@@ -370,9 +385,93 @@ def _globe(scene: _Scene, w: _Writer, cache: dict):
             if not _wanted(mesh.m_Name, go_name, _shader_name(mat)):
                 continue
             mi = w.material(mat)
-            key = (mi, lightmapped)
+            key = (mi, lightmapped, border)
             groups.setdefault(key, _Geometry()).add(h, subs[first + k], matrix, lst)
-    return [w.group(g, mi, lm) for (mi, lm), g in groups.items()], territories
+    out = []
+    for (mi, lm, border), g in groups.items():
+        entry = w.group(g, mi, lm)
+        if border:
+            entry["territory"] = border
+        out.append(entry)
+    return out
+
+
+def _territories(scene: _Scene) -> dict:
+    """Each WorldTerritory3D's centre (its icon hangs over it) and landing zone (the helicopter sets down there)."""
+    by_id = {o.path_id: o for o in scene.objects}
+
+    def ref(t: dict, field: str):
+        p = t.get(field)
+        return by_id.get(p["m_PathID"]) if p and p["m_PathID"] else None
+
+    out = {}
+    for o in scene.objects:
+        if o.type.name != "MonoBehaviour":
+            continue
+        try:
+            if o.read().m_Script.read().m_ClassName != "WorldTerritory3D":
+                continue
+        except Exception:
+            continue
+        t = o.read_typetree()
+        centre, landing, outline, pole = ref(t, "centreObject"), ref(t, "LandingPoint"), ref(t, "Outline"), ref(t, "flagPole")
+        if centre is None or landing is None:
+            continue
+        points: dict = {}
+        for key, tr in (("centre", centre), ("landing", landing)):
+            m = scene.world(tr.read())
+            points[key] = [round(v, 4) for v in right_handed((m[0][3], m[1][3], m[2][3]))]
+        flag = _flag_matrix(scene, pole.read().m_GameObject.read()) if pole is not None else None
+        if flag is not None:
+            points["flag"] = flag
+        name = territory_key(outline.read().m_Name if outline else None, o.read().m_GameObject.read().m_Name)
+        out[name] = points
+    return out
+
+
+def _descendants(tr):
+    for child in tr.m_Children:
+        c = child.read()
+        yield c
+        yield from _descendants(c)
+
+
+def _flag_matrix(scene: _Scene, pole_go):
+    """The world frame of the US flag under a territory's WorldMapFlagPole (hidden until the territory is liberated)."""
+    root = _comps(pole_go)["Transform"].read()
+    for tr in (root, *_descendants(root)):
+        mf = _comps(tr.m_GameObject.read()).get("MeshFilter")
+        if mf is None:
+            continue
+        try:
+            mesh = mf.read().m_Mesh.read() if mf.read().m_Mesh.m_PathID else None
+        except FileNotFoundError:
+            continue
+        if mesh is not None and (mesh.m_Name or "").startswith(FLAG_MESH):
+            return _right_handed_matrix(scene.world(tr))
+    return None
+
+
+def _glows(scene: _Scene, w: _Writer) -> list:
+    """The quads the main camera carries: the blue disc behind the globe and the additive ring around its rim."""
+    main = _find(scene, "Camera", "Main Camera")
+    cam_tr = _comps(main.m_GameObject.read())["Transform"].read()
+    cam_path, cam = scene.path(cam_tr), scene.world(cam_tr)
+    out = []
+    for path, r, mesh, tr in _all_renderers(scene):
+        if path[:-1] != cam_path or not r.m_Enabled or not scene.active(tr):
+            continue
+        mat = r.m_Materials[0].read()
+        props = mat.m_SavedProperties
+        tex = next(env.m_Texture.read() for n, env in props.m_TexEnvs if n == "_MainTex")
+        shader = _shader_name(mat)
+        q = quad_in_camera(cam, scene.world(tr), mesh.m_LocalAABB.m_Extent.x)
+        state = _shader_state(mat)
+        out.append({"name": path[-1], "texture": w.texture(tex), "shader": shader,
+                    "color": [round(v, 4) for v in glow_color(shader, {n: (c.r, c.g, c.b, c.a) for n, c in props.m_Colors})],
+                    "blend": state["blend"], "queue": state["queue"],
+                    "distance": round(q["distance"], 4), "size": round(q["size"], 4)})
+    return sorted(out, key=lambda g: g["queue"])
 
 
 def _model(scene: _Scene, w: _Writer, cache: dict, parts, body_matrix: list) -> list:
@@ -452,8 +551,8 @@ def _settings(scene: _Scene, w: _Writer) -> dict:
                 "start": rs["m_LinearFogStart"], "end": rs["m_LinearFogEnd"]},
         "light": {"towards": [round(-v, 6) for v in forward], "intensity": light.m_Intensity},
         "lightmap": {"file": "worldmap/lightmap.png"},
-        "helicopter3d": {k: heli[k] for k in ("heightOffGround", "angularMoveSpeed", "bankDegrees", "MaxHeightAngle",
-                                              "MinHeightAngle", "LandingOffset")},
+        "helicopter3d": {k: heli[k] for k in ("heightOffGround", "angularMoveSpeed", "bankDegrees", "bankingSideSpeed",
+                                              "MaxHeightAngle", "MinHeightAngle", "LandingOffset") if k in heli},
     }
 
 
@@ -462,7 +561,7 @@ def extract(streaming_assets: str, out) -> None:
     w = _Writer(out)
     cache: dict = {}
     data = _settings(scene, w)
-    groups, territories = _globe(scene, w, cache)
+    groups = _globe(scene, w, cache)
     heli_parts = list(_renderer_parts(scene, HELICOPTER))
     body = next(p for p in heli_parts if p[0][-1] == HELICOPTER_BODY)
     helicopter = _model(scene, w, cache, heli_parts, scene.world(body[3]))
@@ -474,10 +573,9 @@ def extract(streaming_assets: str, out) -> None:
     globe_water = next(o.read() for o in scene.env.objects if o.type.name == "Mesh" and o.peek_name() == "globeWater")
     data.update({
         "radius": round(globe_water.m_LocalAABB.m_Extent.x, 4),
-        "materials": w.materials, "groups": groups, "territories": territories,
+        "materials": w.materials, "groups": groups, "territories": _territories(scene), "glows": _glows(scene, w),
         "models": {"helicopter": helicopter, "flag": flag}, "modelFrames": frames,
-        "icons": {k: w.texture(_texture(scene, n)) for k, n in (("terror", "WorldMap Terror Icon"), ("arrow", "WorldmapArrow"),
-                                                                 ("glow", "worldGlow"))},
+        "icons": {k: w.texture(_texture(scene, n)) for k, n in (("terror", "WorldMap Terror Icon"), ("arrow", "WorldmapArrow"))},
     })
     out.write_bytes("worldmap/globe.bin", bytes(w.bin), "world map geometry (WorldMap3D)")
     out.write_json("worldmap/globe.json", data, "world map scene (WorldMap3D)")

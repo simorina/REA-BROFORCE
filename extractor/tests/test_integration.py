@@ -1,4 +1,5 @@
 import json
+import math
 import os
 
 import pytest
@@ -104,6 +105,16 @@ def test_extracts_the_jungle_background_and_the_effects(tmp_path):
     globe = json.loads((tmp_path / "worldmap" / "globe.json").read_text(encoding="utf-8"))
     assert globe["radius"] == 5.0 and globe["camera"]["height"] == pytest.approx(16.68) and globe["camera"]["fovOut"] == 30.0
     assert {"usa", "hawaii", "amazon", "vietnam", "hongkong", "afghanistan", "panama"} <= set(globe["territories"])
+    # each territory's icon hangs over its centre and the helicopter sets down on its landing zone, both on the surface
+    assert all(5.0 < math.hypot(*t["centre"]) < 5.6 and 4.9 < math.hypot(*t["landing"]) < 5.5 for t in globe["territories"].values())
+    # and its flag pole is where the US flag goes up once it's liberated
+    assert all(len(globe["territories"][k]["flag"]) == 16 for k in ("usa", "hawaii", "vietnam", "hongkong"))
+    # a territory's border is a group of its own: Broforce shows it only while the territory is selected
+    assert {"usa", "hawaii", "afghanistan"} <= {g["territory"] for g in globe["groups"] if g.get("territory")}
+    # the main camera carries the blue disc behind the globe and the additive ring around its rim
+    assert [g["name"] for g in globe["glows"]] == ["backGlow", "Blue Glow"]
+    assert globe["glows"][1]["color"] == pytest.approx([0.0721, 0.3272, 0.3382, 1.0039], abs=1e-3)
+    assert globe["glows"][1]["distance"] == pytest.approx(10.74, abs=1e-3) and globe["glows"][1]["size"] == pytest.approx(8.628, abs=1e-2)
     assert len(globe["groups"]) >= 10 and (tmp_path / "worldmap" / "globe.bin").stat().st_size > 1_000_000
     shaders = {globe["materials"][g["material"]]["shader"] for g in globe["groups"]}
     assert {"Custom/Fake3D", "Custom/Fake3DTree", "Custom/PixelWater", "Custom/MapBorder"} <= shaders
