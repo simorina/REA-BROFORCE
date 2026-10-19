@@ -100,6 +100,16 @@ def test_extracts_the_jungle_background_and_the_effects(tmp_path):
     r, g, b = sky.getpixel((sky.width // 2, sky.height // 2))
     assert b < 220 and abs(r - b) < 60
     assert (tmp_path / bg["distant"][0]["file"]).is_file()
+    # Broforce's 3D world map: the globe (radius 5), its territories, the helicopter and the flag
+    globe = json.loads((tmp_path / "worldmap" / "globe.json").read_text(encoding="utf-8"))
+    assert globe["radius"] == 5.0 and globe["camera"]["height"] == pytest.approx(16.68) and globe["camera"]["fovOut"] == 30.0
+    assert {"usa", "hawaii", "amazon", "vietnam", "hongkong", "afghanistan", "panama"} <= set(globe["territories"])
+    assert len(globe["groups"]) >= 10 and (tmp_path / "worldmap" / "globe.bin").stat().st_size > 1_000_000
+    shaders = {globe["materials"][g["material"]]["shader"] for g in globe["groups"]}
+    assert {"Custom/Fake3D", "Custom/Fake3DTree", "Custom/PixelWater", "Custom/MapBorder"} <= shaders
+    assert [p["name"] for p in globe["models"]["helicopter"]] == ["WorldMap_Helicopter", "Helicopter_MainRotor", "Helicopter_SideRotor"]
+    assert globe["models"]["flag"] and (tmp_path / globe["lightmap"]["file"]).is_file()
+    assert all((tmp_path / f).is_file() for f in globe["icons"].values())
     fx = json.loads((tmp_path / "effects.json").read_text(encoding="utf-8"))
     blood = fx["emitters"]["bloodBig"]
     assert blood["collision"]["gravity"] == 400.0 and blood["collision"]["leavesDecals"] == 1

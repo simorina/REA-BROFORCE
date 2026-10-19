@@ -4,7 +4,7 @@ import datetime
 import os
 import sys
 
-from . import audio, effects, western
+from . import audio, effects, western, worldmap
 from .catalog import SPRITES, TEXTURES, VALUES
 from .manifest import OutputWriter
 from .repaint import RECIPES, repaint
@@ -69,6 +69,7 @@ def run(data_dir: str, out_dir: str, fetch_audio: bool = True) -> None:
     out.write_json("sheets.json", sheets, "SpriteSM frame grids")
     out.write_json("values.json", values, "prefab MonoBehaviour fields")
     effects.extract(os.path.join(data_dir, "StreamingAssets"), out)
+    worldmap.extract(os.path.join(data_dir, "StreamingAssets"), out)  # Broforce's 3D globe for the campaign map
     out.write_bytes("audio/django_western.wav", western.wav_bytes(), "our own spaghetti-western loop, synthesized (extractor/western.py)")
     if fetch_audio:
         for ref in (audio.ANTHEM, audio.ANTHEM_US):
