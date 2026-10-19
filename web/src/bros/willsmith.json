@@ -1,0 +1,10 @@
+{
+  "id": "willsmith",
+  "name": "Bro In Black",
+  "sheet": "bro_in_black",
+  "base": "bro_in_black",
+  "weapon": "cricket",
+  "special": "neuralyzer",
+  "voiceLine": "I make this look good!",
+  "voiceLang": "en-US"
+}

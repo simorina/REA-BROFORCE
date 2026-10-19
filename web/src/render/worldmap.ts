@@ -10,6 +10,7 @@ type Spot = { x: number; y: number };
 export interface MapMission {
   spot: Spot; // fractions of the map
   theme: LevelTheme;
+  missionId: string;
   name: string;
   state: 'done' | 'next' | 'locked';
 }
@@ -85,15 +86,20 @@ function sea(ctx: CanvasRenderingContext2D, time: number): void {
   }
 }
 
-/** The mainland the desert and the burning jungle share, and Epstein's island off its coast. */
+/** The mainland the missions share, and Epstein's island off its coast. */
 function land(ctx: CanvasRenderingContext2D, missions: MapMission[], time: number): void {
-  const main = blobPoints(150, 105, 128, 72, 1.7);
-  const g = ctx.createLinearGradient(40, 0, 260, 0);
+  // A large continent spanning the first 6 missions
+  const main = blobPoints(175, 108, 160, 78, 1.7);
+  const g = ctx.createLinearGradient(20, 0, 340, 0);
   g.addColorStop(0, '#d9b46a');
-  g.addColorStop(0.42, '#c9a85e');
-  g.addColorStop(0.58, '#4c7a32');
+  g.addColorStop(0.20, '#c9a85e');
+  g.addColorStop(0.35, '#4c7a32');
+  g.addColorStop(0.50, '#557e3a');
+  g.addColorStop(0.65, '#4c7a32');
+  g.addColorStop(0.80, '#c9a85e');
   g.addColorStop(1, '#2f5e26');
   shape(ctx, main, g, '#e8d39a');
+
   for (const m of missions) {
     const c = px(m.spot);
     if (m.theme === 'desert') {
@@ -120,7 +126,7 @@ function land(ctx: CanvasRenderingContext2D, missions: MapMission[], time: numbe
         ctx.arc(fx + rise * 0.3, fy - 4 - rise, 2 + rise * 0.12, 0, Math.PI * 2);
         ctx.fill();
       }
-    } else {
+    } else if (m.missionId === 'island') {
       // the island: a beach around the jungle, the temple on its hill
       shape(ctx, blobPoints(c.x + 2, c.y - 2, 38, 26, 4.2), '#e3cf8f', '#f3e6b8');
       shape(ctx, blobPoints(c.x + 2, c.y - 3, 30, 19, 4.9), '#2f7a35');
@@ -128,6 +134,110 @@ function land(ctx: CanvasRenderingContext2D, missions: MapMission[], time: numbe
       ctx.fillRect(c.x + 10, c.y - 13, 9, 4);
       ctx.fillStyle = '#3b6fc4';
       ctx.fillRect(c.x + 12, c.y - 16, 5, 3);
+    } else if (m.missionId === 'harbor') {
+      // harbor: docks and cranes
+      ctx.strokeStyle = 'rgba(80, 70, 60, 0.7)';
+      ctx.lineWidth = 1.5;
+      // pier lines
+      for (const dy of [-8, 0, 8]) {
+        ctx.beginPath();
+        ctx.moveTo(c.x - 14, c.y + dy);
+        ctx.lineTo(c.x + 14, c.y + dy);
+        ctx.stroke();
+      }
+      // crane
+      ctx.strokeStyle = 'rgba(100, 90, 80, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(c.x + 6, c.y + 10);
+      ctx.lineTo(c.x + 6, c.y - 16);
+      ctx.lineTo(c.x + 18, c.y - 16);
+      ctx.stroke();
+      // containers
+      for (const [dx, dy, col] of [[-10, 2, '#c84'], [-6, 2, '#48c'], [-10, -4, '#4a6'], [-6, -4, '#ca4']] as const) {
+        ctx.fillStyle = col;
+        ctx.fillRect(c.x + dx, c.y + dy, 6, 4);
+      }
+    } else if (m.missionId === 'tower') {
+      // skyscraper silhouette
+      ctx.fillStyle = 'rgba(50, 55, 70, 0.85)';
+      ctx.fillRect(c.x - 5, c.y - 22, 12, 26);
+      // windows
+      ctx.fillStyle = 'rgba(255, 230, 120, 0.7)';
+      const flicker = Math.sin(time * 2) * 0.3 + 0.7;
+      for (let wy = -18; wy < 2; wy += 5) {
+        for (let wx = -3; wx < 5; wx += 4) {
+          ctx.globalAlpha = flicker + Math.sin(time * 3 + wx + wy) * 0.2;
+          ctx.fillRect(c.x + wx, c.y + wy, 2, 3);
+        }
+      }
+      ctx.globalAlpha = 1;
+      // antenna
+      ctx.strokeStyle = 'rgba(200, 200, 200, 0.6)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(c.x + 1, c.y - 22);
+      ctx.lineTo(c.x + 1, c.y - 28);
+      ctx.stroke();
+      // blinking light
+      const blink = Math.sin(time * 4) > 0.3 ? 1 : 0.2;
+      ctx.fillStyle = `rgba(255, 40, 40, ${blink})`;
+      ctx.beginPath();
+      ctx.arc(c.x + 1, c.y - 28, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (m.missionId === 'airstrip') {
+      // runway markings
+      ctx.strokeStyle = 'rgba(200, 200, 200, 0.6)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 2]);
+      ctx.beginPath();
+      ctx.moveTo(c.x - 20, c.y);
+      ctx.lineTo(c.x + 20, c.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // runway edge lines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(c.x - 20, c.y - 4);
+      ctx.lineTo(c.x + 20, c.y - 4);
+      ctx.moveTo(c.x - 20, c.y + 4);
+      ctx.lineTo(c.x + 20, c.y + 4);
+      ctx.stroke();
+      // hangar
+      ctx.fillStyle = 'rgba(80, 80, 90, 0.7)';
+      ctx.beginPath();
+      ctx.moveTo(c.x - 8, c.y - 8);
+      ctx.lineTo(c.x + 8, c.y - 8);
+      ctx.lineTo(c.x + 10, c.y - 3);
+      ctx.lineTo(c.x - 10, c.y - 3);
+      ctx.closePath();
+      ctx.fill();
+    } else if (m.missionId === 'temple') {
+      // cave entrance with torch glow
+      ctx.fillStyle = 'rgba(30, 25, 20, 0.8)';
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, 10, Math.PI * 0.85, Math.PI * 0.15, true);
+      ctx.lineTo(c.x + 9, c.y + 5);
+      ctx.lineTo(c.x - 9, c.y + 5);
+      ctx.closePath();
+      ctx.fill();
+      // torch glow
+      const glow = 0.5 + 0.5 * Math.sin(time * 6);
+      ctx.fillStyle = `rgba(255, 140, 30, ${0.3 + glow * 0.3})`;
+      ctx.beginPath();
+      ctx.arc(c.x - 7, c.y - 2, 3 + glow * 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(c.x + 7, c.y - 2, 3 + glow * 2, 0, Math.PI * 2);
+      ctx.fill();
+      // temple pillars
+      ctx.fillStyle = 'rgba(200, 190, 170, 0.7)';
+      ctx.fillRect(c.x - 8, c.y - 6, 2, 8);
+      ctx.fillRect(c.x + 6, c.y - 6, 2, 8);
+    } else {
+      // fallback: generic jungle spot
+      shape(ctx, blobPoints(c.x, c.y, 16, 12, 3.5), '#3f7a35');
     }
   }
 }

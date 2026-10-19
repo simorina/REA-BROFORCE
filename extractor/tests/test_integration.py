@@ -46,8 +46,25 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert values["tank_shell"]["damage"] == 10 and values["tank_shell"]["range"] == 36.0
     assert values["tank_rocket"]["horizontalAcceleration"] == 120.0 and values["tank_rocket"]["crushWallLayers"] == 3
     assert values["bro_soldier"]["fireRate"] == pytest.approx(0.12) and values["bro_soldier"]["extraFireDelay"] == pytest.approx(0.3)
+    # Bro In Black (Brononymous): his sheet, the Noisy Cricket in his hand, its shot and the Neuraliser's beam
+    assert values["bro_in_black"]["speed"] == 110.0 and values["bro_in_black"]["originalSpecialAmmo"] == 3
+    assert values["cricket"]["damage"] == 10 and values["cricket"]["range"] == 28.0
+    assert values["cricket"]["blastForce"] == 20.0 and values["cricket"]["life"] == pytest.approx(0.18)
+    assert sheets["bro_in_black"]["frameW"] == 32 and sheets["cricket_gun"]["frameW"] == 32
+    assert sheets["neuraliser_beam"]["frameW"] == 32 and sheets["neuraliser_beam"]["frameH"] == 16
+    # Samuel's Django: Dirty Brorry's revolver in his own hand, its penetrating bullet, and our western loop
+    assert sheets["revolver_gun"]["frameW"] == 32 and sheets["revolver_gun"]["file"] == "sprites/revolver_gun.png"
+    assert values["revolver_bullet"]["damage"] == 4 and values["revolver_bullet"]["maxPenetrations"] == 2
+    assert values["revolver_bullet"]["life"] == pytest.approx(0.3) and sheets["revolver_bullet"]["frameW"] == 32
+    assert (tmp_path / "audio" / "django_western.wav").is_file()
+    # Che Guevara: Brodock repainted, Rambro's M60 and values, and the Molotov with its little fires
+    assert sheets["che"]["file"] == "sprites/che.png" and sheets["che"]["frameW"] == 32
+    assert sheets["m60_gun"]["file"] == "sprites/m60_gun.png" and sheets["molotov"]["frameW"] == 16  # its little fires show only as flames
+    assert values["bro_rambro"]["originalSpecialAmmo"] == 6 and values["bro_rambro"]["fireRate"] == pytest.approx(0.1)
+    assert values["molotov"]["range"] == 64.0 and values["molotov_fire"]["range"] == 48.0 and values["molotov_fire"]["life"] == 1.0
     assert values["rifle_bullet"]["damage"] == 1
     assert sheets["trump"]["frameW"] == 32 and sheets["rifle_gun"]["frameW"] == 32 and sheets["rifle_gun"]["rows"] == 2
+    assert sheets["blade_gun"]["frameW"] == 32 and sheets["blade_gun"]["cols"] == 32 and sheets["blade_gun"]["rows"] == 2
     assert sheets["jet_us"]["frameW"] == 96 and sheets["jet_us"]["frameH"] == 64 and sheets["jet_us"]["offsetY"] == 12.0
     assert sheets["tank_ru"]["frameW"] == 48 and sheets["turret_ru"]["frameW"] == 48
     assert sheets["tank_shell"]["frameW"] == 32 and sheets["tank_rocket"]["frameH"] == 16
@@ -87,6 +104,7 @@ def test_extracts_the_jungle_background_and_the_effects(tmp_path):
     blood = fx["emitters"]["bloodBig"]
     assert blood["collision"]["gravity"] == 400.0 and blood["collision"]["leavesDecals"] == 1
     assert fx["puffs"]["bloodGush1"]["frames"] == 7
+    assert fx["puffs"]["cricketBeam"]["name"] == "Noisy Cricket Beam Puff" and fx["puffs"]["cricketBall"]["frames"] > 1
     assert fx["bubbles"]["!"]["animatedRestFrame"] == 10
     assert [g["name"] for g in fx["gibs"]] == ["BodyArm1", "BodyArm2", "BodyHead", "BodyLeg1", "BodyLeg2", "BodyTorso"]
     assert fx["blocks"]["sand"]["customColors"] is not None and set(fx["blocks"]) == {"dirt", "sand", "brick", "temple", "steel", "barrel"}

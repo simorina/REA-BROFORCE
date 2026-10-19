@@ -204,6 +204,7 @@ export const PUFF_KEYS = [
   'bloodGush1', 'bloodGush2', 'bloodGush3', 'bloodSpurt1', 'bloodSpurt2', 'bloodSpurt3', 'bloodSplash1', 'bloodSplash2',
   'bloodSmallSplash1', 'bloodSmallSplash2', 'bloodTinySplash1', 'bloodTinySplash2', 'footPoof1', 'footPoof2',
   'footPoof3', 'landPoof1', 'landPoof2', 'muzzleFlash', 'smokeSmall1', 'smokeSmall2', 'smokeSmall3',
+  'cricketBeam', 'cricketBall', // the Noisy Cricket's Puff prefabs
 ] as const;
 export const STAR_KEYS = ['stunnedStars1', 'stunnedStars2', 'stunnedStars3'] as const;
 export type EmitterKey = (typeof EMITTER_KEYS)[number];

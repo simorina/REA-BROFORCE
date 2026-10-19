@@ -110,6 +110,32 @@ export const TANK_CANNON = { ox: 24, oy: 22 }; // TankBroTankTurret.FireCannon: 
 export const HEAVY_SHELL_DIP = { coast: 0.1, slow: 0.35, fall: 0.4, drag: 1.5, gravity: 600 }; // HeavyShell.RunProjectile
 export const SHELL_BLAST = { force: 350, extraY: 300 }; // HeavyShell.MakeEffects: ExplodeUnits(..., 350, 300)
 export const TANK_ROCKET_CRUSH = { damage: 15, range: 16, ox: 9 }; // RocketMassive.Bounce: DamageGround(15, Crush, 16, X + dir*9, Y)
+// Brononymous (Bro In Black): UseFire / FireWeapon, and NoisyCricket.Update / RunBeam / MakeEffects
+export const CRICKET = {
+  ox: 14, oy: 9.5, speed: 700, fireDelay: 0.2, kickY: 150, kickX: 150,
+  timeScale: 0.99, // NoisyCricket.Update: t = dt * 0.33, run three times; life -= t * 3
+  beamStep: 16, killRangeM: 0.7, forceM: 40, extraY: 300, burnRangeM: 1.4, noise: 2,
+};
+// Neuraliser: from (X + dir * 4, Y + height + 3), a 16-unit step every ~0.02 s, up to 32 steps or 240 units
+export const NEURALISER = {
+  ox: 4, oy: UNIT_BOX_HEIGHT + 3, step: 16, stepTime: 0.016, stepCost: 0.02, firstDelay: 0.02, maxSteps: 32, reach: 240,
+  startRange: 16, range: 24, blindTime: 9, flash: 0.11,
+};
+// Samuel's special: he becomes Django for this long (our design), and says the line
+export const DJANGO = { time: 12, line: 'The D is silent.' };
+// DirtyHarry (Dirty Brorry): UseFire / FireWeapon / Update, his prefab's fireRate, and BulletSnakeBroskin.Update
+export const REVOLVER = {
+  ox: 14, oy: 8.5, speed: 750, jitter: 10, fireDelay: 0.15, fireRate: 0.1, shots: 6,
+  reload: 1, reloadFire: 0.86, open: 0.6, close: 0.1, openFrame: 11, timeScale: 0.99,
+};
+// Rambro's M60, Che's: TestVanDammeAnim.UseFire, from (X + dir * 10, Y + 8) at 400, Random.Range(-20, 20) off level
+export const M60 = { ox: 10, oy: 8, speed: 400, jitter: 20 };
+// GrenadeMolotov: RunMovement / Death; GrenadeMolotovFire: Update / Death. The fuse is ours (it bursts on contact anyway).
+export const MOLOTOV = {
+  fuse: 4, touch: 24, touchDamage: 1, burst: 12, burstDamage: 3, flameY: 2,
+  firstAngle: 0.3, firstAngleRand: 0.5, gaps: [0.8, 1.6, 2.4], gapRand: 0.2, speed: 210, speedRand: 50,
+};
+export const MOLOTOV_FIRE = { tick: 0.0334, tickCost: 0.01667, every: 4, flyRange: 16, flyDamage: 1, landRange: 24, landDamage: 1 };
 export const RIFLE = { ox: 14, oy: 8.5, speed: 420, jitter: 10, burst: 2, burstGap: 0.07 }; // BroniversalSoldier.UseFire / Update / FireWeapon
 export const GUN_FRAME_RATE = 0.0334; // TestVanDammeAnim.RunGun
 export const SHIELD = { points: 36, knock: 15 }; // MookRiotShield.Damage: past 35 of shieldDamage it goes; a stopped shot knocks him (xI * 0.05, 15)

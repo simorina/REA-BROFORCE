@@ -1,0 +1,10 @@
+{
+  "id": "samuel",
+  "name": "Samuel L. Jackson",
+  "sheet": "samuel",
+  "base": "bro_lee",
+  "weapon": "blade",
+  "special": "django",
+  "voiceLine": "Some motherf***ers are always trying to ice-skate uphill!",
+  "voiceLang": "en-US"
+}

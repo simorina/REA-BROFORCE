@@ -74,6 +74,20 @@ describe('the anthem when the game is paused or interrupted', () => {
   });
 });
 
+describe("Django's theme", () => {
+  it('starts again from the top each time he becomes Django', () => {
+    const a = Object.assign(fakeAudio(), { currentTime: 0 });
+    const m = new Music(a, ['/audio/django_custom.mp3', '/audio/django_western.wav']);
+    m.update(true, 1);
+    a.currentTime = 7.5; // it has played a while, then he was himself again
+    m.update(false, 1);
+    m.rewind();
+    expect(a.currentTime).toBe(0);
+    m.update(true, 0.1);
+    expect(a.paused).toBe(false);
+  });
+});
+
 describe('music sources', () => {
   it('falls back to the next source, and stays silent after the last', () => {
     const a = Object.assign(fakeAudio(), { src: '' });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { BROLUSCONI } from '../bros';
+import { BROLUSCONI, CHE, SAMUEL, WILL_SMITH } from '../bros';
 import type { BroDef } from './bro';
-import { FIXED_DT } from './constants';
+import { DJANGO, FIXED_DT, SHIELD } from './constants';
 import type { LevelData } from './level';
 import { hitTank } from './driving';
 import type { Blast } from './explosions';
@@ -875,3 +875,191 @@ describe("Trump's jet", () => {
     expect(w.player.dead).toBe(false);
   });
 });
+
+describe("Samuel's katana (Blade)", () => {
+  it("swings through its gun frames 6 to 0 (Blade.UseFire), one every 0.0334 s, then rests", () => {
+    const w = createWorld(EMPTY, TEST_STATS, [SAMUEL], () => 0.5);
+    play(w, { fire: true }, 1);
+    expect(w.player.gunFrame).toBe(6);
+    play(w, {}, Math.round(0.12 / FIXED_DT));
+    expect(w.player.gunFrame).toBeGreaterThan(0);
+    expect(w.player.gunFrame).toBeLessThan(6);
+    play(w, {}, Math.round(0.2 / FIXED_DT));
+    expect(w.player.gunFrame).toBe(0);
+  });
+});
+
+describe('Che Guevara (Rambro, with a Molotov)', () => {
+  it("is Rambro: his prefab's values and six specials", () => {
+    const w = createWorld(EMPTY, TEST_STATS, [CHE], () => 0.5);
+    expect(w.player.stats).toEqual(TEST_STATS.bros.bro_rambro);
+    expect(w.specialAmmo).toBe(6);
+  });
+
+  it('holding the trigger, the M60 fires about ten shots a second (his fireRate 0.1)', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [CHE], () => 0.5);
+    let shots = 0;
+    for (let i = 0; i < Math.round(1 / FIXED_DT); i++) {
+      play(w, { fire: true }, 1);
+      shots += w.events.filter((e) => e.type === 'shot').length;
+      w.events.length = 0;
+    }
+    expect(shots).toBeGreaterThanOrEqual(10);
+    expect(shots).toBeLessThanOrEqual(11);
+    expect(w.player.gunFrame).toBeGreaterThan(0);
+  });
+
+  it('his Molotov bursts among the mooks: the ones close by catch fire and four little fires fly out', () => {
+    const w = createWorld(level([[2, 'P'], [5, 'm'], [27, 'F']]), TEST_STATS, [CHE], () => 0.5);
+    const [m] = w.enemies;
+    w.player.facing = 1;
+    play(w, { special: true }, 1);
+    expect(w.specialAmmo).toBe(5);
+    let flames = 0;
+    for (let i = 0; i < 120 && flames === 0; i++) {
+      play(w, {}, 1);
+      flames = w.projectiles.filter((p) => p.kind === 'molotovFire').length;
+    }
+    expect(flames).toBe(4);
+    expect(m.burnTime).toBeGreaterThan(0);
+  });
+});
+
+describe('Samuel becomes Django (his special)', () => {
+  const django = () => {
+    const w = createWorld(EMPTY, TEST_STATS, [SAMUEL], () => 0.5);
+    w.player.facing = 1;
+    play(w, { special: true }, 1);
+    return w;
+  };
+  const shots = (w: World) => w.projectiles.filter((p) => p.kind === 'revolver');
+
+  it('for 12 s: no projectile thrown, one special gone, and he says the line', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [SAMUEL], () => 0.5);
+    const ammo = w.specialAmmo;
+    play(w, { special: true }, 1);
+    expect(w.django?.time).toBeCloseTo(DJANGO.time, 1);
+    expect(w.projectiles).toHaveLength(0);
+    expect(w.specialAmmo).toBe(ammo - 1);
+    expect(w.effects).toContainEqual(expect.objectContaining({ kind: 'speech', text: DJANGO.line }));
+    expect(w.events).toContainEqual(expect.objectContaining({ type: 'django' }));
+  });
+
+  it("as Django he fires Dirty Brorry's revolver: every 0.25 s held (fireDelay 0.15, then its fireRate 0.1)", () => {
+    const w = django();
+    play(w, { fire: true }, 1);
+    const [first] = shots(w);
+    expect(first).toMatchObject({ team: 'player', xI: 750 }); // its exact start is in projectiles.test
+    expect(first.x).toBeGreaterThan(w.player.x + 14);
+    expect(w.player.gunFrame).toBe(3);
+    let n = 1;
+    for (let i = 0; i < Math.round(0.6 / FIXED_DT); i++) {
+      play(w, { fire: true }, 1);
+      n += w.events.filter((e) => e.type === 'shot').length;
+      w.events.length = 0;
+    }
+    expect(n).toBeGreaterThanOrEqual(3); // the first, then at 0.25 and 0.5 s
+    expect(n).toBeLessThanOrEqual(4);
+  });
+
+  it('six shots, then a 1 s reload with the cylinder open (gun frame 11) before he can fire again', () => {
+    const w = django();
+    let fired = 0;
+    for (let i = 0; i < Math.round(2 / FIXED_DT) && fired < 6; i++) {
+      play(w, { fire: true }, 1);
+      fired += w.events.filter((e) => e.type === 'shot').length;
+      w.events.length = 0;
+    }
+    expect(fired).toBe(6);
+    play(w, { fire: true }, Math.round(0.5 / FIXED_DT));
+    expect(w.events.filter((e) => e.type === 'shot')).toHaveLength(0);
+    expect(w.player.gunFrame).toBe(11);
+    w.events.length = 0;
+    play(w, { fire: true }, Math.round(0.6 / FIXED_DT));
+    expect(w.events.some((e) => e.type === 'shot')).toBe(true);
+  });
+
+  it('when his 12 s run out he has his katana back', () => {
+    const w = django();
+    play(w, {}, Math.round((DJANGO.time + 0.1) / FIXED_DT));
+    expect(w.django).toBeNull();
+    play(w, { fire: true }, 1);
+    expect(shots(w)).toHaveLength(0);
+    expect(w.player.gunFrame).toBe(6); // the katana's slash
+  });
+
+  it('dying ends it: the next bro comes back without it', () => {
+    const w = django();
+    damageUnit(w.player, w.player.health);
+    play(w, {}, Math.round(3 / FIXED_DT));
+    expect(w.django).toBeNull();
+  });
+});
+
+describe('Bro In Black (Brononymous)', () => {
+  it("is Broforce's Brononymous: his prefab's speed, jump, wall climbing and dash, and 3 specials", () => {
+    const w = createWorld(EMPTY, TEST_STATS, [WILL_SMITH], () => 0.5);
+    expect(w.player.stats).toEqual(TEST_STATS.bros.bro_in_black);
+    expect(w.specialAmmo).toBe(3);
+  });
+
+  it('the Noisy Cricket kicks him 150 up and 150 back, with its kick on the gun (Brononymous.FireWeapon)', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [WILL_SMITH], () => 0.5);
+    w.player.facing = 1;
+    play(w, { fire: true }, 1);
+    expect(w.projectiles.filter((p) => p.kind === 'cricket')).toHaveLength(1);
+    expect(w.player.xIBlast).toBe(-150);
+    expect(w.player.yI).toBeCloseTo(150);
+    expect(w.player.gunFrame).toBe(3);
+  });
+
+  it('holding the trigger, he fires about every 0.3 s (fireDelay 0.2 after each shot, then his fireRate 0.1)', () => {
+    const w = createWorld(EMPTY, TEST_STATS, [WILL_SMITH], () => 0.5);
+    let shots = 0;
+    for (let i = 0; i < Math.round(1.2 / FIXED_DT); i++) {
+      play(w, { fire: true }, 1);
+      shots += w.events.filter((e) => e.type === 'shot').length;
+      w.events.length = 0;
+    }
+    expect(shots).toBeGreaterThanOrEqual(4);
+    expect(shots).toBeLessThanOrEqual(5);
+  });
+
+  it('its blast kills the mook it hits and sets the ones around burning (NoisyCricket.MakeEffects: BurnUnitsAround)', () => {
+    const w = createWorld(level([[2, 'P'], [6, 'm'], [8, 'm'], [27, 'F']]), TEST_STATS, [WILL_SMITH], () => 0.5);
+    const [hit, near] = w.enemies;
+    w.player.facing = 1;
+    play(w, { fire: true }, 1);
+    for (let i = 0; i < 30 && !w.events.some((e) => e.type === 'explosion'); i++) play(w, {}, 1);
+    expect(hit.dead).toBe(true);
+    expect(near.burnDamage).toBeGreaterThan(0);
+  });
+
+  it('the Neuraliser blinds the mooks along its beam for 9 s: they forget him and wait (Map.BlindUnits, Mook.Blind)', () => {
+    const w = createWorld(level([[0, 'm'], [3, 'P'], [8, 'm'], [11, 'h'], [27, 'F']]), TEST_STATS, [WILL_SMITH], () => 0.5);
+    const [behind, ahead, shield] = w.enemies;
+    w.player.facing = 1;
+    play(w, { special: true }, 1);
+    expect(w.specialAmmo).toBe(2);
+    play(w, {}, Math.round(0.3 / FIXED_DT));
+    expect(ahead.blindTime).toBeGreaterThan(8.5);
+    expect(ahead.ai?.seenPlayer).toBe(false);
+    expect(ahead.ai?.mental).toBe('alerted');
+    expect(shield.blindTime).toBeGreaterThan(8.5);
+    expect(shield.shield).toBe(SHIELD.points); // a blind riot shield mook keeps his shield
+    expect(behind.blindTime).toBe(0);
+  });
+
+  it('confused enemies with blindTime shoot friendly projectiles that hit other enemies', () => {
+    const w = createWorld(level([[2, 'P'], [10, 'm'], [13, 'm'], [27, 'F']]), TEST_STATS, [WILL_SMITH], () => 0.5);
+    const shooter = w.enemies[0];
+    const victim = w.enemies[1];
+    shooter.facing = 1;
+    shooter.blindTime = 3.0; // confused
+    if (shooter.ai) shooter.ai.queue = [{ type: 'fire', duration: 0.5, c: 0, r: 0 }];
+    play(w, {}, 20);
+    // The confused bullet was fired with team: 'player', hitting and damaging other enemy
+    expect(victim.health).toBeLessThan(TEST_STATS.units.mook.health);
+  });
+});
+

@@ -4,9 +4,9 @@ export type BlockKind = 'dirt' | 'sand' | 'brick' | 'temple' | 'steel' | 'barrel
 export type EnemyKind = 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout' | 'mook_shield' | 'mook_grenadier' | 'dog';
 export type UnitKind = 'bro' | EnemyKind | 'boss';
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
-export const BRO_BASES = ['bro_base', 'bro_lee', 'bro_soldier'] as const;
+export const BRO_BASES = ['bro_base', 'bro_lee', 'bro_soldier', 'bro_in_black', 'bro_rambro'] as const;
 export type BroBase = (typeof BRO_BASES)[number];
-export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket' | 'rifle' | 'jetBomb' | 'grenade';
+export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket' | 'rifle' | 'jetBomb' | 'grenade' | 'cricket' | 'neuraliser' | 'revolver' | 'molotov' | 'molotovFire';
 
 export interface Block {
   kind: BlockKind;
@@ -129,6 +129,10 @@ export interface GameStats {
   tankShell: { damage: number; range: number; life: number }; // HeavyShell "Shell Heavy Tankbro"
   tankRocket: RocketStats & { acceleration: number; crushLayers: number }; // RocketMassive "Rocket Tankbro BIG"
   rifle: { extraFireDelay: number; damage: number; life: number }; // BroniversalSoldier, "Bullet Rambo"
+  cricket: { life: number; damage: number; range: number; blastForce: number; projectileSize: number }; // NoisyCricket
+  revolver: { damage: number; life: number; maxPenetrations: number; projectileSize: number }; // "Bullet DirtyBrory"
+  molotov: { range: number; size: number; gravityM: number }; // "Grenade Molotove"
+  molotovFire: { range: number; size: number; gravityM: number; life: number }; // "Grenade Molotov Fire"
   mech: { health: number }; // GoliathMech
   blocks: Record<BlockKind, { health: number }>;
   barrelRange: number;
@@ -275,6 +279,18 @@ export interface Unit {
   shield: number; // MookRiotShield: what his shield can still take (0: he has none)
 }
 
+/** Neuraliser: the line from where Bro In Black used it to its tip (the projectile's x), growing then flashing. */
+export interface NeuraliserBeam {
+  startX: number;
+  dir: 1 | -1;
+  started: boolean; // EffectFirstUpdate has run
+  growing: boolean;
+  growDelay: number;
+  steps: number; // totalGrowCount
+  flash: number; // flashTime left once it has stopped growing
+  flicker: number; // colorCounter: odd black, even white
+}
+
 export interface Projectile {
   id: number;
   kind: ProjectileKind;
@@ -288,7 +304,12 @@ export interface Projectile {
   dead: boolean;
   warning?: number; // Grenade.panicCounter
   body?: EnemyKind; // a 'body': the mook the judo throw grabbed
-  call?: 'tank' | 'jet'; // a 'marker' that calls in the tank or the jet instead of the airstrike (GrenadeAirstrike.callInTank)
+  call?: 'tank' | 'jet' | 'nuke'; // a 'marker' that calls in special events
+  beamX?: number; // a 'cricket': where its last beam puff was left (NoisyCricket.lastBeamPos)
+  beam?: NeuraliserBeam; // a 'neuraliser': its beam, from startX to the projectile's x
+  pierced?: number[]; // a 'revolver': the units it has gone through (BulletSnakeBroskin.hitUnits)
+  power?: number; // a 'revolver': its damage left, one less after each unit
+  flame?: { counter: number; count: number }; // a 'molotovFire': GrenadeMolotovFire.flameCounter / flameCount
   dip?: number; // HeavyShell.dipCounter
   crush?: number; // RocketMassive.crushWallLayers left
 }

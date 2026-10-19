@@ -19,6 +19,7 @@ export interface RangePop {
 }
 
 const WHITE: RGBA = [1, 1, 1, 1];
+const BLUE_SPARK: RGBA = [0.45, 0.85, 1, 1]; // NoisyCricket's SparkShrapnel Blue
 const RUN_FRAME_RATE = 0.025; // TestVanDammeAnim.runningFrameRate on the bro and mook prefabs
 
 /** A running FlickerFader: steps through its frames, drifting with drag, after an optional delay. */
@@ -209,12 +210,12 @@ export class Effects {
 
   /** EffectsController.CreateSparkShower: yellow to red sparks, part showering and part floating */
   sparkShower(x: number, y: number, count: number, offsetRadius: number, force: number, xI: number, yI: number,
-    redM: number, floatM: number): void {
+    redM: number, floatM: number, tint?: RGBA): void {
     const e = this.data.emitters;
     const emit = (def: EmitterDef, n: number) => {
       for (let i = 0; i < n; i++) {
         const [ux, uy] = this.insideUnitCircle();
-        const color = lerpColor([1, 1, 0.3, 1], [1, 0, 0, 1], (1 - this.rng()) * redM);
+        const color = tint ?? lerpColor([1, 1, 0.3, 1], [1, 0, 0, 1], (1 - this.rng()) * redM);
         this.particles.emit(def, x + offsetRadius * ux, y + offsetRadius * uy, xI + force * ux, yI + force * uy,
           this.size(def), this.energy(def), color);
       }
@@ -467,7 +468,34 @@ export class Effects {
           this.smoke(e.x - e.facing * 9, e.y + 7, e.facing * -50, 0);
           this.smoke(e.x - e.facing * 9, e.y + 7, e.facing * -40, 0);
           this.puff('muzzleFlash', e.x + e.facing * 12, e.y + 8, e.facing, e.facing, 0);
+        } else if (e.weapon === 'm60') {
+          // TestVanDammeAnim.FireWeapon: CreateMuzzleFlashEffect(X + dir * 10, Y + 8, -25, xSpeed * 0.15, ySpeed * 0.15)
+          this.puff('muzzleFlash', e.x + e.facing * 10, e.y + 8, e.facing, e.facing * 60, 0);
+        } else if (e.weapon === 'revolver') {
+          // DirtyHarry.FireWeapon: CreateMuzzleFlashMediumEffect(X + dir * 14, Y + 8.5, -25, xSpeed * 0.06, ySpeed * 0.06)
+          this.puff('muzzleFlash', e.x + e.facing * 14, e.y + 8.5, e.facing, e.facing * 45, 0);
+        } else if (e.weapon === 'cricket') {
+          // Brononymous.FireWeapon: CreateMuzzleFlashEffect(X + dir * 14, Y + 9.5, -25, xSpeed * 0.01, 0)
+          this.puff('muzzleFlash', e.x + e.facing * 14, e.y + 9.5, e.facing, e.facing * 7, 0);
         }
+        return;
+      case 'molotovBurst':
+        // GrenadeMolotov.MakeEffects: sparks, smoke and a ring of flames
+        this.sparkShower(e.x, e.y, 12, 3, 120, 0, 250, 0.8, 0.3);
+        for (let i = 0; i < 3; i++) this.smoke(e.x + (i - 1) * 6, e.y + 4, (i - 1) * 30, 40);
+        for (let i = 0; i < 8; i++) {
+          const [ux, uy] = this.insideUnitCircle();
+          this.flame(this.pick(this.data.flames), e.x + ux * 16, e.y + Math.abs(uy) * 8, this.rng() * 0.3, ux * 48, Math.abs(uy) * 48);
+        }
+        return;
+      case 'django':
+        // Samuel becomes Django: a puff of dust around him
+        for (let i = 0; i < 5; i++) this.smoke(e.x + (i - 2) * 5, e.y + 4 + (i % 2) * 6, (i - 2) * 20, 20);
+        return;
+      case 'cricketBeam':
+        // NoisyCricket.RunBeam and RunCricketEffects: a beam puff, and blue sparks where the shot is
+        this.puff('cricketBeam', e.x, e.y);
+        this.sparkShower(e.x, e.y, 2, 0.1, 7, 0, 2, 0, 0, BLUE_SPARK);
         return;
       default:
     }
@@ -523,6 +551,19 @@ export class Effects {
         this.plumes(x, y, 5, 10, 315, 0, 0);
         this.shaderExplosion('large', x, y);
         return;
+      case 'cricket': {
+        // NoisyCricket.MakeEffects: the ball puff, a range pop, two showers of blue sparks and four puffs of smoke
+        this.puff('cricketBall', x, y);
+        this.rangePop(x, y, range * 2);
+        this.sparkShower(x, y, 5, 3, 160, 0, 60, 0, 0, BLUE_SPARK);
+        this.sparkShower(x, y, 5, 3, 200, 0, 90, 0, 0, BLUE_SPARK);
+        for (let i = 0; i < 4; i++) {
+          const [sx, sy] = this.insideUnitCircle();
+          this.delayedPuff(this.data.suicide.smoke[i % 2], x + sx * range * 0.25, y + sy * range * 0.25, this.rng() * 0.5,
+            sx * range * 3, sy * range * 3);
+        }
+        return;
+      }
       default:
         // the football is ours: a small shader explosion
         this.rangePop(x, y, range * 2);

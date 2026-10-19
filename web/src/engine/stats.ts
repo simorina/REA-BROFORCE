@@ -95,7 +95,10 @@ export function parseValues(raw: Raw): GameStats {
       mook_grenadier: unit(raw, 'mook_grenadier'),
       dog: unit(raw, 'dog'),
     },
-    bros: { bro_base: unit(raw, 'bro_base', true), bro_lee: unit(raw, 'bro_lee', true), bro_soldier: unit(raw, 'bro_soldier', true) },
+    bros: {
+      bro_base: unit(raw, 'bro_base', true), bro_lee: unit(raw, 'bro_lee', true), bro_soldier: unit(raw, 'bro_soldier', true),
+      bro_in_black: unit(raw, 'bro_in_black', true), bro_rambro: unit(raw, 'bro_rambro', true),
+    },
     ai: {
       mook: ai(raw, 'ai_mook'), mook_suicide: ai(raw, 'ai_mook_suicide'), mook_bazooka: ai(raw, 'ai_mook_bazooka'),
       mook_scout: ai(raw, 'ai_mook_scout'), mook_shield: ai(raw, 'ai_mook_shield'),
@@ -134,6 +137,19 @@ export function parseValues(raw: Raw): GameStats {
       crushLayers: num(raw, 'tank_rocket', 'crushWallLayers'),
     },
     mech: { health: num(raw, 'mech', 'health') },
+    cricket: {
+      life: num(raw, 'cricket', 'life'), damage: num(raw, 'cricket', 'damage'),
+      range: num(raw, 'cricket', 'range'), blastForce: num(raw, 'cricket', 'blastForce'), projectileSize: num(raw, 'cricket', 'projectileSize'),
+    },
+    molotov: { range: num(raw, 'molotov', 'range'), size: num(raw, 'molotov', 'size'), gravityM: num(raw, 'molotov', 'gravityM') },
+    molotovFire: {
+      range: num(raw, 'molotov_fire', 'range'), size: num(raw, 'molotov_fire', 'size'),
+      gravityM: num(raw, 'molotov_fire', 'gravityM'), life: num(raw, 'molotov_fire', 'life'),
+    },
+    revolver: {
+      damage: num(raw, 'revolver_bullet', 'damage'), life: num(raw, 'revolver_bullet', 'life'),
+      maxPenetrations: num(raw, 'revolver_bullet', 'maxPenetrations'), projectileSize: num(raw, 'revolver_bullet', 'projectileSize'),
+    },
     rifle: {
       extraFireDelay: num(raw, 'bro_soldier', 'extraFireDelay'),
       damage: num(raw, 'rifle_bullet', 'damage'),

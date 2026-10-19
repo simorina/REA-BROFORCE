@@ -2,6 +2,7 @@ import { parseValues } from '../engine/stats';
 import type { GameStats } from '../engine/types';
 import { unpackTexture, type ShaderTexture } from './fx/pixelShader';
 import type { ShurikenData } from './fx/shuriken';
+import type { WeaponId } from '../engine/bro';
 import type { LevelTheme } from '../engine/level';
 import { effectFiles, parseBackground, parseEffects, parseShuriken, type BackgroundData, type EffectsData } from './fxdata';
 
@@ -15,7 +16,7 @@ export interface SheetInfo {
 }
 
 export const SHEET_KEYS = [
-  'brolusconi', 'putin', 'trump', 'rifle_gun', 'jet_us', 'epstein', 'goliath', 'tank_ru', 'turret_ru', 'tank_shell', 'tank_rocket', 'mook', 'mook_suicide', 'mook_bazooka', 'mook_scout',
+  'brolusconi', 'putin', 'trump', 'kim', 'bro_in_black', 'samuel', 'che', 'm60_gun', 'molotov', 'rifle_gun', 'blade_gun', 'cricket_gun', 'neuraliser_beam', 'revolver_gun', 'revolver_bullet', 'jet_us', 'epstein', 'goliath', 'tank_ru', 'turret_ru', 'tank_shell', 'tank_rocket', 'mook', 'mook_suicide', 'mook_bazooka', 'mook_scout',
   'mook_shield', 'mook_grenadier', 'dog', 'grenade', 'shield', 'prisoner', 'cage', 'helicopter', 'bullet', 'rocket',
   'bomb', 'marker', 'block_dirt', 'block_sand', 'block_brick', 'block_temple', 'block_steel', 'block_barrel', 'flagpole', 'flag',
 ] as const;
@@ -42,6 +43,18 @@ export function isSheetKey(s: string): s is SheetKey {
 export function broSheet(bro: { id: string; sheet: string }): SheetKey {
   if (!isSheetKey(bro.sheet)) throw new Error(`bro ${bro.id}: sheet '${bro.sheet}' is not extracted`);
   return bro.sheet;
+}
+
+/** The gun sprite drawn over a bro (TestVanDammeAnim.gunSprite), for the weapons that have one in hand. */
+const GUN_SHEETS: Partial<Record<WeaponId, SheetKey>> = { rifle: 'rifle_gun', blade: 'blade_gun', cricket: 'cricket_gun', m60: 'm60_gun' };
+
+export function gunSheet(weapon: WeaponId, django = false): SheetKey | null {
+  return django ? 'revolver_gun' : GUN_SHEETS[weapon] ?? null; // as Django, Samuel holds Dirty Brorry's revolver
+}
+
+/** How far forward a gun sprite sits from the body: Blade.SetGunPosition adds 4 to the x offset. */
+export function gunOffsetX(sheet: SheetKey): number {
+  return sheet === 'blade_gun' ? 4 : 0;
 }
 
 export function missingSheets(sheets: Record<string, unknown>): SheetKey[] {

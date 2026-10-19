@@ -46,6 +46,8 @@ GRENADE_FIELDS = ("bounceM", "frictionM")
 SPRITES = (
     SpriteRef("bro_base", "DoubleBroSeven", "DoubleBroSeven", True),
     SpriteRef("bro_lee", "BroLee", "BroLee", True),
+    SpriteRef("bro_in_black", "Brononymous", "Brononymous", True),  # Bro In Black
+    SpriteRef("bro_brodock", "ColJamesBrodock", "Col James Brodock", True),  # repainted into Che Guevara
     SpriteRef("tank_hull", "TankBroTank", "TankBrosTank", True),
     SpriteRef("tank_turret", "TankBroTankTurret", "Turret", True),
     SpriteRef("tank_shell", "HeavyShell", "Shell Heavy Tankbro", True),
@@ -64,6 +66,8 @@ SPRITES = (
     SpriteRef("jet_harrier", "HarrierJet", "Jet Support Attack", True),
     SpriteRef("goliath", "GoliathMech", "GoliathMech", True, strip=True),  # its walk cycle
     SpriteRef("rocket", "Rocket", "Rocket", False),
+    SpriteRef("revolver_bullet", "BulletSnakeBroskin", "Bullet DirtyBrory", False),  # Dirty Brorry's .44
+    SpriteRef("molotov", "GrenadeMolotov", "Grenade Molotove", False),
     SpriteRef("bomb", "RocketBombardment", "Rocket Bombardment", False),
     SpriteRef("marker", "GrenadeAirstrike", "Grenade Airstrike", False),
     SpriteRef("block_dirt", "DirtBlock", "DirtBlock5", True),  # jungle earth: frame 0 has the grass on top
@@ -78,12 +82,23 @@ TEXTURES = (
     TextureRef("bullet", "Bullet Enemy"),
     TextureRef("flag", "AmericanFlagTiny"),
     TextureRef("rifle_gun", "Broniversal Soldier Gun Anim", frame=(32, 32)),
+    TextureRef("blade_gun", "BLADE_gun_anim", frame=(32, 32)),  # Blade's katana: 0 at rest, 6-1 the slash
+    TextureRef("cricket_gun", "BRONONAMOUS_gun_anim", frame=(32, 32)),  # Bro In Black's Noisy Cricket: 3-0 its kick
+    TextureRef("neuraliser_beam", "white BallBeam", frame=(32, 16)),  # the Neuraliser's LineRenderer texture
+    TextureRef("dirty_harry_gun", "DirtyHarry_Gun_anim", frame=(32, 32)),  # repainted into Samuel's revolver_gun
+    TextureRef("rambro_gun", "RAMBRO_gun_anim", frame=(32, 32)),  # Rambro's M60, repainted into Che's m60_gun
     TextureRef("shield", "mook_shield_anim", frame=(32, 32)),  # the riot shield mook's shield (his "gun")
 )
 
 VALUES = (
     ValuesRef("bro_base", "DoubleBroSeven", "DoubleBroSeven", UNIT_FIELDS),
     ValuesRef("bro_lee", "BroLee", "BroLee", UNIT_FIELDS),
+    ValuesRef("bro_in_black", "Brononymous", "Brononymous", UNIT_FIELDS),
+    ValuesRef("bro_rambro", "Rambro", "Rambo", UNIT_FIELDS),  # Che plays as Rambro
+    ValuesRef("molotov", "GrenadeMolotov", "Grenade Molotove", ("range", "size", "gravityM")),
+    ValuesRef("molotov_fire", "GrenadeMolotovFire", "Grenade Molotov Fire", ("range", "size", "gravityM", "life")),
+    ValuesRef("cricket", "NoisyCricket", "NoisyCricket", ("life", "damage", "range", "blastForce", "projectileSize")),
+    ValuesRef("revolver_bullet", "BulletSnakeBroskin", "Bullet DirtyBrory", ("damage", "life", "maxPenetrations", "projectileSize")),
     ValuesRef("tank", "TankBroTank", "TankBrosTank",
               ("speed", "_jumpForce", "maxFallSpeed", "maxDamageBeforeExploding", "deathCountdownExplodeThreshold")),
     ValuesRef("tank_turret", "TankBroTankTurret", "Turret", ("cannonFireSpeed",)),

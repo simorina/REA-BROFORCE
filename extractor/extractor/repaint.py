@@ -151,14 +151,51 @@ TEMPLE_MAP: dict[RGB, RGB] = {
     (76, 70, 37): (0x2E, 0x5A, 0xA8),
 }
 
+# Dirty Brorry's revolver hand -> Samuel's: his skin, and the sleeve of his dark suit (the revolver stays as it is)
+SAMUEL_GUN_MAP: dict[RGB, RGB] = {
+    (0xCF, 0x8C, 0x71): (0x8A, 0x58, 0x40),
+    (0xB5, 0x7C, 0x65): (0x70, 0x44, 0x30),
+    (0x5F, 0x5A, 0x56): (0x26, 0x14, 0x18),
+    (0x70, 0x6B, 0x67): (0x3A, 0x22, 0x26),
+    (0x80, 0x7B, 0x77): (0x4A, 0x2E, 0x32),
+}
+
+# Col James Brodock -> Che Guevara: his red hair and beard dark brown, his headband the black of a beret
+CHE_MAP: dict[RGB, RGB] = {
+    (0xFF, 0x6D, 0x03): (0x3A, 0x2A, 0x1E),
+    (0xCE, 0x57, 0x03): (0x2C, 0x20, 0x17),
+    (0xBD, 0x50, 0x03): (0x22, 0x18, 0x11),
+    (0x69, 0x23, 0x19): (0x1A, 0x12, 0x0D),
+    (0x30, 0x3A, 0x21): (0x14, 0x14, 0x16),
+}
+# Rambro's bare arms on his M60 -> Che's olive sleeves
+CHE_GUN_MAP: dict[RGB, RGB] = {
+    (0xCF, 0x8C, 0x71): (0x54, 0x65, 0x3A),
+    (0xE9, 0xA6, 0x8C): (0x6B, 0x76, 0x4B),
+    (0xD7, 0x94, 0x79): (0x5F, 0x6E, 0x42),
+}
+
+
+@dataclass(frozen=True)
+class Star:
+    """In every frame, the pixel of the `band` colour furthest forward (sprites face right) becomes the star."""
+    band: RGB
+    color: RGB
+    frame: int = 32
+
+
+CHE_STAR = Star(band=(0x30, 0x3A, 0x21), color=(0xD4, 0x20, 0x20))
+
+
 @dataclass(frozen=True)
 class Recipe:
     key: str                  # output sheet: sprites/<key>.png
-    source: str               # catalog SpriteRef key of the sheet it repaints
+    source: str               # catalog SpriteRef or TextureRef key of the sheet it repaints
     palette: dict
     hair: HairMask | None = None
     decal: Decal | None = None
     tone: object = None       # a function RGB -> RGB applied to every opaque pixel
+    star: Star | None = None
 
 
 RECIPES = (
@@ -170,6 +207,9 @@ RECIPES = (
     Recipe("jet_us", "jet_harrier", {}, tone=stealth),
     Recipe("epstein", "bro_base", EPSTEIN_MAP),
     Recipe("block_temple", "block_brick", TEMPLE_MAP),
+    Recipe("revolver_gun", "dirty_harry_gun", SAMUEL_GUN_MAP),
+    Recipe("che", "bro_brodock", CHE_MAP, star=CHE_STAR),
+    Recipe("m60_gun", "rambro_gun", CHE_GUN_MAP),
 )
 
 
@@ -210,7 +250,7 @@ def _split_hair(px, width: int, height: int, mask: HairMask) -> tuple[set, set]:
 
 
 def repaint(img: Image.Image, mapping: dict = PALETTE_MAP, hair: HairMask | None = None,
-            decal: Decal | None = None, tone=None) -> Image.Image:
+            decal: Decal | None = None, tone=None, star: Star | None = None) -> Image.Image:
     out = img.convert("RGBA").copy()
     px = out.load()
     width, height = out.size
@@ -242,4 +282,13 @@ def repaint(img: Image.Image, mapping: dict = PALETTE_MAP, hair: HairMask | None
                         r, g, b, a = src[x, y]
                         if a and (r, g, b) in decal.sources:
                             px[x, y] = (*decal.stripes[dy], a)
+    if star:
+        src = img.convert("RGBA").load()
+        for fy in range(0, height, star.frame):
+            for fx in range(0, width, star.frame):
+                band = [(x, y) for y in range(fy, min(fy + star.frame, height)) for x in range(fx, min(fx + star.frame, width))
+                        if src[x, y][3] and src[x, y][:3] == star.band]
+                if band:
+                    x, y = max(band, key=lambda p: (p[0], -p[1]))
+                    px[x, y] = (*star.color, src[x, y][3])
     return out

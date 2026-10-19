@@ -4,6 +4,7 @@ export interface AudioLike {
   loop: boolean;
   paused: boolean;
   src?: string;
+  currentTime?: number;
   onerror?: ((ev: Event | string) => unknown) | null;
   play(): Promise<void> | void;
   pause(): void;
@@ -51,6 +52,11 @@ export class Music {
     } else if (this.fade === 0 && !a.paused) {
       a.pause();
     }
+  }
+
+  /** Back to the top of the track, so the next fade in starts it from the beginning (Django's theme). */
+  rewind(): void {
+    if (this.audio && this.audio.currentTime !== undefined) this.audio.currentTime = 0;
   }
 
   /** Stops it at once: the game paused without rendering frames (a hidden tab stops requestAnimationFrame). */

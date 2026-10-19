@@ -1,11 +1,11 @@
 import {
   BARREL_EXTRA_Y, BARREL_FORCE, BARREL_GROUND_DAMAGE, BARREL_UNIT_DAMAGE, BARREL_UNIT_RANGE_M,
-  BARREL_Y_OFFSET, MIN_KNOCK_DIST, NOISE_BARREL, NOISE_ROCKET, SHELL_BLAST, SUICIDE_EXTRA_Y, SUICIDE_FORCE_M, TANK_GIB, TANK_GIB_RANGE,
+  BARREL_Y_OFFSET, CRICKET, MIN_KNOCK_DIST, NOISE_BARREL, NOISE_ROCKET, SHELL_BLAST, SUICIDE_EXTRA_Y, SUICIDE_FORCE_M, TANK_GIB, TANK_GIB_RANGE,
   SUICIDE_GROUND_DAMAGE, SUICIDE_UNIT_DAMAGE, UNIT_BOX_HEIGHT,
 } from './constants';
 import type { TileMap } from './map';
 import { damageUnit, knock } from './units';
-import type { BlastTeam, BlockKind, RocketStats, Team, Unit } from './types';
+import type { BlastTeam, BlockKind, GameStats, RocketStats, Team, Unit } from './types';
 
 export interface Blast {
   x: number;
@@ -20,7 +20,7 @@ export interface Blast {
   team: BlastTeam;
   big: boolean; // shakes the screen
   noise: number; // Map.DisturbWildLife range: mooks this close (plus their hearing) turn to look
-  source: 'rocket' | 'bomb' | 'football' | 'barrel' | 'suicide' | 'shell' | 'bigRocket' | 'tank'; // whose MakeEffects to show
+  source: 'rocket' | 'bomb' | 'football' | 'barrel' | 'suicide' | 'shell' | 'bigRocket' | 'tank' | 'cricket'; // whose MakeEffects to show
   owner?: Unit; // the suicide mook that went off
   doodadDamage: number; // Map.DamageDoodads: what long grass and other doodads take ...
   doodadRange: number; // ... within this range
@@ -38,6 +38,15 @@ export function rocketBlast(x: number, y: number, s: RocketStats, team: Team, bi
     x, y, groundDamage: s.damage, groundRange: s.range, unitDamage: s.damage, unitRange: s.range * 1.5,
     killRange: s.range, force: s.blastForce * 20, extraY: s.blastForceExtraY, team, big, noise: NOISE_ROCKET, source,
     doodadDamage: s.damage, doodadRange: s.range * 0.6, // Rocket.MakeEffects
+  };
+}
+
+/** NoisyCricket.MakeEffects: DamageGround(damage, range); ExplodeUnits(range, range * 0.7, blastForce * 40, 300). */
+export function cricketBlast(x: number, y: number, s: GameStats['cricket'], team: Team): Blast {
+  return {
+    x, y, groundDamage: s.damage, groundRange: s.range, unitDamage: s.damage, unitRange: s.range,
+    killRange: s.range * CRICKET.killRangeM, force: s.blastForce * CRICKET.forceM, extraY: CRICKET.extraY, team, big: true,
+    noise: CRICKET.noise, source: 'cricket', doodadDamage: s.damage, doodadRange: s.range,
   };
 }
 

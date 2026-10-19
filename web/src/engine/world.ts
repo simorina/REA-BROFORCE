@@ -11,7 +11,8 @@ import {
   LIVES_START, PRISONER_RESCUE_DIST, RESCUE_INVULNERABLE, RESPAWN_DELAY, SPAWN_INVULNERABLE, SPECIAL2_TIME,
   SPEECH_DURATION, TILE, UNIT_BOX_HEIGHT, UNIT_WIDTH, BAZOOKA_RECOIL, DOOR_EXIT_INVULNERABLE, DOOR_FIRE_DAMAGE, SCOUT_WAVE_TIME,
   BOMB_FIRE_RANGE_M, SUICIDE_BURN_EXTRA, ALLURE_RANGE, FLEX_EVENT_FRAMES, FLEX_FRAME_RATE, FLEX_FRAMES, FLEX_HOLD,
-  FLEX_RESTART_FRAME, FLEX_SLOW_FRAMES, FLEX_SLOW_RATE, TANK_EXIT_YI, MECH, DOG, DOG_BITE_COOLDOWN, GRENADIER_THROW_DELAY,
+  FLEX_RESTART_FRAME, FLEX_SLOW_FRAMES, FLEX_SLOW_RATE, TANK_EXIT_YI, MECH, DOG, DOG_BITE_COOLDOWN, GRENADIER_THROW_DELAY, CRICKET,
+  NEURALISER, DJANGO, MOLOTOV,
 } from './constants';
 import { alarmDoor, collapseDoor, doorLostSupport, makeDoor, stepDoor, type DoorSpawn, type MookDoor } from './doors';
 import { applyBlast, barrelBlast, suicideBlast, type Blast } from './explosions';
@@ -19,13 +20,13 @@ import { parseLevel, type LevelData } from './level';
 import { makeBlock, type TileMap } from './map';
 import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
-  dropGrenade, fireBazookaRocket, fireMookBullet, spawnAirstrike, stepProjectile, throwGrenade,
+  dropGrenade, fireBazookaRocket, fireMookBullet, molotovFlames, spawnAirstrike, stepProjectile, throwGrenade,
 } from './projectiles';
 import {
   allVehicles, boardVehicles, callJet, callTank, carryDriver, driveVehicle, exitVehicle, hitVehicle, stepJets, stepTanks,
 } from './driving';
 import { stepJudo } from './judo';
-import { SPECIAL_KITS, WEAPON_KITS } from './kits';
+import { REVOLVER_KIT, SPECIAL_KITS, WEAPON_KITS } from './kits';
 import { damageUnit, inHitBox, makeUnit, runFiring, runGun } from './units';
 import { bossDown, levelBossAlive, makeBoss, stepBoss } from './boss';
 import { damageMech, makeMech, mechInBlast, stepMech, type Mech } from './mech';
@@ -77,7 +78,7 @@ export interface Grass {
 /** What happened during a step, for sound, particles and the voice line. Positions are world units. */
 export type GameEvent =
   | { type: 'voice'; text: string; lang: string }
-  | { type: 'shot'; weapon: ProjectileKind | 'judo'; x: number; y: number; facing: 1 | -1 }
+  | { type: 'shot'; weapon: ProjectileKind | 'judo' | 'blade' | 'cricket' | 'revolver' | 'm60'; x: number; y: number; facing: 1 | -1 }
   | { type: 'explosion'; x: number; y: number; big: boolean; source: Blast['source']; range: number }
   | { type: 'airstrike'; x: number; y: number } // GrenadeAirstrike.Death: the marker calls the strike in
   | { type: 'block'; x: number; y: number; kind: BlockKind; damage: number }
@@ -103,6 +104,9 @@ export type GameEvent =
   | { type: 'shieldHit'; x: number; y: number } // a shot stopped by a riot shield
   | { type: 'shieldOff'; x: number; y: number; xI: number } // and the shield knocked away
   | { type: 'bite'; x: number; y: number }
+  | { type: 'cricketBeam'; x: number; y: number } // the Noisy Cricket's trail
+  | { type: 'django'; x: number; y: number } // Samuel becomes Django
+  | { type: 'molotovBurst'; x: number; y: number } // Che's Molotov goes up
   | { type: 'exitJet'; x: number; y: number }
   | { type: 'gunSwitch'; x: number; y: number };
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
@@ -128,6 +132,7 @@ export interface World {
   boss: Unit | null; // Jeffrey Epstein, when the level has him (also among the enemies)
   mech: Mech | null; // his Goliath, the level's last fight
   driving: Vehicle | null; // what the player is in
+  django: { time: number; shots: number; reload: number } | null; // Samuel as Django: time left, the revolver's state
   reboard: Vehicle | null; // the vehicle just left: no boarding it until he stands clear of it
   flexPower: 'allure' | null; // PlayerInventory.flexPowers: what flexing does
   flag: { x: number; y: number };
@@ -173,9 +178,9 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
     prisoners: parsed.cages.map((c) => ({ x: cellX(c.c), y: feetY(c.r), freed: false })),
     checkpoints: parsed.checkpoints.map((c) => ({ x: cellX(c.c), y: feetY(c.r), activated: false, raisedAt: 0 })),
     grass: parsed.grass.map((c) => ({ x: cellX(c.c), y: c.r * TILE, health: stats.grass.health, destroyed: false })),
-    doors, doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, reboard: null, flexPower: level.flexPower ?? null,
+    doors, doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, django: null, reboard: null, flexPower: level.flexPower ?? null,
     flag: { x: cellX(parsed.flag.c), y: feetY(parsed.flag.r) },
-    lives: LIVES_START, specialAmmo: stats.bros[bro.base].specialAmmo, respawnTimer: 0,
+    lives: LIVES_START, specialAmmo: bro.specialAmmo ?? stats.bros[bro.base].specialAmmo, respawnTimer: 0,
     state: 'playing', extractionTime: 0, time: 0, nextId, camera, events: [], laughIndex: 0,
   };
 }
@@ -261,9 +266,10 @@ export function inGrass(w: World, x: number, y: number, range: number): boolean 
 /** HeroController brings in a new bro after a death: ours is picked at random, never the one who just died. */
 function respawn(w: World): void {
   w.lives -= 1;
+  w.django = null; // the next bro comes back as himself
   const others = w.roster.filter((b) => b !== w.bro);
   if (others.length > 0) w.bro = others[Math.min(others.length - 1, Math.floor(w.rng() * others.length))];
-  w.specialAmmo = w.stats.bros[w.bro.base].specialAmmo; // he comes with his own specials
+  w.specialAmmo = w.bro.specialAmmo ?? w.stats.bros[w.bro.base].specialAmmo; // he comes with his own specials
   w.player = makeUnit(w.nextId++, 'bro', 'player', w.spawn.x, w.spawn.y, w.stats.bros[w.bro.base]);
   w.player.invulnerable = SPAWN_INVULNERABLE;
   w.events.push({ type: 'respawn', x: w.spawn.x, y: w.spawn.y });
@@ -276,12 +282,13 @@ function respawn(w: World): void {
 function swapBro(w: World): void {
   if (w.roster.length < 2) return;
   w.bro = w.roster[(w.roster.indexOf(w.bro) + 1) % w.roster.length];
+  w.django = null;
   const stats = w.stats.bros[w.bro.base];
   w.player.stats = stats;
   w.player.health = stats.health;
   w.player.flex = null;
   w.player.attack = null;
-  w.specialAmmo = stats.specialAmmo;
+  w.specialAmmo = w.bro.specialAmmo ?? stats.specialAmmo;
 }
 
 /**
@@ -343,7 +350,7 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
     stepUnit(p, p.attack ? NO_INTENT : intentFrom(controls, prev), w.map, t, w.time); // BroLee holds still to strike
     animateFlex(w, p, controls, t);
     p.fireCooldown -= t;
-    const weapon = WEAPON_KITS[w.bro.weapon];
+    const weapon = w.django ? REVOLVER_KIT : WEAPON_KITS[w.bro.weapon];
     if (weapon.step) weapon.step(w, p, controls.fire && !p.attack, t);
     else if (controls.fire && (weapon.repeat || !prev.fire) && !p.attack && p.fireCooldown <= 0) {
       weapon.fire(w, p);
@@ -351,15 +358,21 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
     }
     stepJudo(w, p, t, blasts);
     runGun(p, t);
+    if (w.django && (w.django.time -= t) <= 0) w.django = null; // Django's time is up
     if (controls.special && !prev.special && w.specialAmmo > 0) {
       w.specialAmmo -= 1;
       const thrown = SPECIAL_KITS[w.bro.special](w.nextId++, p, controls.down);
-      w.projectiles.push(thrown);
-      w.effects.push({ kind: 'speech', x: p.x, y: p.y + 40, age: 0, duration: SPEECH_DURATION, text: w.bro.voiceLine });
-      w.events.push(
-        { type: 'voice', text: w.bro.voiceLine, lang: w.bro.voiceLang },
-        { type: 'shot', weapon: thrown.kind, x: p.x, y: p.y, facing: p.facing },
-      );
+      const line = w.bro.special === 'django' ? DJANGO.line : w.bro.voiceLine;
+      w.effects.push({ kind: 'speech', x: p.x, y: p.y + 40, age: 0, duration: SPEECH_DURATION, text: line });
+      w.events.push({ type: 'voice', text: line, lang: w.bro.voiceLang });
+      if (thrown) {
+        w.projectiles.push(thrown);
+        w.events.push({ type: 'shot', weapon: thrown.kind, x: p.x, y: p.y, facing: p.facing });
+      }
+      if (w.bro.special === 'django') {
+        w.django = { time: DJANGO.time, shots: 0, reload: 0 };
+        w.events.push({ type: 'django', x: p.x, y: p.y });
+      }
     }
   }
   if (p.y < -64 && !w.driving) {
@@ -561,6 +574,13 @@ function burnAround(w: World, source: Unit | null, x: number, y: number, range: 
   }
 }
 
+/** Map.HitLivingUnits with DamageType.Fire: every living mook in range catches fire (Mook.Damage). */
+function fireUnits(w: World, x: number, y: number, range: number, damage: number, xI: number): void {
+  for (const m of w.enemies) {
+    if (!m.dead && m.invulnerable <= 0 && inArea(m, x, y, range, range)) setOnFire(w, m, damage, xI);
+  }
+}
+
 /** MookDog.RunFiring: alerted, it bites a bro in reach (a breath between bites). */
 function dogBite(w: World, m: Unit, t: number): void {
   if (m.fireDelay > 0) {
@@ -590,12 +610,16 @@ function useFire(w: World, m: Unit): void {
     w.events.push({ type: 'wave', x: m.x, y: m.y });
   } else if (m.kind === 'mook_bazooka') {
     if (!isVisible(w.camera, m.x, m.y + 8, 4, 8)) return;
-    w.projectiles.push(fireBazookaRocket(w.nextId++, m, w.stats, w.rng));
+    const rocket = fireBazookaRocket(w.nextId++, m, w.stats, w.rng);
+    if (m.blindTime > 0) rocket.team = 'player'; // Confused shot misses players and damages other enemies
+    w.projectiles.push(rocket);
     m.fireDelay = BAZOOKA_FIRE_DELAY; // MookBazooka.FireWeapon
     m.xIBlast = -m.facing * BAZOOKA_RECOIL;
     w.events.push({ type: 'shot', weapon: 'rocket', x: m.x, y: m.y, facing: m.facing });
   } else if (isVisible(w.camera, m.x, m.y)) {
-    w.projectiles.push(fireMookBullet(w.nextId++, m, w.stats, w.rng));
+    const bullet = fireMookBullet(w.nextId++, m, w.stats, w.rng);
+    if (m.blindTime > 0) bullet.team = 'player'; // Confused shot misses players and damages other enemies
+    w.projectiles.push(bullet);
     w.events.push({ type: 'shot', weapon: 'bullet', x: m.x, y: m.y, facing: m.facing });
   }
 }
@@ -642,6 +666,35 @@ function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
       } else if (ev.type === 'callJet') {
         w.events.push({ type: 'airstrike', x: ev.x, y: ev.y });
         callJet(w, ev.x);
+      } else if (ev.type === 'blind') {
+        blindUnits(w, ev.x, ev.y, ev.range, NEURALISER.blindTime); // the Neuraliser's beam
+      } else if (ev.type === 'cricketBeam') {
+        w.events.push(ev);
+      } else if (ev.type === 'fire') {
+        fireUnits(w, ev.x, ev.y, ev.range, ev.damage, ev.xI);
+      } else if (ev.type === 'flameFx') {
+        w.events.push({ type: 'flame', x: ev.x, y: ev.y });
+      } else if (ev.type === 'molotov') {
+        // GrenadeMolotov.Death: Map.HitLivingUnits(3, Fire, 12) and four little fires
+        fireUnits(w, ev.x, ev.y, MOLOTOV.burst, MOLOTOV.burstDamage, 0);
+        w.projectiles.push(...molotovFlames(() => w.nextId++, ev.x, ev.y, w.stats, w.rng, p.team));
+        w.events.push({ type: 'molotovBurst', x: ev.x, y: ev.y });
+      } else if (ev.type === 'callNuke') {
+        w.events.push({ type: 'airstrike', x: ev.x, y: ev.y });
+        const y = screenMaxY(w.camera) + 160;
+        w.projectiles.push({
+          id: w.nextId++,
+          kind: 'bigRocket',
+          team: 'player',
+          x: ev.x,
+          y,
+          xI: 0,
+          yI: -480,
+          life: 3,
+          bounces: 0,
+          dead: false,
+          crush: 5,
+        });
       } else {
         w.events.push({ type: 'airstrike', x: ev.x, y: ev.y });
         w.projectiles.push(...spawnAirstrike(() => w.nextId++, ev.x, ev.y, screenMaxY(w.camera), w.stats, w.rng));
@@ -675,6 +728,7 @@ function resolveBlasts(w: World, blasts: Blast[]): void {
     if (b.big) w.effects.push({ kind: 'shake', x: b.x, y: b.y, age: 0, duration: EXPLOSION_DURATION });
     w.events.push({ type: 'explosion', x: b.x, y: b.y, big: b.big, source: b.source, range: b.groundRange });
     if (b.source === 'bomb') bombFire(w, b.x, b.y, b.groundRange * BOMB_FIRE_RANGE_M);
+    if (b.source === 'cricket') burnAround(w, null, b.x, b.y, b.groundRange * CRICKET.burnRangeM); // NoisyCricket: BurnUnitsAround
     if (b.source === 'suicide') burnAround(w, b.owner ?? null, b.x, b.y, b.groundRange + SUICIDE_BURN_EXTRA);
     if (b.noise > 0) makeNoise(w, b.x, b.y, b.noise);
     damageGrass(w, b);

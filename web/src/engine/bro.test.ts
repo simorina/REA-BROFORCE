@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BROLUSCONI, BROS, PUTIN, TRUMP, rosterStartingWith } from '../bros';
+import { BROLUSCONI, BROS, CHE, KIM, PUTIN, SAMUEL, TRUMP, WILL_SMITH, rosterStartingWith } from '../bros';
 import { parseBro } from './bro';
 
 const valid = {
@@ -29,19 +29,48 @@ describe('bro definitions', () => {
     });
   });
 
+  it('Kim Jong-un fires an RPG and calls an ICBM nuke strike, in Korean', () => {
+    expect(KIM).toEqual({
+      id: 'kim', name: 'Kim Jong-un', sheet: 'kim', base: 'bro_soldier', weapon: 'rpg', special: 'nuke',
+      voiceLine: '미사일을 발사하라!', voiceLang: 'ko-KR',
+    });
+  });
+
+  it('Will Smith uses Noisy Cricket and calls in the Neuralyzer as Bro In Black', () => {
+    expect(WILL_SMITH).toEqual({ // Broforce's Bro In Black (Brononymous): his own sheet and prefab
+      id: 'willsmith', name: 'Bro In Black', sheet: 'bro_in_black', base: 'bro_in_black', weapon: 'cricket', special: 'neuralyzer',
+      voiceLine: 'I make this look good!', voiceLang: 'en-US',
+    });
+  });
+
+  it('Samuel L. Jackson slashes with a katana and, as his special, becomes Django', () => {
+    expect(SAMUEL).toEqual({
+      id: 'samuel', name: 'Samuel L. Jackson', sheet: 'samuel', base: 'bro_lee', weapon: 'blade', special: 'django',
+      voiceLine: 'Some motherf***ers are always trying to ice-skate uphill!', voiceLang: 'en-US',
+    });
+  });
+
+  it('Che Guevara plays as Rambro: his M60 and, for a special, a Molotov', () => {
+    expect(CHE).toEqual({
+      id: 'che', name: 'Che Guevara', sheet: 'che', base: 'bro_rambro', weapon: 'm60', special: 'molotov',
+      voiceLine: '¡Hasta la victoria siempre!', voiceLang: 'es-ES',
+    });
+  });
+
   it('rosterStartingWith puts the chosen bro first and keeps the cycle order', () => {
-    expect(BROS).toEqual([BROLUSCONI, PUTIN, TRUMP]);
-    expect(rosterStartingWith('putin')).toEqual([PUTIN, TRUMP, BROLUSCONI]);
-    expect(rosterStartingWith('brolusconi')).toEqual([BROLUSCONI, PUTIN, TRUMP]);
+    expect(BROS).toEqual([BROLUSCONI, PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE]);
+    expect(rosterStartingWith('putin')).toEqual([PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE, BROLUSCONI]);
+    expect(rosterStartingWith('brolusconi')).toEqual([BROLUSCONI, PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE]);
+    expect(rosterStartingWith('kim')).toEqual([KIM, WILL_SMITH, SAMUEL, CHE, BROLUSCONI, PUTIN, TRUMP]);
   });
 
   it('rosterStartingWith falls back to the first bro for an unknown id', () => {
-    expect(rosterStartingWith('ghost')).toEqual([BROLUSCONI, PUTIN, TRUMP]);
+    expect(rosterStartingWith('ghost')).toEqual([BROLUSCONI, PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE]);
   });
 
   it('rejects unknown weapons and specials', () => {
     expect(() => parseBro({ ...valid, weapon: 'laser' })).toThrow("unknown weapon 'laser'");
-    expect(() => parseBro({ ...valid, special: 'nuke' })).toThrow("unknown special 'nuke'");
+    expect(() => parseBro({ ...valid, special: 'orbital_cannon' })).toThrow("unknown special 'orbital_cannon'");
     expect(() => parseBro({ ...valid, special: 'matryoshka' })).toThrow("unknown special 'matryoshka'");
   });
 
@@ -53,5 +82,13 @@ describe('bro definitions', () => {
   it('rejects missing or empty text fields', () => {
     expect(() => parseBro({ ...valid, voiceLine: '' })).toThrow('voiceLine');
     expect(() => parseBro(null)).toThrow('not an object');
+  });
+
+  it('all weapon and special kits are implemented for each bro', async () => {
+    const { WEAPON_KITS, SPECIAL_KITS } = await import('./kits');
+    for (const b of BROS) {
+      expect(WEAPON_KITS[b.weapon], `${b.id} weapon ${b.weapon}`).toBeDefined();
+      expect(SPECIAL_KITS[b.special], `${b.id} special ${b.special}`).toBeDefined();
+    }
   });
 });

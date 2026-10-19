@@ -1,0 +1,10 @@
+{
+  "id": "kim",
+  "name": "Kim Jong-un",
+  "sheet": "kim",
+  "base": "bro_soldier",
+  "weapon": "rpg",
+  "special": "nuke",
+  "voiceLine": "미사일을 발사하라!",
+  "voiceLang": "ko-KR"
+}

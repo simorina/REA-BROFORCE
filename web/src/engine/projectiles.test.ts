@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { FIXED_DT } from './constants';
 import { TileMap, makeBlock } from './map';
 import {
-  fireBigRocket, fireMookBullet, fireShell, kickFootball, spawnAirstrike, stepProjectile, throwBody, throwMarker,
-  type ProjectileEvent, type ProjectileWorld,
+  fireBigRocket, fireM60Bullet, fireMookBullet, fireNoisyCricket, fireRevolverBullet, fireShell, molotovFlames, throwMolotov, kickFootball, spawnAirstrike, stepProjectile,
+  throwBody, throwMarker, useNeuraliser, type ProjectileEvent, type ProjectileWorld,
 } from './projectiles';
 import { TEST_STATS } from './testStats';
 import { makeUnit } from './units';
@@ -206,3 +206,193 @@ describe("the tank's projectiles", () => {
     expect(e?.type === 'explode' && [e.blast.source, e.blast.groundDamage, e.blast.killRange]).toEqual(['bigRocket', 15, 56]);
   });
 });
+
+describe("Che Guevara's M60 (Rambro) and Molotov (GrenadeMolotov)", () => {
+  const che = () => {
+    const u = makeUnit(1, 'bro', 'player', 50, 30, TEST_STATS.bros.bro_rambro);
+    u.facing = 1;
+    return u;
+  };
+  const fires = (evs: ProjectileEvent[]) => evs.filter((e): e is Extract<ProjectileEvent, { type: 'fire' }> => e.type === 'fire');
+
+  it("the M60's bullet is Bullet Rambo, from (x + 10, y + 8) at 400, up to 20 off level (TestVanDammeAnim.UseFire)", () => {
+    const p = fireM60Bullet(1, che(), TEST_STATS, () => 0.5);
+    expect([p.kind, p.team, p.x, p.y, p.xI, p.yI, p.life]).toEqual(['rifle', 'player', 60, 38, 400, 0, TEST_STATS.rifle.life]);
+    expect(fireM60Bullet(1, che(), TEST_STATS, () => 0).yI).toBe(-20);
+    expect(fireM60Bullet(1, che(), TEST_STATS, () => 0.999).yI).toBe(19);
+  });
+
+  it('the Molotov is thrown like any special grenade (BroBase.UseSpecial)', () => {
+    const m = throwMolotov(1, che(), false);
+    const a = throwMarker(1, che(), false);
+    expect([m.kind, m.x, m.y, m.xI, m.yI]).toEqual(['molotov', a.x, a.y, a.xI, a.yI]);
+  });
+
+  it('it bursts where it lands (deathOnBounce)', () => {
+    const p = throwMolotov(1, che(), false);
+    const evs = steps(p, world(floorMap(80)), 200);
+    expect(p.dead).toBe(true);
+    const burst = evs.find((e) => e.type === 'molotov');
+    expect(burst?.type === 'molotov' && burst.y).toBeGreaterThanOrEqual(8); // on top of the floor, not in it
+  });
+
+  it('it bursts on a mook it flies into, setting him alight (RunMovement: HitLivingUnits(1, Fire, 24))', () => {
+    const p = throwMolotov(1, che(), false);
+    const target = mook(70, 30);
+    const evs = steps(p, world(new TileMap(80, 20), [target]), 30);
+    expect(fires(evs)[0]).toMatchObject({ range: 24, damage: 1 });
+    expect(evs.some((e) => e.type === 'molotov')).toBe(true);
+  });
+
+  it('it throws four little fires up and around (GrenadeMolotov.Death: Point3OnCircle, 210-260)', () => {
+    const flames = molotovFlames(() => 7, 100, 40, TEST_STATS, () => 0.5);
+    expect(flames).toHaveLength(4);
+    const a0 = 0.3 - 0.25;
+    const angles = [a0, a0 + 0.9, a0 + 1.7, a0 + 2.5];
+    flames.forEach((f, i) => {
+      expect(f).toMatchObject({ kind: 'molotovFire', team: 'player', x: 100, y: 42, life: 1 });
+      expect(f.xI).toBeCloseTo(Math.cos(angles[i]) * 235);
+      expect(f.yI).toBeCloseTo(Math.sin(angles[i]) * 235);
+    });
+  });
+
+  it('a little fire burns a range of 16 around itself as it flies, and 24 where it lands, then is gone', () => {
+    const [f] = molotovFlames(() => 7, 100, 40, TEST_STATS, () => 0.5);
+    const evs = steps(f, world(floorMap(80)), 200);
+    const ranges = fires(evs).map((e) => e.range);
+    expect(ranges).toContain(16);
+    expect(ranges.at(-1)).toBe(24);
+    expect(f.dead).toBe(true);
+  });
+});
+
+describe("Django's revolver (DirtyHarry, Bullet DirtyBrory: BulletSnakeBroskin)", () => {
+  const samuel = () => {
+    const u = makeUnit(1, 'bro', 'player', 50, 30, TEST_STATS.bros.bro_lee);
+    u.facing = 1;
+    return u;
+  };
+
+  it('the bullet leaves from (x + 14, y + 8.5) at 750, up to 10 off level, and lives 0.3 s', () => {
+    const p = fireRevolverBullet(1, samuel(), TEST_STATS, () => 0.5);
+    expect([p.kind, p.team, p.x, p.y, p.xI, p.yI, p.life]).toEqual(['revolver', 'player', 64, 38.5, 750, 0, 0.3]);
+    expect(fireRevolverBullet(1, samuel(), TEST_STATS, () => 0).yI).toBe(-10);
+  });
+
+  it('it goes through two mooks, 4 damage to the first and 3 to the second, and is gone', () => {
+    const p = fireRevolverBullet(1, samuel(), TEST_STATS, () => 0.5);
+    const [a, b, c] = [mook(90, 32), mook(110, 32), mook(130, 32)];
+    b.id = 3; // the helper gives every mook id 2, and a bullet hits each unit (by id) once
+    c.id = 4;
+    steps(p, world(new TileMap(80, 20), [a, b, c]), 30);
+    expect(TEST_STATS.units.mook.health - a.health).toBe(4);
+    expect(TEST_STATS.units.mook.health - b.health).toBe(3);
+    expect(c.health).toBe(TEST_STATS.units.mook.health);
+    expect(p.dead).toBe(true);
+  });
+
+  it('in the open it flies about 0.3 s at 750 (0.99 of real time, like the Noisy Cricket)', () => {
+    const p = fireRevolverBullet(1, samuel(), TEST_STATS, () => 0.5);
+    steps(p, world(new TileMap(80, 20)), 60);
+    expect(p.x - 64).toBeGreaterThan(750 * 0.3 * 0.99 - 14);
+    expect(p.x - 64).toBeLessThan(750 * 0.3 * 0.99 + 14);
+  });
+
+  it('a wall stops it and takes its damage', () => {
+    const map = new TileMap(80, 20);
+    map.set(6, 2, makeBlock('dirt', TEST_STATS)); // x 96-112
+    const health = map.get(6, 2)!.health;
+    const p = fireRevolverBullet(1, samuel(), TEST_STATS, () => 0.5);
+    steps(p, world(map), 60);
+    expect(p.dead).toBe(true);
+    expect(p.x).toBeLessThanOrEqual(112);
+    expect(map.get(6, 2)?.health ?? 0).toBeLessThan(health);
+  });
+});
+
+describe("Bro In Black's Noisy Cricket and Neuraliser (Brononymous)", () => {
+  const bib = () => {
+    const u = makeUnit(1, 'bro', 'player', 50, 30, TEST_STATS.bros.bro_in_black);
+    u.facing = 1;
+    return u;
+  };
+  const blinds = (evs: ProjectileEvent[]) => evs.filter((e): e is Extract<ProjectileEvent, { type: 'blind' }> => e.type === 'blind');
+
+  it('the Noisy Cricket shot leaves from (x + 14, y + 9.5) at 700 and lives 0.18 s (Brononymous.UseFire, its prefab)', () => {
+    const p = fireNoisyCricket(1, bib(), TEST_STATS);
+    expect([p.kind, p.team, p.x, p.y, p.xI, p.yI, p.life]).toEqual(['cricket', 'player', 64, 39.5, 700, 0, 0.18]);
+  });
+
+  it('in the open it flies 0.18 s at 700 (NoisyCricket.Update: t * 0.33, three times) and goes off: damage 10, range 28', () => {
+    const p = fireNoisyCricket(1, bib(), TEST_STATS);
+    const evs = steps(p, world(new TileMap(80, 20)), 60);
+    expect(p.dead).toBe(true);
+    expect(p.x - 64).toBeGreaterThan(700 * 0.18 * 0.99 - 13);
+    expect(p.x - 64).toBeLessThan(700 * 0.18 * 0.99 + 13);
+    const exp = evs.find((e) => e.type === 'explode');
+    expect(exp?.type === 'explode' && exp.blast).toMatchObject({
+      // NoisyCricket.MakeEffects: DamageGround(damage, range); ExplodeUnits(range, range * 0.7, blastForce * 40, 300)
+      source: 'cricket', team: 'player', groundDamage: 10, groundRange: 28, unitDamage: 10, unitRange: 28, force: 800, extraY: 300,
+    });
+    expect(exp?.type === 'explode' && exp.blast.killRange).toBeCloseTo(19.6);
+  });
+
+  it('a direct hit does its full damage (Projectile.Fire: damageInternal = damage) and sets it off', () => {
+    const p = fireNoisyCricket(1, bib(), TEST_STATS);
+    const target = mook(80, 32);
+    const evs = steps(p, world(new TileMap(80, 20), [target]), 10);
+    expect(target.health).toBe(TEST_STATS.units.mook.health - TEST_STATS.cricket.damage);
+    expect(evs.some((e) => e.type === 'hit')).toBe(true);
+    expect(evs.some((e) => e.type === 'explode')).toBe(true);
+  });
+
+  it('a wall sets it off (NoisyCricket.ReflectProjectile)', () => {
+    const map = new TileMap(80, 20);
+    map.set(6, 2, makeBlock('steel', TEST_STATS)); // x 96-112
+    const p = fireNoisyCricket(1, bib(), TEST_STATS);
+    const evs = steps(p, world(map), 60);
+    const exp = evs.find((e) => e.type === 'explode');
+    expect(exp?.type === 'explode' && exp.blast.x).toBeLessThanOrEqual(112);
+  });
+
+  it('it leaves a beam puff every 16 units it flies (NoisyCricket.RunBeam)', () => {
+    const p = fireNoisyCricket(1, bib(), TEST_STATS);
+    const puffs = steps(p, world(new TileMap(80, 20)), 60).filter((e) => e.type === 'cricketBeam');
+    expect(puffs.length).toBeGreaterThanOrEqual(6);
+    expect(puffs.length).toBeLessThanOrEqual(9);
+  });
+
+  it('the Neuraliser starts at (x + 4, y + height + 3) and first blinds a range of 16 there (Neuraliser.EffectFirstUpdate)', () => {
+    const p = useNeuraliser(1, bib(), false);
+    expect([p.kind, p.x, p.y]).toEqual(['neuraliser', 54, 39]);
+    expect(blinds(stepProjectile(p, world(new TileMap(80, 20)), FIXED_DT))[0]).toEqual({ type: 'blind', x: 54, y: 39, range: 16 });
+  });
+
+  it('its beam grows 16 units at a time, about 800 units a second, blinding a range of 24 at each tip', () => {
+    const p = useNeuraliser(1, bib(), false);
+    const w = world(new TileMap(80, 20));
+    const evs = steps(p, w, Math.round(0.1 / FIXED_DT));
+    const tips = blinds(evs).filter((e) => e.range === 24).map((e) => e.x);
+    expect(tips.slice(0, 3)).toEqual([70, 86, 102]);
+    expect(p.x - 54).toBeGreaterThan(80 - 24);
+    expect(p.x - 54).toBeLessThan(80 + 24);
+  });
+
+  it('it stops 240 units out, flashes for 0.11 s and is gone', () => {
+    const p = useNeuraliser(1, bib(), false);
+    const evs = steps(p, world(new TileMap(80, 20)), Math.round(0.5 / FIXED_DT));
+    const tips = blinds(evs).filter((e) => e.range === 24).map((e) => e.x);
+    expect(Math.max(...tips) - 54).toBeLessThanOrEqual(240 + 16);
+    expect(Math.max(...tips) - 54).toBeGreaterThan(224);
+    expect(p.dead).toBe(true);
+  });
+
+  it('a wall stops it at its face', () => {
+    const map = new TileMap(80, 20);
+    map.set(8, 2, makeBlock('steel', TEST_STATS)); // x 128-144
+    const p = useNeuraliser(1, bib(), false);
+    const tips = blinds(steps(p, world(map), Math.round(0.5 / FIXED_DT))).map((e) => e.x);
+    expect(Math.max(...tips)).toBeLessThanOrEqual(128);
+  });
+});
+

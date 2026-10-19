@@ -57,14 +57,14 @@ export function knock(u: Unit, kx: number, ky: number): void {
 }
 
 /** TestVanDammeAnim.StartFiring + RunFiring: true on the steps that fire a shot while the trigger is held. */
-export function runFiring(u: Unit, fire: boolean, t: number): boolean {
-  if (fire && !u.wasFire && u.fireDelay <= 0) u.fireCounter = u.stats.fireRate < FIRE_START_LIMIT ? u.stats.fireRate : 0;
+export function runFiring(u: Unit, fire: boolean, t: number, fireRate = u.stats.fireRate): boolean {
+  if (fire && !u.wasFire && u.fireDelay <= 0) u.fireCounter = fireRate < FIRE_START_LIMIT ? fireRate : 0;
   u.wasFire = fire;
   u.fireDelay -= t;
   if (!fire || u.fireDelay > 0) return false;
   u.fireCounter += t;
-  if (u.fireCounter < u.stats.fireRate) return false;
-  u.fireCounter -= u.stats.fireRate;
+  if (u.fireCounter < fireRate) return false;
+  u.fireCounter -= fireRate;
   return true;
 }
 

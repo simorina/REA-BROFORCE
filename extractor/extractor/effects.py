@@ -67,6 +67,8 @@ PUFFS = {
     "groundExplodePoof": "groundExplodePoofPrefab",
     "whiteFlashPop": "whiteFlashPopPrefab",
 }
+# Puffs on other prefabs: the Noisy Cricket's beam trail and the ball where its shot goes off
+PREFAB_PUFFS = {"cricketBeam": ("Puff", "Noisy Cricket Beam Puff"), "cricketBall": ("Puff", "Noisy Cricket Ball Puff")}
 # PuffTwoLayer: the stars over a blinded or stunned unit
 TWO_LAYER_PUFFS = {"stunnedStars1": "stunnedStars1Prefab", "stunnedStars2": "stunnedStars2Prefab",
                    "stunnedStars3": "stunnedStars3Prefab"}
@@ -496,7 +498,8 @@ def extract(streaming_assets: str, out) -> None:
         "colors": {k: [_color(tt[f"{k}Color1"]), _color(tt[f"{k}Color2"])] for k in ("dirt", "flesh", "sand", "bone")},
         "bloodColor": _color(ft["RedBloodColor"]),
         "emitters": {k: _emitter(scene, scene.field(holders[h], f)) for k, (h, f) in EMITTERS.items()},
-        "puffs": {k: _puff(scene, scene.field(fx, f)) for k, f in PUFFS.items()},
+        "puffs": {**{k: _puff(scene, scene.field(fx, f)) for k, f in PUFFS.items()},
+                  **{k: _puff(scene, scene.find(*v)) for k, v in PREFAB_PUFFS.items()}},
         "twoLayerPuffs": {k: _puff(scene, scene.field(fx, f), True) for k, f in TWO_LAYER_PUFFS.items()},
         "bubbles": {k: _bubble(scene, *v) for k, v in BUBBLES.items()},
         "grass": _grass(scene),

@@ -1,0 +1,10 @@
+{
+  "id": "che",
+  "name": "Che Guevara",
+  "sheet": "che",
+  "base": "bro_rambro",
+  "weapon": "m60",
+  "special": "molotov",
+  "voiceLine": "¡Hasta la victoria siempre!",
+  "voiceLang": "es-ES"
+}

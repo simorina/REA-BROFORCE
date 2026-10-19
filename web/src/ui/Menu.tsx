@@ -5,11 +5,20 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   football: 'Calcia un pallone esplosivo',
   judo: 'Presa di judo: afferra un mook e scaraventalo',
   rifle: "Fucile d'assalto (raffiche da tre)",
+  cricket: 'Noisy Cricket: un colpo che esplode e brucia i nemici, e il rinculo ti sbalza indietro',
+  blade: 'Katana di Blade: fendente ravvicinato che affetta nemici e deflette proiettili',
+  rpg: 'Lanciarazzi RPG: razzo balistico diretto a forte impatto',
+  m60: 'Mitragliatrice M60 di Rambro: raffica continua tenendo premuto',
 };
 const SPECIAL_HINT: Record<SpecialId, string> = {
   airstrike: 'Attacco aereo (con ↓ lo lanci corto)',
   tank: 'Carro armato: lancia il segnale e salici sopra (X spara, C cambia arma, F scendi)',
   jet: 'Jet: lancia il segnale e salici sopra (frecce per volare, X razzi, C bomba, F salti giù)',
+  neuralyzer: 'Neuralizzatore: un raggio che acceca per 9 secondi i nemici che tocca',
+  glaive: 'Glaive di Blade: lama ricurva da lancio che rimbalza e trapassa i mook',
+  nuke: 'Missile ICBM: attacco nucleare dal cielo a distruzione totale',
+  django: 'Django: per 12 secondi diventi Django, col revolver (sei colpi, poi ricarica) e la sua musica',
+  molotov: 'Molotov: esplode dove cade, dà fuoco ai nemici vicini e sparge quattro fiammelle',
 };
 
 interface Props {
@@ -62,7 +71,7 @@ export function Menu({ bros, selected, portraits, voice, sound, onSelect, onTogg
           </button>
         ))}
       </div>
-      <p className="mission">Livello 1: l'isola di Jeffrey Epstein. Battilo al suo tempio, poi inseguilo fino al suo Goliath.</p>
+      <p className="mission">Campagna "Operazione Little Saint James": 7 missioni per smascherare i file e distruggere Epstein e il suo Goliath!</p>
       <p className="hint">← → per scegliere il bro (salvare un prigioniero ti passa all'altro)</p>
       <table className="controls">
         <tbody>

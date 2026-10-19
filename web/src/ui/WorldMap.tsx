@@ -63,7 +63,7 @@ export function WorldMap({ assets, done, message, onPlay, onMenu }: Props) {
     const sheet = assets.sheets.helicopter;
     const art = { image: assets.images.helicopter, frameW: sheet.frameW, frameH: sheet.frameH };
     const missions: MapMission[] = MISSIONS.map((m, i) => ({
-      spot: m.map, theme: themes[i], name: m.name,
+      spot: m.map, theme: themes[i], name: m.name, missionId: m.id,
       state: i < done ? 'done' : i === unlocked ? 'next' : 'locked',
     }));
     const t0 = performance.now();
@@ -90,6 +90,7 @@ export function WorldMap({ assets, done, message, onPlay, onMenu }: Props) {
         Missione {selected + 1}: <strong>{mission.name}</strong>
         {selected < done ? ' (completata)' : ''}
       </p>
+      <p className="map-briefing">{mission.briefing}</p>
       <button onClick={() => onPlay(selected)} autoFocus>
         Parti (Invio)
       </button>

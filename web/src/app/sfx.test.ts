@@ -24,6 +24,9 @@ describe('sfx', () => {
     expect(sfxFor({ type: 'shieldHit', x: 0, y: 0 })).toBe('clank');
     expect(sfxFor({ type: 'shieldOff', x: 0, y: 0, xI: 0 })).toBe('crumble');
     expect(sfxFor({ type: 'bite', x: 0, y: 0 })).toBe('bite');
+    expect(sfxFor({ type: 'django', x: 0, y: 0 })).toBe('whistle'); // Samuel becomes Django
+    expect(sfxFor({ type: 'molotovBurst', x: 0, y: 0 })).toBe('pop'); // Che's Molotov
+    expect(sfxFor({ type: 'shot', weapon: 'molotov', x: 0, y: 0, facing: 1 })).toBe('throw');
     expect(sfxFor({ type: 'shot', weapon: 'grenade', x: 0, y: 0, facing: 1 })).toBe('throw');
   });
 

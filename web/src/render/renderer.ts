@@ -1,6 +1,6 @@
 import { VIEW_H, VIEW_W } from '../engine/camera';
 import {
-  BUBBLE_TIME, EXTRACTION_TIME, FLAG_RAISE_TIME, INVULNERABLE_FLASH, SHAKE_AMOUNT, SHAKE_TIME, TILE,
+  BUBBLE_TIME, EXTRACTION_TIME, FLAG_RAISE_TIME, INVULNERABLE_FLASH, NEURALISER, SHAKE_AMOUNT, SHAKE_TIME, TILE,
 } from '../engine/constants';
 import type { LevelTheme, ParallaxDoodad } from '../engine/level';
 import { getColumn, getRow } from '../engine/map';
@@ -10,7 +10,7 @@ import type { Tank } from '../engine/tank';
 import type { BlockKind, Projectile, Unit, UnitKind } from '../engine/types';
 import { speaker, type Effect, type GameEvent, type World } from '../engine/world';
 import { blockFrame, helicopterFrame, jetFrameCentreY, loopFrame, mechFrame, prisonerFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
-import type { Assets, SheetKey } from './assets';
+import { gunOffsetX, type Assets, type SheetKey } from './assets';
 import { Effects } from './fx/controller';
 import { particleFrame } from './fx/particles';
 import { drawParticle, type PixelBuffer } from './fx/pixelShader';
@@ -34,6 +34,7 @@ const quant = (v: number): number => Math.round(Math.min(1, Math.max(0, v)) * 31
 export class Renderer {
   private viewX = 0; // camera centre plus shake, for this frame
   private viewY = 0;
+  private django = false; // Samuel is Django: draw his hat
   readonly effects: Effects;
   private readonly background: BgInstance[];
   private readonly grass = new GrassWobble();
@@ -64,6 +65,7 @@ export class Renderer {
 
   /** dt is 0 while paused: the frame is redrawn as it was, without shake. */
   render(w: World, dt: number): void {
+    this.django = w.django !== null;
     let shake = 0;
     if (dt > 0) {
       this.effects.step(dt, w.map, { x: w.camera.x, y: w.camera.y, halfW: VIEW_W / 2, halfH: VIEW_H / 2 }, w.time);
@@ -318,8 +320,9 @@ export class Renderer {
     // the bro's (and the boss's) gun on top of him (TestVanDammeAnim.gunSprite: same pivot as the body), muzzle frames from gunFrame
     const gun = u.kind === 'bro' ? this.playerGun() : u.kind === 'boss' ? 'rifle_gun' : null;
     if (gun && !u.dead && !u.wallClimbing && !u.flex && !u.attack) {
-      this.sprite(gun, u.gunFrame, 0, u.x, u.y + this.assets.sheets[key].offsetY, u.facing < 0);
+      this.sprite(gun, u.gunFrame, 0, u.x + u.facing * gunOffsetX(gun), u.y + this.assets.sheets[key].offsetY, u.facing < 0);
     }
+    if (u.kind === 'bro' && this.django && !u.dead) this.drawDjangoHat(u);
     // MookRiotShield: the shield is his gun sprite, held until it is knocked away
     if (u.shield > 0 && !u.dead) this.sprite('shield', 0, 0, u.x, u.y + this.assets.sheets[key].offsetY, u.facing < 0);
     if (b !== 1) this.ctx.filter = 'none';
@@ -455,6 +458,19 @@ export class Renderer {
       case 'grenade':
         this.sprite('grenade', 0, 0, p.x, p.y, false, time * 12 * Math.sign(p.xI || 1)); // tumbling
         break;
+      case 'cricket':
+        break; // NoisyCricket's own mesh is switched off: its beam puffs and sparks are what shows
+      case 'neuraliser':
+        this.drawNeuraliser(p);
+        break;
+      case 'revolver':
+        this.sprite('revolver_bullet', 0, 0, p.x, p.y, p.xI < 0); // Bullet DirtyBrory's streak
+        break;
+      case 'molotov':
+        this.sprite('molotov', 0, 0, p.x, p.y, p.xI < 0, time * 10 * Math.sign(p.xI || 1)); // spinning as it flies
+        break;
+      case 'molotovFire':
+        break; // GrenadeMolotovFire has no sprite of its own: its flames are what shows
       case 'marker':
         this.sprite('marker', 0, 0, p.x, p.y + 4);
         break;
@@ -472,6 +488,48 @@ export class Renderer {
         this.sprite(ENEMY_SHEETS[p.body ?? 'mook'], 4, 0, p.x, p.y, p.xI < 0, time * 14 * Math.sign(p.xI || 1));
         break;
     }
+  }
+
+  /** Django's hat, our own pixel art: a brown cowboy hat with a dark band, on the bro's head (its brim at feet + 17). */
+  private drawDjangoHat(u: Unit): void {
+    const { ctx } = this;
+    const s = this.scale;
+    const rect = (x0: number, y0: number, w: number, h: number, color: string) => {
+      ctx.fillStyle = color;
+      const x = u.facing < 0 ? u.x - x0 - w : u.x + x0;
+      ctx.fillRect(Math.round(this.sx(x)), Math.round(this.sy(u.y + y0 + h)), w * s, h * s);
+    };
+    rect(-5, 17, 12, 1, '#4a2f17'); // brim
+    rect(-2, 18, 7, 1, '#22140a'); // band
+    rect(-2, 19, 7, 2, '#6b4423'); // crown
+    rect(-1, 21, 5, 1, '#6b4423');
+  }
+
+  /**
+   * Neuraliser's LineRenderer: "white BallBeam" tiled along the beam (texture scale steps * 0.5, at least 1), 16 units
+   * thick, black and white by turns; once it stops growing it flashes thinner over 0.11 s.
+   */
+  private drawNeuraliser(p: Projectile): void {
+    const b = p.beam;
+    if (!b) return;
+    const width = b.growing ? NEURALISER.step : (NEURALISER.step * Math.max(0, b.flash)) / NEURALISER.flash;
+    const length = p.x - b.startX;
+    if (width <= 0 || length === 0) return;
+    const { ctx } = this;
+    const s = this.scale;
+    const info = this.assets.sheets.neuraliser_beam;
+    const reps = Math.min(100, Math.max(1, b.steps * 0.5));
+    const seg = Math.abs(length) / reps;
+    ctx.save();
+    ctx.translate(this.sx(b.startX), this.sy(p.y));
+    if (length < 0) ctx.scale(-1, 1);
+    if (b.flicker % 2 !== 0) ctx.filter = 'brightness(0)';
+    for (let i = 0; i < Math.ceil(reps); i++) {
+      const w = Math.min(seg, Math.abs(length) - i * seg);
+      ctx.drawImage(this.assets.images.neuraliser_beam, 0, 0, info.frameW * (w / seg), info.frameH,
+        i * seg * s, (-width / 2) * s, w * s, width * s);
+    }
+    ctx.restore();
   }
 
   /** The football is our own art: a white ball with spinning black patches. */

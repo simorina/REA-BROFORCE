@@ -15,6 +15,19 @@ describe('parseValues', () => {
     expect(s.rifle).toEqual({ extraFireDelay: 0.3, damage: 1, life: 0.45 });
   });
 
+  it("reads Bro In Black (Brononymous) as a bro and his Noisy Cricket's shot", () => {
+    const s = parseValues(RAW_VALUES);
+    expect(s.bros.bro_in_black).toMatchObject({ speed: 110, jumpForce: 260, fireRate: 0.1, specialAmmo: 3, canWallClimb: true, canDash: true });
+    expect(s.cricket).toEqual({ life: 0.18, damage: 10, range: 28, blastForce: 20, projectileSize: 8 });
+  });
+
+  it("reads Rambro as a bro, and the Molotov and its little fires", () => {
+    const s = parseValues(RAW_VALUES);
+    expect(s.bros.bro_rambro).toMatchObject({ speed: 110, fireRate: 0.1, specialAmmo: 6, canWallClimb: true });
+    expect(s.molotov).toEqual({ range: 64, size: 3, gravityM: 1 });
+    expect(s.molotovFire).toEqual({ range: 48, size: 3, gravityM: 1, life: 1 });
+  });
+
   it('maps values.json onto GameStats', () => {
     expect(parseValues(RAW_VALUES)).toEqual(TEST_STATS);
   });

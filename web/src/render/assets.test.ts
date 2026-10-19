@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RAW_VALUES, TEST_STATS } from '../engine/testStats';
-import { MissingGameDataError, SHEET_KEYS, broSheet, isSheetKey, loadData, missingSheets } from './assets';
+import { MissingGameDataError, SHEET_KEYS, broSheet, gunOffsetX, gunSheet, isSheetKey, loadData, missingSheets } from './assets';
 import { effectFiles } from './fxdata';
 import { TEST_BACKGROUND, TEST_EFFECTS } from './testFx';
 
@@ -42,6 +42,14 @@ describe('loadData', () => {
     expect(missingSheets(old)).toEqual(['trump']);
   });
 
+  it("Kim's, Bro In Black's and Samuel's sheets are required", () => {
+    const old: Record<string, unknown> = { ...sheets };
+    delete old.kim;
+    delete old.bro_in_black;
+    delete old.samuel;
+    expect(missingSheets(old)).toEqual(['kim', 'bro_in_black', 'samuel']);
+  });
+
   it("the Goliath's sheet is required", () => {
     const old: Record<string, unknown> = { ...sheets };
     delete old.goliath;
@@ -54,6 +62,39 @@ describe('loadData', () => {
     delete old.block_temple;
     delete old.epstein;
     expect(missingSheets(old)).toEqual(['epstein', 'block_sand', 'block_temple']);
+  });
+
+  it("draws the gun a bro holds: Trump's rifle and Samuel's katana (Blade's gun sprite); the others hold none", () => {
+    expect(gunSheet('rifle')).toBe('rifle_gun');
+    expect(gunSheet('blade')).toBe('blade_gun');
+    expect(gunSheet('cricket')).toBe('cricket_gun'); // Bro In Black's Noisy Cricket
+    expect(gunSheet('blade', true)).toBe('revolver_gun'); // as Django, whatever he carried
+    expect(gunSheet('m60')).toBe('m60_gun'); // Che with Rambro's M60
+    const noChe: Record<string, unknown> = { ...sheets };
+    delete noChe.che;
+    delete noChe.m60_gun;
+    delete noChe.molotov;
+    expect(missingSheets(noChe)).toEqual(['che', 'm60_gun', 'molotov']);
+    const noRevolver: Record<string, unknown> = { ...sheets };
+    delete noRevolver.revolver_gun;
+    delete noRevolver.revolver_bullet;
+    expect(missingSheets(noRevolver)).toEqual(['revolver_gun', 'revolver_bullet']);
+    for (const w of ['football', 'judo'] as const) expect(gunSheet(w)).toBeNull();
+    const old: Record<string, unknown> = { ...sheets };
+    delete old.blade_gun;
+    expect(missingSheets(old)).toEqual(['blade_gun']);
+  });
+
+  it("Bro In Black's Noisy Cricket and the Neuraliser's beam texture are required", () => {
+    const old: Record<string, unknown> = { ...sheets };
+    delete old.cricket_gun;
+    delete old.neuraliser_beam;
+    expect(missingSheets(old)).toEqual(['cricket_gun', 'neuraliser_beam']);
+  });
+
+  it("holds Blade's katana 4 px forward (Blade.SetGunPosition: xOffset + 4); the rifle sits on the body", () => {
+    expect(gunOffsetX('blade_gun')).toBe(4);
+    expect(gunOffsetX('rifle_gun')).toBe(0);
   });
 
   it('the rifle and jet sheets are required', () => {

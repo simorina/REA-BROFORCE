@@ -18,6 +18,7 @@ export function sfxFor(e: GameEvent): SfxName | null {
         case 'body':
         case 'jetBomb':
         case 'grenade':
+        case 'molotov':
           return 'throw';
         case 'rocket':
         case 'bomb':
@@ -66,6 +67,10 @@ export function sfxFor(e: GameEvent): SfxName | null {
       return 'crumble';
     case 'bite':
       return 'bite';
+    case 'django':
+      return 'whistle';
+    case 'molotovBurst':
+      return 'pop';
     default:
       return null;
   }

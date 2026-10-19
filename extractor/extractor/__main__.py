@@ -4,7 +4,7 @@ import datetime
 import os
 import sys
 
-from . import audio, effects
+from . import audio, effects, western
 from .catalog import SPRITES, TEXTURES, VALUES
 from .manifest import OutputWriter
 from .repaint import RECIPES, repaint
@@ -48,7 +48,7 @@ def run(data_dir: str, out_dir: str, fetch_audio: bool = True) -> None:
         for recipe in RECIPES:
             if recipe.source == ref.key:
                 repainted = f"sprites/{recipe.key}.png"
-                out.write_png(repainted, repaint(image, recipe.palette, recipe.hair, recipe.decal, recipe.tone), f"repaint of {source}")
+                out.write_png(repainted, repaint(image, recipe.palette, recipe.hair, recipe.decal, recipe.tone, recipe.star), f"repaint of {source}")
                 sheets[recipe.key] = {**sheets[ref.key], "file": repainted}
     for ref in TEXTURES:
         image = prefabs.texture(ref.texture)
@@ -56,6 +56,11 @@ def run(data_dir: str, out_dir: str, fetch_audio: bool = True) -> None:
         out.write_png(file, image, f"texture {ref.texture}")
         w, h = ref.frame or (image.height, image.height)
         sheets[ref.key] = sheet_entry(file, image.width, image.height, {"w": w, "h": h, "offset_y": 0.0})
+        for recipe in RECIPES:
+            if recipe.source == ref.key:
+                repainted = f"sprites/{recipe.key}.png"
+                out.write_png(repainted, repaint(image, recipe.palette, recipe.hair, recipe.decal, recipe.tone, recipe.star), f"repaint of texture {ref.texture}")
+                sheets[recipe.key] = {**sheets[ref.key], "file": repainted}
     values = {}
     for ref in VALUES:
         fields = prefabs.values(ref.script, ref.gameobject, ref.fields)
@@ -64,6 +69,7 @@ def run(data_dir: str, out_dir: str, fetch_audio: bool = True) -> None:
     out.write_json("sheets.json", sheets, "SpriteSM frame grids")
     out.write_json("values.json", values, "prefab MonoBehaviour fields")
     effects.extract(os.path.join(data_dir, "StreamingAssets"), out)
+    out.write_bytes("audio/django_western.wav", western.wav_bytes(), "our own spaghetti-western loop, synthesized (extractor/western.py)")
     if fetch_audio:
         for ref in (audio.ANTHEM, audio.ANTHEM_US):
             audio.fetch(ref, out)

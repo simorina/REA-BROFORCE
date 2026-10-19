@@ -15,7 +15,7 @@ import { NO_CONTROLS, type Controls } from '../engine/types';
 import { bossBar, bossName } from '../engine/boss';
 import { createWorld, stepWorld } from '../engine/world';
 import type { LevelData } from '../engine/level';
-import { broSheet, type Assets } from '../render/assets';
+import { broSheet, gunSheet, type Assets } from '../render/assets';
 import { fitCanvas } from '../render/layout';
 import { Renderer } from '../render/renderer';
 import { Hud } from './Hud';
@@ -56,17 +56,20 @@ export function GameView({ assets, broId, buildLevel, voice, sound, onEnd, onMen
     if (!ctx) return;
     const level = buildLevel();
     const world = createWorld(level, assets.stats, roster);
-    const renderer = new Renderer(ctx, assets, SCALE, () => broSheet(world.bro), () => (world.bro.weapon === 'rifle' ? 'rifle_gun' : null), level.parallax, Math.random, level.theme);
+    const renderer = new Renderer(ctx, assets, SCALE, () => broSheet(world.bro), () => gunSheet(world.bro.weapon, world.django !== null), level.parallax, Math.random, level.theme);
     const keyboard = new Keyboard();
     keyboard.attach(window);
     const sfx = new Sfx(sound);
     // one player per vehicle: the tank's anthem, and the jet's sound (the user's own, else the US anthem)
     const tankAnthem = new Music(sound ? new Audio() : null, ['/audio/anthem_ru.ogg']);
+    // Samuel as Django: the user's own copy of the theme if there is one (never committed), else our western loop
+    const djangoMusic = new Music(sound ? new Audio() : null, ['/audio/django_custom.mp3', '/audio/django_western.wav']);
     const jetMusic = new Music(sound ? new Audio() : null, ['/audio/trump_custom.mp3', '/audio/anthem_us.ogg']);
     const unsubscribePause = pause.subscribe(() => {
       sfx.setPaused(pause.get());
       if (pause.get()) { // a hidden tab pauses without rendering frames, so don't wait for a fade
         tankAnthem.silence();
+        djangoMusic.silence();
         jetMusic.silence();
       }
     });
@@ -99,6 +102,7 @@ export function GameView({ assets, broId, buildLevel, voice, sound, onEnd, onMen
             speak(e.text, e.lang, voice);
             continue;
           }
+          if (e.type === 'django') djangoMusic.rewind(); // the theme starts from the top
           const name = sfxFor(e);
           if (name) sfx.play(name, e.x, world.camera.x);
           renderer.onEvent(e);
@@ -121,6 +125,7 @@ export function GameView({ assets, broId, buildLevel, voice, sound, onEnd, onMen
         renderer.render(world, paused ? 0 : frameTime);
         const musicDt = paused ? 1 : frameTime;
         tankAnthem.update(anthemShouldPlay(world.driving?.kind === 'tank', world.state, paused, sound), musicDt);
+        djangoMusic.update(anthemShouldPlay(world.django !== null, world.state, paused, sound), musicDt);
         jetMusic.update(anthemShouldPlay(world.driving?.kind === 'jet', world.state, paused, sound), musicDt);
       },
     );
@@ -131,6 +136,7 @@ export function GameView({ assets, broId, buildLevel, voice, sound, onEnd, onMen
       unsubscribePause();
       sfx.dispose();
       tankAnthem.dispose();
+      djangoMusic.dispose();
       jetMusic.dispose();
       window.removeEventListener('keydown', onPauseKey);
       window.removeEventListener('blur', onBlur);

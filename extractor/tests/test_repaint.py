@@ -1,8 +1,8 @@
 from PIL import Image
 
-from extractor.catalog import SPRITES
+from extractor.catalog import SPRITES, TEXTURES
 from extractor.repaint import HULL_MAP, PALETTE_MAP, PUTIN_HAIR, PUTIN_MAP, RECIPES, RU_FLAG, TRUMP_MAP, TURRET_MAP, repaint, stealth
-from extractor.repaint import EPSTEIN_MAP, TEMPLE_MAP
+from extractor.repaint import CHE_GUN_MAP, CHE_MAP, CHE_STAR, EPSTEIN_MAP, SAMUEL_GUN_MAP, TEMPLE_MAP
 
 
 def test_maps_known_colours_and_keeps_alpha():
@@ -78,7 +78,7 @@ def test_putin_skin_is_pale_and_brolusconi_ignores_it():
 
 def test_recipes_repaint_extracted_sheets_into_new_keys():
     keys = [r.key for r in RECIPES]
-    sprite_keys = {s.key for s in SPRITES}
+    sprite_keys = {s.key for s in SPRITES} | {t.key for t in TEXTURES}  # a recipe repaints a sprite or a texture
     assert len(keys) == len(set(keys))
     assert all(r.source in sprite_keys for r in RECIPES)
     assert not set(keys) & sprite_keys
@@ -160,4 +160,51 @@ def test_the_temple_bricks_are_white_with_blue_mortar():
 
 
 def test_island_recipes():
-    assert [(r.key, r.source) for r in RECIPES][6:] == [("epstein", "bro_base"), ("block_temple", "block_brick")]
+    assert [(r.key, r.source) for r in RECIPES][6:8] == [("epstein", "bro_base"), ("block_temple", "block_brick")]
+
+
+def test_dirty_harrys_revolver_hand_and_sleeve_take_samuels_skin_and_suit():
+    img = Image.new("RGBA", (3, 1))
+    img.putpixel((0, 0), (0xCF, 0x8C, 0x71, 255))  # hand
+    img.putpixel((1, 0), (0x5F, 0x5A, 0x56, 255))  # sleeve
+    img.putpixel((2, 0), (0x0E, 0x0E, 0x0E, 255))  # the revolver stays black
+    out = repaint(img, SAMUEL_GUN_MAP)
+    assert out.getpixel((0, 0)) == (0x8A, 0x58, 0x40, 255)
+    assert out.getpixel((1, 0)) == (0x26, 0x14, 0x18, 255)
+    assert out.getpixel((2, 0)) == (0x0E, 0x0E, 0x0E, 255)
+    assert any(r.key == "revolver_gun" and r.source == "dirty_harry_gun" for r in RECIPES)
+
+
+def test_brodocks_red_hair_and_beard_turn_dark_and_his_headband_black():
+    img = Image.new("RGBA", (3, 1))
+    img.putpixel((0, 0), (0xFF, 0x6D, 0x03, 255))  # hair / beard
+    img.putpixel((1, 0), (0x30, 0x3A, 0x21, 255))  # headband
+    img.putpixel((2, 0), (0x54, 0x65, 0x3A, 255))  # the olive fatigues stay
+    out = repaint(img, CHE_MAP)
+    assert out.getpixel((0, 0))[:3] == CHE_MAP[(0xFF, 0x6D, 0x03)] and sum(out.getpixel((0, 0))[:3]) < 200
+    assert out.getpixel((1, 0))[:3] == CHE_MAP[(0x30, 0x3A, 0x21)]
+    assert out.getpixel((2, 0)) == (0x54, 0x65, 0x3A, 255)
+    assert any(r.key == "che" and r.source == "bro_brodock" for r in RECIPES)
+
+
+def test_the_red_star_goes_on_the_front_of_the_headband_in_every_frame():
+    band = (0x30, 0x3A, 0x21)
+    img = Image.new("RGBA", (64, 32))
+    for x in (10, 11, 12, 13):
+        img.putpixel((x, 14), (*band, 255))  # frame 0: the band runs 10-13, he faces right
+    for x in (40, 41, 42):
+        img.putpixel((x, 15), (*band, 255))  # frame 1: 40-42
+    out = repaint(img, CHE_MAP, star=CHE_STAR)
+    assert out.getpixel((13, 14))[:3] == CHE_STAR.color
+    assert out.getpixel((42, 15))[:3] == CHE_STAR.color
+    assert out.getpixel((12, 14))[:3] == CHE_MAP[band]
+
+
+def test_rambros_bare_arms_on_the_m60_take_ches_olive_sleeves():
+    img = Image.new("RGBA", (2, 1))
+    img.putpixel((0, 0), (0xCF, 0x8C, 0x71, 255))
+    img.putpixel((1, 0), (0x1E, 0x1E, 0x1E, 255))  # the gun stays
+    out = repaint(img, CHE_GUN_MAP)
+    assert out.getpixel((0, 0)) == (0x54, 0x65, 0x3A, 255)
+    assert out.getpixel((1, 0)) == (0x1E, 0x1E, 0x1E, 255)
+    assert any(r.key == "m60_gun" and r.source == "rambro_gun" for r in RECIPES)
