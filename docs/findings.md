@@ -225,3 +225,35 @@ BackgroundCamera, which grades the background with an Amplify Color LUT per them
 (`colorMapBurningJungleDay` = `Preset_Burning_Jungle`; the jungle's is `Preset_Blank`, the desert has none). The
 extractor bakes that LUT into the burning background's sprites (32 slices of 32x32, blue across slices, red across,
 green up), so the sky comes out smoky while the level itself keeps its colours, as in the game.
+
+## Broforce's globe for the world map (sixth pass)
+
+The campaign map is now Broforce's `WorldMap3D` scene drawn with three.js; the 2D map stays as the fallback when WebGL
+or `game-data/worldmap` is missing. The extractor bakes the scene's meshes into world space (z flipped for three.js,
+winding reversed) and merges them by material, about 261k vertices with the one lightmap (RGBM: rgb x a x 5). The
+shaders are ported from their DXBC: `Custom/Fake3D` tints by `lerp(_Shadow, _Color, N.L)`, adds a
+`(1 - N.V)^_FresPow x _FresCol` rim and multiplies by the lightmap; `Fake3DTree` sways and leans away from
+`_HelicopterPos`; `PixelWater` scrolls two normal maps and sparkles where its reflection crosses `_Cutoff` (the
+cubemap is approximated by the sun); `MapBorder` scrolls its dashes. The main camera carries two quads: `backGlow`
+(`Custom/backgroundTransparent`: BlueGlow x (0.058, 0.163, 0.353, 0.443), in the background queue, behind the globe)
+and `Blue Glow` (`Particles/Additive`: worldGlow x 2 x `_TintColor`, 10.74 ahead, round the rim).
+
+`WorldCamera.FollowClampedTransform` keeps the camera 16.68 out over the helicopter, looking at the centre, its
+latitude halved as the view widens (`GetHelicopterPosition`); `RunZoom` moves the field of view between 30 and 18
+(`SmoothZoom`: by the sine of the zoom), in while the helicopter waits and out once it is 5 units off. `Helicopter3D`
+flies 5.9 from the centre at 25 degrees a second; ours flies itself to the chosen mission along the great circle. Its
+nose turns after its way (`RotateTowards` at 2 + 6 |bank| + 6 trick radians a second), it rolls 40 degrees into a
+turn (`bankingSideSpeed` 5) and dips 16 while it flies (`DoBanking`); to land it drops to the territory's
+`LandingPoint` (plus `LandingOffset` 0.15) over two seconds, and `TransportArriveAt` comes after three.
+
+`WorldTerritory3D`: its dashed border (`Outline`) shows only while it is selected, with the helicopter over it. Its
+`WMIcon` (a 16-pixel red disc with the terror level; ours shows the mission's number) is drawn by the UI camera
+(orthographic size 48, the icon 8 units) over `centreObject`; it pops up on a spring, bounces when the territory is
+selected, and gives way to `WorldmapArrow` at the rim once `dot(camera, centre)` drops under 0.3, pointing back at
+the globe from 1.3 to 3.2 half-heights out as the view zooms. A liberated territory raises the US flag on its
+`WorldMapFlagPole`. Selecting a territory on the 3D map shows `GeneralUI`: the general's head, the description and
+"THREAT LEVEL:" with a colour's name (Salmon, Burgundy, Infinite...); ours keeps the briefing under the map with a
+threat level that climbs from Giallo to Infinito. The panel that slides up from the bottom
+(`WorldMapInterfaceTerritoryDetails`, "GOD SPEED BROFORCE!") belongs to the old 2D map (`Helicopter2D`); ours borrows
+its farewell for the landing. Left out: flying freely with the arrows, the territories' states (burning, infested,
+terror spreading), the general, the birds and seagulls and the map's mooks.

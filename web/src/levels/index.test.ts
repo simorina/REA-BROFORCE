@@ -23,6 +23,10 @@ describe('the campaign missions', () => {
     ]);
   });
 
+  it("each mission sits on a territory of Broforce's globe", () => {
+    expect(MISSIONS.map((m) => m.territory)).toEqual(['afghanistan', 'hongkong', 'vietnam', 'usa', 'panama', 'amazon', 'hawaii']);
+  });
+
   it('each mission has a lore briefing explaining the story', () => {
     for (const m of MISSIONS) {
       expect(m.briefing).toBeDefined();
