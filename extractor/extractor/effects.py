@@ -20,6 +20,7 @@ from PIL import Image
 
 from .grade import grade, lut_filter
 from .particles import SystemWriter
+from .repaint import FLAME_GREEN, FLAME_RED, FLAME_WHITE, repaint
 from .unity import AssetNotFound
 
 BUNDLES = ("networkobjects.assetbundle", "sharedtextures.assetbundle", "sharedassets.assetbundle",
@@ -69,6 +70,9 @@ PUFFS = {
 }
 # Puffs on other prefabs: the Noisy Cricket's beam trail and the ball where its shot goes off
 PREFAB_PUFFS = {"cricketBeam": ("Puff", "Noisy Cricket Beam Puff"), "cricketBall": ("Puff", "Noisy Cricket Ball Puff")}
+# Ellen Ripbro's flame wall (FlameWallExplosion.explosionPuffs), its three flames painted in the tricolour for Giorgia Meloni
+TRICOLOUR_PUFFS = {"flameWallGreen": ("Flame Wall Puff Test", FLAME_GREEN), "flameWallWhite": ("Flame Wall Puff Test 2", FLAME_WHITE),
+                   "flameWallRed": ("Flame Wall Puff Test 3", FLAME_RED)}
 # PuffTwoLayer: the stars over a blinded or stunned unit
 TWO_LAYER_PUFFS = {"stunnedStars1": "stunnedStars1Prefab", "stunnedStars2": "stunnedStars2Prefab",
                    "stunnedStars3": "stunnedStars3Prefab"}
@@ -186,15 +190,19 @@ class Scene:
                     return te.m_Texture.read(), mat
         raise AssetNotFound("renderer has no _MainTex")
 
-    def write_texture(self, tex, folder: str, source: str) -> str:
-        name = tex.m_Name
+    def write_texture(self, tex, folder: str, source: str, tone=None, tag: str = "") -> str:
+        """The texture as it is, or (with a `tone`) repainted and written apart under the `tag`."""
+        name = f"{tex.m_Name} {tag}" if tone else tex.m_Name
         if name not in self.written:
             rel = f"sprites/{folder}/{_safe(name)}.png"
-            self.out.write_png(rel, tex.image.convert("RGBA"), f"texture {name} ({source})")
+            image = tex.image.convert("RGBA")
+            if tone:
+                image = repaint(image, {}, tone=tone)
+            self.out.write_png(rel, image, f"texture {tex.m_Name} ({source})" + (f", {tag}" if tone else ""))
             self.written[name] = rel
         return self.written[name]
 
-    def sprite(self, go, folder: str, crop: bool, lut=None):
+    def sprite(self, go, folder: str, crop: bool, lut=None, tone=None, tag: str = ""):
         """SpriteSM size/rect/offset of a GameObject with its texture (whole, or cropped to the rect)."""
         comps = self.components(go)
         if "SpriteSM" not in comps and "WobbleSprite" not in comps:
@@ -218,7 +226,7 @@ class Scene:
             self.out.write_png(rel, image, f"{go.m_Name} (texture {tex.m_Name})")
             info["file"] = rel
         else:
-            info["file"] = self.write_texture(tex, folder, go.m_Name)
+            info["file"] = self.write_texture(tex, folder, go.m_Name, tone, tag)
             info["rect"] = rect
         return info
 
@@ -284,12 +292,12 @@ def _emitter(scene: Scene, obj) -> dict:
     return out
 
 
-def _puff(scene: Scene, obj, two_layer: bool = False) -> dict:
+def _puff(scene: Scene, obj, two_layer: bool = False, tone=None, tag: str = "") -> dict:
     go = scene.go_of(obj)
     comps = scene.components(go)
     cls = "PuffTwoLayer" if two_layer else "Puff"
     p = comps[cls].read_typetree()
-    info = scene.sprite(go, "fx", crop=False)
+    info = scene.sprite(go, "fx", crop=False, tone=tone, tag=tag)
     info.update({"name": go.m_Name, **{k: _num(p[k]) for k in PUFF_FIELDS if k in p}})
     return info
 
@@ -499,7 +507,8 @@ def extract(streaming_assets: str, out) -> None:
         "bloodColor": _color(ft["RedBloodColor"]),
         "emitters": {k: _emitter(scene, scene.field(holders[h], f)) for k, (h, f) in EMITTERS.items()},
         "puffs": {**{k: _puff(scene, scene.field(fx, f)) for k, f in PUFFS.items()},
-                  **{k: _puff(scene, scene.find(*v)) for k, v in PREFAB_PUFFS.items()}},
+                  **{k: _puff(scene, scene.find(*v)) for k, v in PREFAB_PUFFS.items()},
+                  **{k: _puff(scene, scene.find("Puff", n), tone=tone, tag=k) for k, (n, tone) in TRICOLOUR_PUFFS.items()}},
         "twoLayerPuffs": {k: _puff(scene, scene.field(fx, f), True) for k, f in TWO_LAYER_PUFFS.items()},
         "bubbles": {k: _bubble(scene, *v) for k, v in BUBBLES.items()},
         "grass": _grass(scene),

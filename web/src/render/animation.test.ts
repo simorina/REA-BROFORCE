@@ -3,10 +3,18 @@ import { TEST_STATS } from '../engine/testStats';
 import { makeUnit } from '../engine/units';
 import { TileMap, makeBlock } from '../engine/map';
 import { makeTank } from '../engine/tank';
-import { blockFrame, helicopterFrame, jetFrameCentreY, mechFrame, loopFrame, prisonerFrame, special2Frame, stripFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
+import { blockFrame, flameLook, helicopterFrame, jetFrameCentreY, mechFrame, loopFrame, prisonerFrame, special2Frame, stripFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
 
 const bro = (patch: Partial<ReturnType<typeof makeUnit>>) =>
   Object.assign(makeUnit(1, 'bro', 'player', 0, 8, TEST_STATS.bros.bro_base), { onGround: true }, patch);
+
+describe("flameLook (FlameThrower Bullet's flame: its AnimatedTexture, sinking 32 a second)", () => {
+  it('plays its ten frames once at 0.0334 s and holds the last, sinking as it goes', () => {
+    expect(flameLook(0, TEST_STATS.flame)).toEqual({ frame: 0, dy: -0 });
+    expect(flameLook(0.1, TEST_STATS.flame)).toEqual({ frame: 2, dy: -3.2 });
+    expect(flameLook(1, TEST_STATS.flame).frame).toBe(9);
+  });
+});
 
 describe('unitFrame (TestVanDammeAnim.Animate*)', () => {
   it('idles on row 0, column 0', () => {

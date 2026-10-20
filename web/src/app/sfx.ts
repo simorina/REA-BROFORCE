@@ -4,7 +4,7 @@ import type { GameEvent } from '../engine/world';
 /** Our own synthesized sound effects (WebAudio); no Broforce audio is extracted or played. */
 export type SfxName =
   | 'kick' | 'throw' | 'shot' | 'rocket' | 'boom' | 'pop' | 'crumble' | 'splat' | 'grunt' | 'death' | 'alert'
-  | 'rescue' | 'checkpoint' | 'whistle' | 'flex' | 'swish' | 'mortar' | 'cannon' | 'clank' | 'bite';
+  | 'rescue' | 'checkpoint' | 'whistle' | 'flex' | 'swish' | 'mortar' | 'cannon' | 'clank' | 'bite' | 'flame' | 'roar';
 
 export function sfxFor(e: GameEvent): SfxName | null {
   switch (e.type) {
@@ -27,6 +27,10 @@ export function sfxFor(e: GameEvent): SfxName | null {
           return 'mortar';
         case 'bigRocket':
           return 'cannon';
+        case 'flamethrower':
+          return 'flame';
+        case 'flameWall':
+          return 'roar';
         default:
           return 'shot';
       }
@@ -239,5 +243,15 @@ const RECIPES: Record<SfxName, (s: Sfx, out: AudioNode, t: number) => void> = {
   bite: (s, o, t) => {
     s.tone(o, t, 'sawtooth', 320, 160, 0.09, 0.14);
     s.hiss(o, t + 0.02, 'bandpass', 1200, 600, 0.06, 0.3);
+  },
+  // a squirt of the flamethrower every 0.1 s: they run together into a roar
+  flame: (s, o, t) => {
+    s.hiss(o, t, 'bandpass', 900, 380, 0.16, 0.3);
+    s.hiss(o, t, 'lowpass', 520, 220, 0.16, 0.22);
+  },
+  roar: (s, o, t) => {
+    s.hiss(o, t, 'lowpass', 1300, 160, 1.4, 0.7);
+    s.hiss(o, t, 'bandpass', 700, 300, 1.1, 0.35);
+    s.tone(o, t, 'sawtooth', 85, 40, 0.8, 0.22);
   },
 };

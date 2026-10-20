@@ -93,9 +93,6 @@ TEXTURES = (
     TextureRef("flame_1", "flamethrower_bullet1", frame=(32, 32)),  # FlameThrower Bullet 1-3's flames: green, white, red
     TextureRef("flame_2", "flamethrower_bullet2", frame=(32, 32)),
     TextureRef("flame_3", "flamethrower_bullet3", frame=(32, 32)),
-    TextureRef("flamewall_1", "FlameWallTestFlame7", frame=(32, 32)),  # Flame Wall Puff Test 1-3: the same tricolour
-    TextureRef("flamewall_2", "FlameWallTestFlame4rendered", frame=(32, 32)),
-    TextureRef("flamewall_3", "FlameWallTestFlame5", frame=(32, 32)),
 )
 
 VALUES = (
@@ -109,7 +106,6 @@ VALUES = (
     ValuesRef("flame_anim", "AnimatedTexture", "Flame1", ("frames", "frameRate")),
     ValuesRef("flame_wall", "FlameWallExplosion", "flameWallExplosion",
               ("maxCollumns", "maxRows", "totalExplosions", "explosionRate", "damageAmount", "maxPuffDelay", "yExplosionOffset")),
-    ValuesRef("flame_wall_puff", "Puff", "Flame Wall Puff Test", ("frameRate", "frames")),
     ValuesRef("molotov", "GrenadeMolotov", "Grenade Molotove", ("range", "size", "gravityM")),
     ValuesRef("molotov_fire", "GrenadeMolotovFire", "Grenade Molotov Fire", ("range", "size", "gravityM", "life")),
     ValuesRef("cricket", "NoisyCricket", "NoisyCricket", ("life", "damage", "range", "blastForce", "projectileSize")),

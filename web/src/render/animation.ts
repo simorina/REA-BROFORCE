@@ -55,6 +55,13 @@ export function loopFrame(time: number, frameRate: number, cols: number): number
   return Math.floor(time / frameRate) % cols;
 }
 
+const FLAME_SINK = 32; // FlameBullet.Update: the flame's sprite (flameObjectTranform) moves down 32 a second
+
+/** A FlameThrower Bullet `age` seconds out: its AnimatedTexture's frame (once through, loop off) and how far it has sunk. */
+export function flameLook(age: number, anim: { frames: number; frameRate: number }): { frame: number; dy: number } {
+  return { frame: Math.min(anim.frames - 1, Math.max(0, Math.floor(age / anim.frameRate))), dy: -FLAME_SINK * age };
+}
+
 /** Hobro_anim: columns 0-3 are the standing idle; 4-5 are death poses, so the cage loop stays on 0-3. */
 export function prisonerFrame(time: number): number {
   return loopFrame(time, 0.15, 4);

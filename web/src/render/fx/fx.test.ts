@@ -187,6 +187,25 @@ describe('Effects call sites', () => {
   });
 });
 
+describe("Giorgia Meloni's fire", () => {
+  it('each burning cell of her flame wall puffs its flame in the tricolour, after its delay, drifting its way', () => {
+    const fx = new Effects(TEST_EFFECTS, () => 0.5);
+    fx.onEvent({ type: 'flameWallPuff', x: 64, y: 28, variant: 0, delay: 0.02, dir: 1, xI: 66 }, () => 'mook');
+    fx.onEvent({ type: 'flameWallPuff', x: 80, y: 28, variant: 2, delay: 0, dir: -1, xI: -66 }, () => 'mook');
+    expect(fx.puffs.map((p) => p.def.name)).toEqual(['Flame Wall Puff Test', 'Flame Wall Puff Test 3']);
+    expect(fx.puffs[0]).toMatchObject({ x: 64, y: 28, delay: 0.02, flip: 1, xI: 66 });
+    expect(fx.puffs[0].def.file).toContain('flameWallGreen');
+    expect(fx.puffs[1]).toMatchObject({ flip: -1, xI: -66 });
+    expect(fx.puffs[1].def.file).toContain('flameWallRed');
+  });
+
+  it("her flamethrower flashes at the nozzle for each of its two flames (BaBroracus.FireWeapon: CreateMuzzleFlashEffect)", () => {
+    const fx = new Effects(TEST_EFFECTS, () => 0.5);
+    fx.onEvent({ type: 'shot', weapon: 'flamethrower', x: 50, y: 8, facing: 1 }, () => 'mook');
+    expect(fx.puffs.map((p) => [p.def.name, p.x, p.y])).toEqual([['MuzzleFlash Puff1', 61, 14], ['MuzzleFlash Puff1', 61, 15]]);
+  });
+});
+
 describe('flames and the mook door blowing up', () => {
   it("FlickerFader: steps a frame every frameRate and dies after its last", () => {
     const fx = new Effects(TEST_EFFECTS, () => 0.5);

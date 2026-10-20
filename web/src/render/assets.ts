@@ -16,7 +16,8 @@ export interface SheetInfo {
 }
 
 export const SHEET_KEYS = [
-  'brolusconi', 'putin', 'trump', 'kim', 'bro_in_black', 'samuel', 'che', 'm60_gun', 'molotov', 'rifle_gun', 'blade_gun', 'cricket_gun', 'neuraliser_beam', 'revolver_gun', 'revolver_bullet', 'jet_us', 'epstein', 'goliath', 'tank_ru', 'turret_ru', 'tank_shell', 'tank_rocket', 'mook', 'mook_suicide', 'mook_bazooka', 'mook_scout',
+  'brolusconi', 'putin', 'trump', 'kim', 'bro_in_black', 'samuel', 'che', 'm60_gun', 'molotov', 'meloni', 'flamethrower_gun',
+  'flame_green', 'flame_white', 'flame_red', 'rifle_gun', 'blade_gun', 'cricket_gun', 'neuraliser_beam', 'revolver_gun', 'revolver_bullet', 'jet_us', 'epstein', 'goliath', 'tank_ru', 'turret_ru', 'tank_shell', 'tank_rocket', 'mook', 'mook_suicide', 'mook_bazooka', 'mook_scout',
   'mook_shield', 'mook_grenadier', 'dog', 'grenade', 'shield', 'prisoner', 'cage', 'helicopter', 'bullet', 'rocket',
   'bomb', 'marker', 'block_dirt', 'block_sand', 'block_brick', 'block_temple', 'block_steel', 'block_barrel', 'flagpole', 'flag',
 ] as const;
@@ -46,7 +47,9 @@ export function broSheet(bro: { id: string; sheet: string }): SheetKey {
 }
 
 /** The gun sprite drawn over a bro (TestVanDammeAnim.gunSprite), for the weapons that have one in hand. */
-const GUN_SHEETS: Partial<Record<WeaponId, SheetKey>> = { rifle: 'rifle_gun', blade: 'blade_gun', cricket: 'cricket_gun', m60: 'm60_gun' };
+const GUN_SHEETS: Partial<Record<WeaponId, SheetKey>> = {
+  rifle: 'rifle_gun', blade: 'blade_gun', cricket: 'cricket_gun', m60: 'm60_gun', flamethrower: 'flamethrower_gun',
+};
 
 export function gunSheet(weapon: WeaponId, django = false): SheetKey | null {
   return django ? 'revolver_gun' : GUN_SHEETS[weapon] ?? null; // as Django, Samuel holds Dirty Brorry's revolver

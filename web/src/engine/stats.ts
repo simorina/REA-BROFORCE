@@ -156,7 +156,6 @@ export function parseValues(raw: Raw): GameStats {
       explosions: num(raw, 'flame_wall', 'totalExplosions'), rate: num(raw, 'flame_wall', 'explosionRate'),
       damage: num(raw, 'flame_wall', 'damageAmount'), puffDelay: num(raw, 'flame_wall', 'maxPuffDelay'),
       puffY: num(raw, 'flame_wall', 'yExplosionOffset'),
-      puffFrames: num(raw, 'flame_wall_puff', 'frames'), puffFrameRate: num(raw, 'flame_wall_puff', 'frameRate'),
     },
     revolver: {
       damage: num(raw, 'revolver_bullet', 'damage'), life: num(raw, 'revolver_bullet', 'life'),

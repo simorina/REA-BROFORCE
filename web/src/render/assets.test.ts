@@ -64,6 +64,13 @@ describe('loadData', () => {
     expect(missingSheets(old)).toEqual(['epstein', 'block_sand', 'block_temple']);
   });
 
+  it("draws Meloni with B.A. Broracus's flamethrower in her hands, and its flames in the tricolour", () => {
+    expect(gunSheet('flamethrower')).toBe('flamethrower_gun');
+    const noMeloni: Record<string, unknown> = { ...sheets };
+    for (const k of ['meloni', 'flamethrower_gun', 'flame_green', 'flame_white', 'flame_red']) delete noMeloni[k];
+    expect(missingSheets(noMeloni)).toEqual(['meloni', 'flamethrower_gun', 'flame_green', 'flame_white', 'flame_red']);
+  });
+
   it("draws the gun a bro holds: Trump's rifle and Samuel's katana (Blade's gun sprite); the others hold none", () => {
     expect(gunSheet('rifle')).toBe('rifle_gun');
     expect(gunSheet('blade')).toBe('blade_gun');

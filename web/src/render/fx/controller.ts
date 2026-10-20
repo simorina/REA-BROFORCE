@@ -477,6 +477,10 @@ export class Effects {
         } else if (e.weapon === 'cricket') {
           // Brononymous.FireWeapon: CreateMuzzleFlashEffect(X + dir * 14, Y + 9.5, -25, xSpeed * 0.01, 0)
           this.puff('muzzleFlash', e.x + e.facing * 14, e.y + 9.5, e.facing, e.facing * 7, 0);
+        } else if (e.weapon === 'flamethrower') {
+          // BaBroracus.FireWeapon, once a flame: CreateMuzzleFlashEffect(X + dir * 11, Y + 6 / Y + 7, -25, xSpeed * 0.01, ..)
+          this.puff('muzzleFlash', e.x + e.facing * 11, e.y + 6, e.facing, e.facing * 1.2, 0);
+          this.puff('muzzleFlash', e.x + e.facing * 11, e.y + 7, e.facing, e.facing * 1.5, 0);
         }
         return;
       case 'molotovBurst':
@@ -491,6 +495,10 @@ export class Effects {
       case 'django':
         // Samuel becomes Django: a puff of dust around him
         for (let i = 0; i < 5; i++) this.smoke(e.x + (i - 2) * 5, e.y + 4 + (i % 2) * 6, (i - 2) * 20, 20);
+        return;
+      case 'flameWallPuff':
+        // FlameWallExplosion.CreateFlashBangPoint: one of its explosionPuffs, flipped and pushed the way the fire spreads
+        this.puff((['flameWallGreen', 'flameWallWhite', 'flameWallRed'] as const)[e.variant] ?? 'flameWallRed', e.x, e.y, e.dir, e.xI, 0, WHITE, e.delay);
         return;
       case 'cricketBeam':
         // NoisyCricket.RunBeam and RunCricketEffects: a beam puff, and blue sparks where the shot is

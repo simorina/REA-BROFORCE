@@ -16,7 +16,6 @@ export const RAW_VALUES: Record<string, Record<string, unknown>> = {
   flame_bullet: { life: 0.35, damage: 1, projectileSize: 8 },
   flame_anim: { frames: 10, frameRate: 0.0334 },
   flame_wall: { maxCollumns: 14, maxRows: 3, totalExplosions: 50, explosionRate: 0.11, damageAmount: 3, maxPuffDelay: 0.04, yExplosionOffset: 4 },
-  flame_wall_puff: { frameRate: 0.0234, frames: 20 },
   rifle_bullet: { damage: 1, life: 0.45 },
   mech: { health: 300 },
   mook: { speed: 70, _jumpForce: 200, health: 3, fireRate: 0.17, maxFallSpeed: -400, canWallClimb: 0, canDash: 0, originalSpecialAmmo: 3, hearingRangeX: 50, hearingRangeY: 0, canHideInGrass: 1, canBeSetOnFire: 1, willPanicWhenOnFire: 1 },
@@ -119,7 +118,7 @@ export const TEST_STATS: GameStats = {
   molotovFire: { range: 48, size: 3, gravityM: 1, life: 1 },
   flamethrower: { fireRate: 0.1 },
   flame: { life: 0.35, damage: 1, size: 8, frames: 10, frameRate: 0.0334 },
-  flameWall: { columns: 14, rows: 3, explosions: 50, rate: 0.11, damage: 3, puffDelay: 0.04, puffY: 4, puffFrames: 20, puffFrameRate: 0.0234 },
+  flameWall: { columns: 14, rows: 3, explosions: 50, rate: 0.11, damage: 3, puffDelay: 0.04, puffY: 4 },
   mech: { health: 300 },
   blocks: {
     dirt: { health: 5 }, sand: { health: 5 }, brick: { health: 5 }, temple: { health: 5 }, steel: { health: 500000 },

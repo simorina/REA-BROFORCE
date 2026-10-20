@@ -30,6 +30,11 @@ describe('sfx', () => {
     expect(sfxFor({ type: 'shot', weapon: 'grenade', x: 0, y: 0, facing: 1 })).toBe('throw');
   });
 
+  it("gives Meloni's flamethrower its whoosh and her flame wall a roar", () => {
+    expect(sfxFor({ type: 'shot', weapon: 'flamethrower', x: 0, y: 0, facing: 1 })).toBe('flame');
+    expect(sfxFor({ type: 'shot', weapon: 'flameWall', x: 0, y: 0, facing: 1 })).toBe('roar');
+  });
+
   it('pans with the position and fades sounds far off screen', () => {
     expect(placement(100, 100)).toEqual({ pan: 0, gain: 1 });
     expect(placement(400, 100).pan).toBeCloseTo(0.6);

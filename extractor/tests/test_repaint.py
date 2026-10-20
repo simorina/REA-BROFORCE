@@ -246,5 +246,4 @@ def test_the_flames_burn_in_the_tricolour_hottest_lightest():
     img = Image.new("RGBA", (1, 1), (*hot, 200))
     assert repaint(img, {}, tone=FLAME_GREEN).getpixel((0, 0))[3] == 200
     pairs = {(r.key, r.source) for r in RECIPES}
-    assert {("flame_green", "flame_1"), ("flame_white", "flame_2"), ("flame_red", "flame_3"),
-            ("flamewall_green", "flamewall_1"), ("flamewall_white", "flamewall_2"), ("flamewall_red", "flamewall_3")} <= pairs
+    assert {("flame_green", "flame_1"), ("flame_white", "flame_2"), ("flame_red", "flame_3")} <= pairs

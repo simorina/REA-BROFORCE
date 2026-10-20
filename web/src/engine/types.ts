@@ -121,8 +121,6 @@ export interface FlameWallStats {
   damage: number; // damageAmount, Fire
   puffDelay: number; // maxPuffDelay
   puffY: number; // yExplosionOffset
-  puffFrames: number; // Flame Wall Puff Test's frames and frameRate
-  puffFrameRate: number;
 }
 
 export interface GameStats {
@@ -148,7 +146,7 @@ export interface GameStats {
   molotovFire: { range: number; size: number; gravityM: number; life: number }; // "Grenade Molotov Fire"
   flamethrower: { fireRate: number }; // B.A. Broracus's (BaBroracus.fireRate): Meloni's
   flame: { life: number; damage: number; size: number; frames: number; frameRate: number }; // FlameThrower Bullet, its AnimatedTexture
-  flameWall: FlameWallStats; // Ellen Ripbro's flameWallExplosion and its Flame Wall Puff
+  flameWall: FlameWallStats; // Ellen Ripbro's flameWallExplosion (its puffs are effects.json's flameWall*)
   mech: { health: number }; // GoliathMech
   blocks: Record<BlockKind, { health: number }>;
   barrelRange: number;

@@ -9,7 +9,7 @@ import type { Mech } from '../engine/mech';
 import type { Tank } from '../engine/tank';
 import type { BlockKind, Projectile, Unit, UnitKind } from '../engine/types';
 import { speaker, type Effect, type GameEvent, type World } from '../engine/world';
-import { blockFrame, helicopterFrame, jetFrameCentreY, loopFrame, mechFrame, prisonerFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
+import { blockFrame, flameLook, helicopterFrame, jetFrameCentreY, loopFrame, mechFrame, prisonerFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
 import { gunOffsetX, type Assets, type SheetKey } from './assets';
 import { Effects } from './fx/controller';
 import { particleFrame } from './fx/particles';
@@ -21,6 +21,7 @@ import { GrassWobble } from './grass';
 import { clampBubbleLeft } from './layout';
 import { parallaxCentre, placeBackground, type BgInstance } from './parallax';
 
+const FLAME_SHEETS: readonly SheetKey[] = ['flame_green', 'flame_white', 'flame_red']; // FlameThrower Bullet 1-3, in the tricolour
 const ENEMY_SHEETS: Record<Exclude<UnitKind, 'bro'>, SheetKey> = {
   mook: 'mook', mook_suicide: 'mook_suicide', mook_bazooka: 'mook_bazooka', mook_scout: 'mook_scout', boss: 'epstein',
   mook_shield: 'mook_shield', mook_grenadier: 'mook_grenadier', dog: 'dog',
@@ -471,6 +472,14 @@ export class Renderer {
         break;
       case 'molotovFire':
         break; // GrenadeMolotovFire has no sprite of its own: its flames are what shows
+      case 'flame': {
+        // FlameThrower Bullet 1-3: green, white and red, once through their frames, sinking as they fly
+        const look = flameLook(this.assets.stats.flame.life - p.life, this.assets.stats.flame);
+        this.sprite(FLAME_SHEETS[p.variant ?? 0] ?? 'flame_red', look.frame, 0, p.x, p.y + look.dy, p.xI < 0);
+        break;
+      }
+      case 'flameWall':
+        break; // FlameWallExplosion has no sprite: its puffs are what shows
       case 'marker':
         this.sprite('marker', 0, 0, p.x, p.y + 4);
         break;

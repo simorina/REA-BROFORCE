@@ -65,12 +65,11 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert values["molotov"]["range"] == 64.0 and values["molotov_fire"]["range"] == 48.0 and values["molotov_fire"]["life"] == 1.0
     # Giorgia Meloni: Ellen Ripbro repainted, B.A. Broracus's flamethrower, Ellen's flame wall, the flames in the tricolour
     assert sheets["meloni"]["file"] == "sprites/meloni.png" and sheets["meloni"]["frameW"] == 32
-    assert sheets["flamethrower_gun"]["frameW"] == 32 and sheets["flame_green"]["cols"] == 16 and sheets["flamewall_red"]["cols"] == 32
+    assert sheets["flamethrower_gun"]["frameW"] == 32 and sheets["flame_green"]["cols"] == 16
     assert values["bro_ellen"]["speed"] == 110.0 and values["bro_ellen"]["originalSpecialAmmo"] == 3
     assert values["flamethrower"]["fireRate"] == pytest.approx(0.1) and values["flame_bullet"]["life"] == pytest.approx(0.35)
     assert values["flame_bullet"]["damage"] == 1 and values["flame_anim"]["frames"] == 10
     assert values["flame_wall"]["maxCollumns"] == 14 and values["flame_wall"]["maxRows"] == 3 and values["flame_wall"]["damageAmount"] == 3
-    assert values["flame_wall_puff"]["frames"] == 20
     assert values["rifle_bullet"]["damage"] == 1
     assert sheets["trump"]["frameW"] == 32 and sheets["rifle_gun"]["frameW"] == 32 and sheets["rifle_gun"]["rows"] == 2
     assert sheets["blade_gun"]["frameW"] == 32 and sheets["blade_gun"]["cols"] == 32 and sheets["blade_gun"]["rows"] == 2
@@ -135,6 +134,13 @@ def test_extracts_the_jungle_background_and_the_effects(tmp_path):
     assert blood["collision"]["gravity"] == 400.0 and blood["collision"]["leavesDecals"] == 1
     assert fx["puffs"]["bloodGush1"]["frames"] == 7
     assert fx["puffs"]["cricketBeam"]["name"] == "Noisy Cricket Beam Puff" and fx["puffs"]["cricketBall"]["frames"] > 1
+    # Ellen Ripbro's flame wall puffs, in Meloni's tricolour: the green one burns green
+    wall = [fx["puffs"][k] for k in ("flameWallGreen", "flameWallWhite", "flameWallRed")]
+    assert [p["name"] for p in wall] == ["Flame Wall Puff Test", "Flame Wall Puff Test 2", "Flame Wall Puff Test 3"]
+    assert all(p["frames"] == 20 and p["frameRate"] == pytest.approx(0.0234) for p in wall)
+    green = Image.open(tmp_path / wall[0]["file"]).convert("RGBA")
+    lit = [px for px in green.getdata() if px[3]]
+    assert lit and all(g > r and g > b for r, g, b, _ in lit)
     assert fx["bubbles"]["!"]["animatedRestFrame"] == 10
     assert [g["name"] for g in fx["gibs"]] == ["BodyArm1", "BodyArm2", "BodyHead", "BodyLeg1", "BodyLeg2", "BodyTorso"]
     assert fx["blocks"]["sand"]["customColors"] is not None and set(fx["blocks"]) == {"dirt", "sand", "brick", "temple", "steel", "barrel"}

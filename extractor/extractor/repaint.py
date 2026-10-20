@@ -251,9 +251,6 @@ RECIPES = (
     Recipe("flame_green", "flame_1", {}, tone=FLAME_GREEN),
     Recipe("flame_white", "flame_2", {}, tone=FLAME_WHITE),
     Recipe("flame_red", "flame_3", {}, tone=FLAME_RED),
-    Recipe("flamewall_green", "flamewall_1", {}, tone=FLAME_GREEN),
-    Recipe("flamewall_white", "flamewall_2", {}, tone=FLAME_WHITE),
-    Recipe("flamewall_red", "flamewall_3", {}, tone=FLAME_RED),
 )
 
 
