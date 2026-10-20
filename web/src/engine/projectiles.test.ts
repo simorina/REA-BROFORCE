@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FIXED_DT } from './constants';
 import { TileMap, makeBlock } from './map';
 import {
-  fireBigRocket, fireFlames, fireM60Bullet, fireMookBullet, fireNoisyCricket, fireRevolverBullet, fireShell, makeFlameWall, molotovFlames,
+  fireBigRocket, fireFlames, fireM60Bullet, fireMinigunBullet, fireMookBullet, fireNoisyCricket, fireRevolverBullet, fireShell, makeFlameWall, molotovFlames,
   throwMolotov, kickFootball, spawnAirstrike, stepProjectile, throwBody, throwMarker, useNeuraliser, type ProjectileEvent, type ProjectileWorld,
 } from './projectiles';
 import { TEST_STATS } from './testStats';
@@ -263,6 +263,40 @@ describe("Che Guevara's M60 (Rambro) and Molotov (GrenadeMolotov)", () => {
     expect(ranges).toContain(16);
     expect(ranges.at(-1)).toBe(24);
     expect(f.dead).toBe(true);
+  });
+});
+
+describe("the Bruiser's minigun (MookBigGuy.UseFire, Bullet MookMiniGun)", () => {
+  const bruiser = (facing: 1 | -1 = 1) => {
+    const m = makeUnit(2, 'mook_bruiser', 'enemy', 100, 8, TEST_STATS.units.mook_bruiser);
+    m.facing = facing;
+    return m;
+  };
+
+  it('fires from (x + 17, y + 9) at 400, from 15 down to 29 up (Random.Range(0, 45) - 15)', () => {
+    const p = fireMinigunBullet(1, bruiser(), TEST_STATS, () => 0);
+    expect([p.kind, p.team, p.x, p.y, p.xI, p.yI, p.life]).toEqual(['minigun', 'enemy', 117, 17, 400, -15, 0.45]);
+    expect(fireMinigunBullet(1, bruiser(-1), TEST_STATS, () => 0.999).yI).toBe(29);
+    expect(fireMinigunBullet(1, bruiser(-1), TEST_STATS, () => 0.5).xI).toBe(-400);
+  });
+
+  it('hits the bro like a bullet', () => {
+    const p = fireMinigunBullet(1, bruiser(), TEST_STATS, () => 1 / 3);
+    const target = bro(130, 8);
+    steps(p, world(new TileMap(40, 10), [target]), 10);
+    expect(p.dead).toBe(true);
+    expect(target.health).toBe(TEST_STATS.bros.bro_base.health - 1);
+  });
+
+  it('chips a block only with every third bullet (MookMiniGunBullet.HitWalls)', () => {
+    const map = new TileMap(40, 10);
+    map.set(9, 1, makeBlock('dirt', TEST_STATS));
+    for (let id = 1; id <= 6; id++) {
+      const p = fireMinigunBullet(id, bruiser(), TEST_STATS, () => 1 / 3);
+      p.x = 120;
+      steps(p, world(map), 30);
+    }
+    expect(map.get(9, 1)?.health).toBe(TEST_STATS.blocks.dirt.health - 2);
   });
 });
 

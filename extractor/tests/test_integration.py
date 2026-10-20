@@ -87,6 +87,11 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert values["ai_dog"]["sightDelay"] == pytest.approx(0.22) and values["ai_mook_shield"]["delayBetweenFiring"] == pytest.approx(1.25)
     assert values["grenade_mook"]["damage"] == 10 and values["grenade_mook"]["range"] == 42.0
     assert sheets["dog"]["frameW"] == 32 and sheets["shield"]["frameW"] == 32 and sheets["grenade"]["frameW"] == 16
+    # the Bruiser (MookBigGuy): a 36-pixel sheet, his minigun with his arms, BigGuyAI and the minigun's bullet
+    assert sheets["mook_bruiser"]["frameW"] == 36 and sheets["bruiser_gun"]["frameW"] == 36 and sheets["bruiser_gun"]["rows"] == 4
+    assert values["mook_bruiser"]["health"] == 25 and values["mook_bruiser"]["fireRate"] == pytest.approx(0.07)
+    assert values["ai_mook_bruiser"]["attackTime"] == pytest.approx(1.2) and values["path_mook_bruiser"]["agentSize"] > 0
+    assert values["minigun_bullet"]["damage"] == 1 and values["minigun_bullet"]["life"] == pytest.approx(0.45)
     assert values["block_sand"]["health"] > 0 and values["block_dirt"]["health"] > 0
 
 

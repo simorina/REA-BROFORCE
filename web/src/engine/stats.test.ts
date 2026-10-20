@@ -36,6 +36,14 @@ describe('parseValues', () => {
     expect(s.flameWall).toEqual({ columns: 14, rows: 3, explosions: 50, rate: 0.11, damage: 3, puffDelay: 0.04, puffY: 4 });
   });
 
+  it("reads the Bruiser (MookBigGuy, BigGuyAI) and his minigun's bullet", () => {
+    const s = parseValues(RAW_VALUES);
+    expect(s.units.mook_bruiser).toMatchObject({ health: 25, speed: 40, jumpForce: 120, fireRate: 0.07, canBeSetOnFire: true, canHideInGrass: false });
+    expect(s.ai.mook_bruiser).toMatchObject({ attackTime: 1.2, sightDelay: 0.667, delayBetweenFiring: 1.8, maxIdleWait: 0.8 });
+    expect(s.paths.mook_bruiser).toMatchObject({ agentSize: 12, jumpHeight: 2, maxDropDistance: 2 });
+    expect(s.minigun).toEqual({ damage: 1, life: 0.45 });
+  });
+
   it('maps values.json onto GameStats', () => {
     expect(parseValues(RAW_VALUES)).toEqual(TEST_STATS);
   });

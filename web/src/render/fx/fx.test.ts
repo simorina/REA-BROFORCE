@@ -187,6 +187,14 @@ describe('Effects call sites', () => {
   });
 });
 
+describe("the Bruiser's minigun", () => {
+  it('flashes at the muzzle, 17 ahead and 9 up (MookBigGuy.FireWeapon)', () => {
+    const fx = new Effects(TEST_EFFECTS, () => 0.5);
+    fx.onEvent({ type: 'shot', weapon: 'minigun', x: 100, y: 8, facing: -1 }, () => 'mook');
+    expect(fx.puffs.map((p) => [p.def.name, p.x, p.y, p.flip])).toEqual([['MuzzleFlash Puff1', 83, 17, -1]]);
+  });
+});
+
 describe("Giorgia Meloni's fire", () => {
   it('each burning cell of her flame wall puffs its flame in the tricolour, after its delay, drifting its way', () => {
     const fx = new Effects(TEST_EFFECTS, () => 0.5);

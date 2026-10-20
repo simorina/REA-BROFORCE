@@ -5,7 +5,7 @@ import { DOG, FIXED_DT, SHIELD } from './constants';
 import { parseLevel, type LevelData } from './level';
 import { TEST_STATS } from './testStats';
 import { NO_CONTROLS, type Controls, type EnemyKind, type Projectile, type Unit } from './types';
-import { damageUnit } from './units';
+import { damageUnit, knock, makeUnit } from './units';
 import { createWorld, stepWorld, type World } from './world';
 
 const COLS = 30;
@@ -42,6 +42,42 @@ describe('the new enemies in the levels', () => {
   it("reads the riot shield mook ('h'), the grenadier ('n') and the dog ('q')", () => {
     const lvl = parseLevel({ cols: 6, rows: 2, tiles: ['Phnq.F', 'dddddd'] }, TEST_STATS);
     expect(lvl.enemies.map((e) => e.kind)).toEqual(['mook_shield', 'mook_grenadier', 'dog']);
+  });
+});
+
+describe('the Bruiser (MookBigGuy, BigGuyAI)', () => {
+  it("reads the Bruiser ('B'), tough with his 25 health", () => {
+    expect(parseLevel({ cols: 4, rows: 2, tiles: ['PB.F', 'dddd'] }, TEST_STATS).enemies.map((e) => e.kind)).toEqual(['mook_bruiser']);
+    expect(createWorld(strip('B'), TEST_STATS, [BROLUSCONI], () => 0.5).enemies[0].health).toBe(25);
+  });
+
+  it('alerted, he sprays the bro with a burst of minigun bullets, one every 0.07 s for his 1.2 s of firing', () => {
+    const { w, m } = alerted('B', 'mook_bruiser', 9);
+    w.player.invulnerable = 999;
+    const seen = new Set<number>();
+    for (let i = 0; i < steps(4); i++) {
+      play(w, {}, 1);
+      for (const p of w.projectiles) if (p.kind === 'minigun') seen.add(p.id);
+    }
+    expect(seen.size).toBeGreaterThanOrEqual(15);
+    expect(m.gunFrame).toBeGreaterThanOrEqual(0);
+  });
+
+  it('he barely budges when hit: a twentieth of the push, his blast capped at 10, a fifth of the lift (MookBigGuy.Knock)', () => {
+    const m = makeUnit(2, 'mook_bruiser', 'enemy', 100, 8, TEST_STATS.units.mook_bruiser);
+    knock(m, 220, 160);
+    expect([m.xI, m.xIBlast, m.yI]).toEqual([11, 10, 32]);
+  });
+
+  it('a hit at half health or worse, or of 10 or more, makes him stumble and hold his fire 0.15 s (MookBigGuy.Damage)', () => {
+    const m = makeUnit(2, 'mook_bruiser', 'enemy', 100, 8, TEST_STATS.units.mook_bruiser);
+    damageUnit(m, 3);
+    expect(m.fireDelay).toBe(0);
+    damageUnit(m, 10);
+    expect(m.fireDelay).toBeCloseTo(0.15);
+    m.fireDelay = 0;
+    damageUnit(m, 1); // 11 left: under half his 25
+    expect(m.fireDelay).toBeCloseTo(0.15);
   });
 });
 

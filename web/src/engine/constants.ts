@@ -147,6 +147,10 @@ export const RIFLE = { ox: 14, oy: 8.5, speed: 420, jitter: 10, burst: 2, burstG
 export const GUN_FRAME_RATE = 0.0334; // TestVanDammeAnim.RunGun
 export const SHIELD = { points: 36, knock: 15 }; // MookRiotShield.Damage: past 35 of shieldDamage it goes; a stopped shot knocks him (xI * 0.05, 15)
 export const GRENADIER = { ox: 8, oy: 24, x: 130, y: 130 }; // MookGrenadier.AnimateThrowingHeldObject: from (X + dir*8, Y + 24) at (dir*130, 130), times the distance
+// MookBigGuy: UseFire's minigun from (X + dir*17, Y + 9) at dir*400, yI Random.Range(0, 45) - 15; Knock keeps a twentieth
+// of the push (to 200), half of it as blast (to 10) and a fifth of the lift (to 300); Damage: a hit at half health or worse,
+// or of 10 or more, stumbles him and holds his fire (hurtStumbleFireDelay)
+export const BRUISER = { ox: 17, oy: 9, speed: 400, spreadFrom: -15, spreadCount: 45, knockX: 20, knockMax: 200, blastMax: 10, liftM: 5, liftMax: 300, stumble: 0.15, stumbleDamage: 10 };
 export const DOG = { bite: 3, range: 6 }; // MookDog.RunFiring: Map.HitLivingUnits(3, Melee, 6, X, Y + 4)
 export const JET_ROCKET = { ox: [32, 8], oy: -5, x: 450, y: -285, jitter: 12 }; // HarrierJet.Update: two shots from (X+32, Y-5), (X+8, Y-5) at (450, -285) + insideUnitCircle * 12
 export const JET_DESCENT = { slow: 40, slowZone: 48 }; // HarrierJet.Start: yI -40 over its last 48 px

@@ -1,6 +1,6 @@
 import {
   AIRSTRIKE_FUSE, AIRSTRIKE_ROCKETS, AIRSTRIKE_SPEED_MIN, AIRSTRIKE_SPEED_RAND, AIRSTRIKE_THROW,
-  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, FLAME_WALL, FLAMETHROWER, FOOTBALL, CRICKET, GRAVITY, GRENADE_EXTRA_Y, GRENADE_FUSE, M60, MOLOTOV, MOLOTOV_FIRE, NEURALISER, REVOLVER, GRENADIER, GRENADIER_REACH, HEAVY_SHELL_DIP, JET_BOMB, JET_ROCKET, JUDO_THROW, SHIELD, MOOK_BULLET_SPEED, RIFLE, TANK_CANNON, TANK_ROCKET_CRUSH, TANK_SHELL,
+  AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, BRUISER, FLAME_WALL, FLAMETHROWER, FOOTBALL, CRICKET, GRAVITY, GRENADE_EXTRA_Y, GRENADE_FUSE, M60, MOLOTOV, MOLOTOV_FIRE, NEURALISER, REVOLVER, GRENADIER, GRENADIER_REACH, HEAVY_SHELL_DIP, JET_BOMB, JET_ROCKET, JUDO_THROW, SHIELD, MOOK_BULLET_SPEED, RIFLE, TANK_CANNON, TANK_ROCKET_CRUSH, TANK_SHELL,
   TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT,
 } from './constants';
 import { barrelBlast, cricketBlast, rocketBlast, shellBlast, suicideBlast, type Blast } from './explosions';
@@ -58,6 +58,12 @@ function make(id: number, kind: ProjectileKind, team: Team, x: number, y: number
 export function fireMookBullet(id: number, m: Unit, stats: GameStats, rng: () => number): Projectile {
   return make(id, 'bullet', m.team, m.x + m.facing * 10, m.y + 8, m.facing * MOOK_BULLET_SPEED,
     (Math.floor(rng() * 4) - 2) * 0.2, stats.bullet.life);
+}
+
+/** MookBigGuy.UseFire / FireWeapon: a Bullet MookMiniGun from (X + dir*17, Y + 9) at dir*400, from 15 down to 29 up. */
+export function fireMinigunBullet(id: number, m: Unit, stats: GameStats, rng: () => number): Projectile {
+  return make(id, 'minigun', m.team, m.x + m.facing * BRUISER.ox, m.y + BRUISER.oy, m.facing * BRUISER.speed,
+    Math.floor(rng() * BRUISER.spreadCount) + BRUISER.spreadFrom, stats.minigun.life);
 }
 
 /** MookBazooka.UseFire: from (x + facing * 12, y + 8) at 100. Homing (RocketSeeking) is not ported. */
@@ -634,12 +640,14 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
   p.life -= t;
   switch (p.kind) {
     case 'bullet':
-    case 'rifle': {
-      const damage = p.kind === 'rifle' ? w.stats.rifle.damage : w.stats.bullet.damage;
+    case 'rifle':
+    case 'minigun': {
+      const damage = p.kind === 'rifle' ? w.stats.rifle.damage : p.kind === 'minigun' ? w.stats.minigun.damage : w.stats.bullet.damage;
       p.x += p.xI * t;
       p.y += p.yI * t;
       if (w.map.blockAt(p.x, p.y)) {
-        hitBlock(p, w, damage, events);
+        // MookMiniGunBullet.HitWalls: only every third of the Bruiser's bullets chips the block
+        hitBlock(p, w, p.kind === 'minigun' && p.id % 3 !== 0 ? 0 : damage, events);
         p.dead = true;
         break;
       }

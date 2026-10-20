@@ -79,7 +79,7 @@ export function makeAiState(id: number): AiState {
     bubble: null, bubbleTime: 0, attractC: 0, attractR: 0, wasJump: false, agent: makeAgent(), repathCount: 0, speed: null,
     startC: null, startR: 0, interest: null, runDir: 0, alertDelay: 0, rambro: 0, rambroLife: 0,
     litFuse: false, suicideDelay: SUICIDE_DELAY, suicideTimer: SUICIDE_TIMER, deathFuse: SUICIDE_DEATH_FUSE, exploded: false,
-    droppedGrenade: false,
+    droppedGrenade: false, attackingDir: 0,
   };
 }
 
@@ -136,6 +136,7 @@ function newGridPoint(m: Unit, ai: AiState, rng: () => number): { c: number; r: 
 
 function setMental(ai: AiState, mental: MentalState): void {
   ai.mental = mental;
+  if (mental !== 'alerted') ai.attackingDir = 0; // BigGuyAI.SetMentalState
   if (mental === 'suspicious') ai.suspiciousThinks = 0;
 }
 
@@ -188,6 +189,11 @@ export function fullyAlert(m: Unit, stats: AiStats, x: number, y: number, rng: (
   ai.walkDir = sign(x - m.x);
   ai.queue.push(act('face', 0, getColumn(x), getRow(y)));
   setMental(ai, 'alerted');
+  if (m.kind === 'mook_bruiser') { // BigGuyAI.FullyAlert: he keeps shooting the way the alert came from
+    if (x < m.x - 8) ai.attackingDir = -1;
+    else if (x > m.x + 8) ai.attackingDir = 1;
+    ai.thoughtsSinceSeen = 0;
+  }
 }
 
 /** Map.GetNearestMookInterestPoint: Manhattan distance, scanning from the last one registered. */
@@ -506,6 +512,30 @@ function bazookaThink(m: Unit, ai: AiState, ctx: AiContext): void {
   shuffle(ai, getColumn(m.x), getRow(m.y), rng, false);
 }
 
+/**
+ * BigGuyAI.DoAlertedThink: the Bruiser turns back to the way he was shooting, sprays the minigun for attackTime, and
+ * after a few thoughts without the bro he looks around, then gives up with a "?".
+ */
+function bruiserThink(m: Unit, ai: AiState, ctx: AiContext): void {
+  const { rng, stats, map } = ctx;
+  if (ai.attackingDir !== 0 && m.facing !== ai.attackingDir) {
+    ai.queue.push(act('face', 0, getColumn(m.x) - m.facing * 6, getRow(m.y)), act('wait', stats.sightDelay));
+  }
+  ai.queue.push(act('fire', stats.attackTime));
+  if (!canSeePlayer(m.x, m.y, ai.walkDir, stats.sightX, stats.sightY, alive(ctx.player), map)) {
+    ai.thoughtsSinceSeen++;
+    if (ai.thoughtsSinceSeen > 2) {
+      ai.walkDir = rng() <= 0.5 ? -1 : 1;
+      ai.attackingDir = 0;
+    }
+    if (ai.thoughtsSinceSeen > 6) ai.queue.push(act('becomeIdle', ACTION_TIME), act('question'), act('wait', 0.25));
+  } else {
+    ai.thoughtsSinceSeen = 0;
+    ai.attackingDir = ai.walkDir;
+  }
+  ai.queue.push(act('wait', 0.4), act('wait', stats.delayBetweenFiring));
+}
+
 /** SuicideAI.DoAlertedThink: keep running at the last place the player was seen. */
 function suicideThink(m: Unit, ai: AiState, ctx: AiContext): void {
   const p = alive(ctx.player);
@@ -545,6 +575,7 @@ function think(m: Unit, ai: AiState, ctx: AiContext): void {
   else if (m.kind === 'mook_suicide' || m.kind === 'dog') suicideThink(m, ai, ctx); // DogAI: it runs at the bro too
   else if (m.kind === 'mook_bazooka' || m.kind === 'mook_grenadier') bazookaThink(m, ai, ctx); // the grenadier's AI is MookBazookaAi
   else if (m.kind === 'mook_scout') baseAlertedThink(m, ai, ctx);
+  else if (m.kind === 'mook_bruiser') bruiserThink(m, ai, ctx);
   else trooperThink(m, ai, ctx);
 }
 

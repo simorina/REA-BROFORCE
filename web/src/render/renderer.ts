@@ -24,7 +24,7 @@ import { parallaxCentre, placeBackground, type BgInstance } from './parallax';
 const FLAME_SHEETS: readonly SheetKey[] = ['flame_green', 'flame_white', 'flame_red']; // FlameThrower Bullet 1-3, in the tricolour
 const ENEMY_SHEETS: Record<Exclude<UnitKind, 'bro'>, SheetKey> = {
   mook: 'mook', mook_suicide: 'mook_suicide', mook_bazooka: 'mook_bazooka', mook_scout: 'mook_scout', boss: 'epstein',
-  mook_shield: 'mook_shield', mook_grenadier: 'mook_grenadier', dog: 'dog',
+  mook_shield: 'mook_shield', mook_grenadier: 'mook_grenadier', dog: 'dog', mook_bruiser: 'mook_bruiser',
 };
 const BLOCK_SHEETS: Record<BlockKind, SheetKey> = {
   dirt: 'block_dirt', sand: 'block_sand', brick: 'block_brick', temple: 'block_temple', steel: 'block_steel', barrel: 'block_barrel',
@@ -322,6 +322,12 @@ export class Renderer {
     const gun = u.kind === 'bro' ? this.playerGun() : u.kind === 'boss' ? 'rifle_gun' : null;
     if (gun && !u.dead && !u.wallClimbing && !u.flex && !u.attack) {
       this.sprite(gun, u.gunFrame, 0, u.x + u.facing * gunOffsetX(gun), u.y + this.assets.sheets[key].offsetY, u.facing < 0);
+    }
+    // the Bruiser's minigun, in his arms: its running row while he runs, else its muzzle frames (MookBigGuy.RunGun)
+    if (u.kind === 'mook_bruiser' && !u.dead && u.burnTime <= 0 && u.blindTime <= 0) {
+      const running = f.row === 1;
+      this.sprite('bruiser_gun', running ? f.col : u.gunFrame, running ? 1 : 0, u.x + u.facing * gunOffsetX('bruiser_gun'),
+        u.y + this.assets.sheets[key].offsetY, u.facing < 0);
     }
     if (u.kind === 'bro' && this.django && !u.dead) this.drawDjangoHat(u);
     // MookRiotShield: the shield is his gun sprite, held until it is knocked away

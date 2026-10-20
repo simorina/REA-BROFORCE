@@ -477,6 +477,9 @@ export class Effects {
         } else if (e.weapon === 'cricket') {
           // Brononymous.FireWeapon: CreateMuzzleFlashEffect(X + dir * 14, Y + 9.5, -25, xSpeed * 0.01, 0)
           this.puff('muzzleFlash', e.x + e.facing * 14, e.y + 9.5, e.facing, e.facing * 7, 0);
+        } else if (e.weapon === 'minigun') {
+          // MookBigGuy.FireWeapon: CreateMuzzleFlashEffect(X + dir * 17, Y + 9, -25, xSpeed * 0.01, ..)
+          this.puff('muzzleFlash', e.x + e.facing * 17, e.y + 9, e.facing, e.facing * 4, 0);
         } else if (e.weapon === 'flamethrower') {
           // BaBroracus.FireWeapon, once a flame: CreateMuzzleFlashEffect(X + dir * 11, Y + 6 / Y + 7, -25, xSpeed * 0.01, ..)
           this.puff('muzzleFlash', e.x + e.facing * 11, e.y + 6, e.facing, e.facing * 1.2, 0);

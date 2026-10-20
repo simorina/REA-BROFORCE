@@ -1,5 +1,5 @@
 import { makeAiState } from './ai';
-import { FIRE_START_LIMIT, GIB_THRESHOLD, GUN_FRAME_RATE, SHIELD, UNIT_BOX_HEIGHT, UNIT_WIDTH } from './constants';
+import { BRUISER, FIRE_START_LIMIT, GIB_THRESHOLD, GUN_FRAME_RATE, SHIELD, UNIT_BOX_HEIGHT, UNIT_WIDTH } from './constants';
 import type { Team, Unit, UnitKind, UnitStats } from './types';
 
 export function makeUnit(id: number, kind: UnitKind, team: Team, x: number, y: number, stats: UnitStats): Unit {
@@ -31,6 +31,10 @@ export function damageUnit(u: Unit, amount: number, ignoreInvulnerable = false):
   }
   u.health -= amount;
   if (u.health < GIB_THRESHOLD) u.gibbed = true;
+  // MookBigGuy.Damage: a hit when he is down to half, or a big one, makes the Bruiser stumble and hold his fire
+  if (u.kind === 'mook_bruiser' && u.health > 0 && !ignoreInvulnerable && (u.health <= u.stats.health / 2 || amount >= BRUISER.stumbleDamage)) {
+    u.fireDelay = Math.max(u.fireDelay, BRUISER.stumble);
+  }
   if (u.dead || u.health > 0) return false;
   u.dead = true;
   u.deadTime = 0;
@@ -50,6 +54,14 @@ export function runGun(u: Unit, t: number): void {
 
 /** TestVanDammeAnim.Knock: half the push goes to xI and half to xIBlast; heroes fly up less. */
 export function knock(u: Unit, kx: number, ky: number): void {
+  if (u.kind === 'mook_bruiser') { // MookBigGuy.Knock: he is heavy
+    const b = BRUISER;
+    u.xI = Math.max(-b.knockMax, Math.min(b.knockMax, u.xI + kx / b.knockX));
+    u.xIBlast = Math.max(-b.blastMax, Math.min(b.blastMax, u.xIBlast + kx / 2));
+    u.yI = Math.min(b.liftMax, u.yI + ky / b.liftM);
+    if (u.yI > 0) u.onGround = false;
+    return;
+  }
   u.xI = Math.max(-200, Math.min(200, u.xI + kx / 2));
   u.xIBlast = Math.max(-200, Math.min(200, u.xIBlast + kx / 2));
   u.yI = Math.min(u.team === 'player' ? 300 : 400, u.yI + ky);

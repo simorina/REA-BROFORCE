@@ -60,6 +60,7 @@ SPRITES = (
     SpriteRef("mook_shield", "MookRiotShield", "ZMookRiotShield", True),
     SpriteRef("mook_grenadier", "MookGrenadier", "ZMook Grenadier", True),
     SpriteRef("dog", "MookDog", "ZMookDog", True),
+    SpriteRef("mook_bruiser", "MookBigGuy", "ZMookBigGuy", True),  # the Bruiser: 36x32 frames
     SpriteRef("grenade", "Grenade", "GrenadeEvilSmall Long fuse", False),  # the grenadier's long-fuse grenade
     SpriteRef("prisoner", "RescueBro", "Hobro", True),
     SpriteRef("cage", "Cage", "CageBig", True),
@@ -89,6 +90,7 @@ TEXTURES = (
     TextureRef("dirty_harry_gun", "DirtyHarry_Gun_anim", frame=(32, 32)),  # repainted into Samuel's revolver_gun
     TextureRef("rambro_gun", "RAMBRO_gun_anim", frame=(32, 32)),  # Rambro's M60, repainted into Che's m60_gun
     TextureRef("shield", "mook_shield_anim", frame=(32, 32)),  # the riot shield mook's shield (his "gun")
+    TextureRef("bruiser_gun", "mookbig_gun_anim", frame=(36, 32)),  # the Bruiser's minigun, in his arms: row 0 idle/firing, row 1 running
     TextureRef("ba_gun", "BABROACUS_gun_anim", frame=(32, 32)),  # B.A. Broracus's flamethrower, repainted into Meloni's
     TextureRef("flame_1", "flamethrower_bullet1", frame=(32, 32)),  # FlameThrower Bullet 1-3's flames: green, white, red
     TextureRef("flame_2", "flamethrower_bullet2", frame=(32, 32)),
@@ -135,6 +137,10 @@ VALUES = (
     ValuesRef("ai_dog", "DogAI", "ZMookDog", AI_FIELDS),
     ValuesRef("path_mook_grenadier", "PathAgent", "ZMook Grenadier", PATH_FIELDS),
     ValuesRef("path_dog", "PathAgent", "ZMookDog", PATH_FIELDS),
+    ValuesRef("mook_bruiser", "MookBigGuy", "ZMookBigGuy", MOOK_FIELDS),
+    ValuesRef("ai_mook_bruiser", "BigGuyAI", "ZMookBigGuy", AI_FIELDS),
+    ValuesRef("path_mook_bruiser", "PathAgent", "ZMookBigGuy", PATH_FIELDS),
+    ValuesRef("minigun_bullet", "MookMiniGunBullet", "Bullet MookMiniGun", BULLET_FIELDS),
     ValuesRef("grenade_mook", "Grenade", "GrenadeEvilSmall Long fuse",
               ("bounceM", "frictionM", "gravityM", "damage", "range", "blastForce")),
     ValuesRef("path_mook", "PathAgent", "ZMook", PATH_FIELDS),

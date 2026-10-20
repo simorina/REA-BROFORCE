@@ -64,6 +64,14 @@ describe('loadData', () => {
     expect(missingSheets(old)).toEqual(['epstein', 'block_sand', 'block_temple']);
   });
 
+  it('draws the Bruiser and his minigun, 4 forward of him like his Gun sprite', () => {
+    const noBruiser: Record<string, unknown> = { ...sheets };
+    delete noBruiser.mook_bruiser;
+    delete noBruiser.bruiser_gun;
+    expect(missingSheets(noBruiser)).toEqual(['mook_bruiser', 'bruiser_gun']);
+    expect(gunOffsetX('bruiser_gun')).toBe(4);
+  });
+
   it("draws Meloni with B.A. Broracus's flamethrower in her hands, and its flames in the tricolour", () => {
     expect(gunSheet('flamethrower')).toBe('flamethrower_gun');
     const noMeloni: Record<string, unknown> = { ...sheets };

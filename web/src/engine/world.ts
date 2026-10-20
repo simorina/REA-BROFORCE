@@ -20,7 +20,7 @@ import { parseLevel, type LevelData } from './level';
 import { makeBlock, type TileMap } from './map';
 import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
-  dropGrenade, fireBazookaRocket, fireMookBullet, molotovFlames, spawnAirstrike, stepProjectile, throwGrenade,
+  dropGrenade, fireBazookaRocket, fireMinigunBullet, fireMookBullet, molotovFlames, spawnAirstrike, stepProjectile, throwGrenade,
 } from './projectiles';
 import {
   allVehicles, boardVehicles, callJet, callTank, carryDriver, driveVehicle, exitVehicle, hitVehicle, stepJets, stepTanks,
@@ -458,6 +458,7 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
       useFire(w, m);
     }
     stepBurning(w, m, t);
+    if (m.kind === 'mook_bruiser') runGun(m, t); // MookBigGuy.RunGun: his minigun's muzzle frames
     if (m.y < -64) damageUnit(m, m.health);
   }
 }
@@ -641,6 +642,14 @@ function useFire(w: World, m: Unit): void {
     m.fireDelay = BAZOOKA_FIRE_DELAY; // MookBazooka.FireWeapon
     m.xIBlast = -m.facing * BAZOOKA_RECOIL;
     w.events.push({ type: 'shot', weapon: 'rocket', x: m.x, y: m.y, facing: m.facing });
+  } else if (m.kind === 'mook_bruiser') {
+    if (!isVisible(w.camera, m.x, m.y + 8, 6, 13)) return; // SortOfFollow.IsItSortOfVisible(X, Y + 8, 6, 13)
+    const bullet = fireMinigunBullet(w.nextId++, m, w.stats, w.rng);
+    if (m.blindTime > 0) bullet.team = 'player';
+    w.projectiles.push(bullet);
+    if (m.gunFrame <= 1) m.gunFrame = 3; // MookBigGuy.FireWeapon
+    m.gunCounter = 0;
+    w.events.push({ type: 'shot', weapon: 'minigun', x: m.x, y: m.y, facing: m.facing });
   } else if (isVisible(w.camera, m.x, m.y)) {
     const bullet = fireMookBullet(w.nextId++, m, w.stats, w.rng);
     if (m.blindTime > 0) bullet.team = 'player'; // Confused shot misses players and damages other enemies

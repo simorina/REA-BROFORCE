@@ -61,6 +61,7 @@ export function buildHarbor(): LevelData {
   put(78, 12, 'z');
   put(80, 8, 'm');
   put(84, 4, 'h');
+  put(88, 4, 'B'); // a Bruiser holds the warehouse floor
   put(86, 8, 'm');
   put(90, 4, 'x');
   put(91, 4, 'x');

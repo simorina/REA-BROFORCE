@@ -94,6 +94,7 @@ export function parseValues(raw: Raw): GameStats {
       mook_shield: unit(raw, 'mook_shield'),
       mook_grenadier: unit(raw, 'mook_grenadier'),
       dog: unit(raw, 'dog'),
+      mook_bruiser: unit(raw, 'mook_bruiser'),
     },
     bros: {
       bro_base: unit(raw, 'bro_base', true), bro_lee: unit(raw, 'bro_lee', true), bro_soldier: unit(raw, 'bro_soldier', true),
@@ -102,13 +103,13 @@ export function parseValues(raw: Raw): GameStats {
     ai: {
       mook: ai(raw, 'ai_mook'), mook_suicide: ai(raw, 'ai_mook_suicide'), mook_bazooka: ai(raw, 'ai_mook_bazooka'),
       mook_scout: ai(raw, 'ai_mook_scout'), mook_shield: ai(raw, 'ai_mook_shield'),
-      mook_grenadier: ai(raw, 'ai_mook_grenadier'), dog: ai(raw, 'ai_dog'),
+      mook_grenadier: ai(raw, 'ai_mook_grenadier'), dog: ai(raw, 'ai_dog'), mook_bruiser: ai(raw, 'ai_mook_bruiser'),
     },
     paths: {
       mook: path(raw, 'path_mook'), mook_suicide: path(raw, 'path_mook_suicide'), mook_bazooka: path(raw, 'path_mook_bazooka'),
       mook_scout: path(raw, 'path_mook_scout'),
       mook_shield: path(raw, 'path_mook'), // ZMookRiotShield has no PathAgent: a trooper's
-      mook_grenadier: path(raw, 'path_mook_grenadier'), dog: path(raw, 'path_dog'),
+      mook_grenadier: path(raw, 'path_mook_grenadier'), dog: path(raw, 'path_dog'), mook_bruiser: path(raw, 'path_mook_bruiser'),
     },
     scoutRunSpeed: num(raw, 'mook_scout', 'runSpeed'),
     dogRunSpeed: num(raw, 'dog', 'awareRunSpeed'),
@@ -119,6 +120,7 @@ export function parseValues(raw: Raw): GameStats {
     },
     door: door(raw, 'mook_door'),
     bullet: { damage: num(raw, 'bullet', 'damage'), life: num(raw, 'bullet', 'life') },
+    minigun: { damage: num(raw, 'minigun_bullet', 'damage'), life: num(raw, 'minigun_bullet', 'life') },
     rocketMook: rocket(raw, 'rocket_mook'),
     bomb: rocket(raw, 'bomb'),
     marker: { bounceM: num(raw, 'marker', 'bounceM'), frictionM: num(raw, 'marker', 'frictionM') },
