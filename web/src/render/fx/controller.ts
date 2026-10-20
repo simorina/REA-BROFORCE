@@ -577,6 +577,9 @@ export class Effects {
       case 'mine':
         this.mineBlast(x, y - MINE.unitY);
         return;
+      case 'stomp':
+        this.rangePop(x, y, range * 2); // MookBigGuyElite.FallDamage: no fire, just the shock
+        return;
       case 'shell':
         // HeavyShell.MakeEffects: a range pop and a medium explosion
         this.rangePop(x, y, range * 3);

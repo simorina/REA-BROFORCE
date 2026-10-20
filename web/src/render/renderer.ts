@@ -1,6 +1,6 @@
 import { VIEW_H, VIEW_W } from '../engine/camera';
 import {
-  BUBBLE_TIME, EXTRACTION_TIME, FLAG_RAISE_TIME, INVULNERABLE_FLASH, NEURALISER, SHAKE_AMOUNT, SHAKE_TIME, TILE,
+  BUBBLE_TIME, ELITE, EXTRACTION_TIME, FLAG_RAISE_TIME, INVULNERABLE_FLASH, NEURALISER, SHAKE_AMOUNT, SHAKE_TIME, TILE,
 } from '../engine/constants';
 import type { LevelTheme, ParallaxDoodad } from '../engine/level';
 import { getColumn, getRow } from '../engine/map';
@@ -27,6 +27,7 @@ const ENEMY_SHEETS: Record<Exclude<UnitKind, 'bro'>, SheetKey> = {
   mook_shield: 'mook_shield', mook_grenadier: 'mook_grenadier', dog: 'dog', mook_bruiser: 'mook_bruiser',
   mook_jetpack: 'mook_jetpack', mook_jetpack_bazooka: 'mook_jetpack_bazooka', mook_ninja: 'mook_ninja', mook_alarmist: 'mook_alarmist',
   mook_mortar: 'mook', // ZMookMortar wears the trooper's mook2_anim
+  mook_bruiser_elite: 'mook_bruiser_elite',
 };
 const BLOCK_SHEETS: Record<BlockKind, SheetKey> = {
   dirt: 'block_dirt', sand: 'block_sand', brick: 'block_brick', temple: 'block_temple', steel: 'block_steel', barrel: 'block_barrel',
@@ -327,9 +328,11 @@ export class Renderer {
       this.sprite(gun, u.gunFrame, 0, u.x + u.facing * gunOffsetX(gun), u.y + this.assets.sheets[key].offsetY, u.facing < 0);
     }
     // the Bruiser's minigun, in his arms: its running row while he runs, else its muzzle frames (MookBigGuy.RunGun)
-    if (u.kind === 'mook_bruiser' && !u.dead && u.burnTime <= 0 && u.blindTime <= 0) {
+    const bigGun = u.kind === 'mook_bruiser' ? 'bruiser_gun' : u.kind === 'mook_bruiser_elite' ? 'bruiser_elite_gun' : null;
+    const gunHidden = u.kind === 'mook_bruiser_elite' && f.row === 0 && f.col >= ELITE.jumpCol; // DeactivateGun: leaping, getting up
+    if (bigGun && !gunHidden && !u.dead && u.burnTime <= 0 && u.blindTime <= 0) {
       const running = f.row === 1;
-      this.sprite('bruiser_gun', running ? f.col : u.gunFrame, running ? 1 : 0, u.x + u.facing * gunOffsetX('bruiser_gun'),
+      this.sprite(bigGun, running ? f.col : u.gunFrame, running ? 1 : 0, u.x + u.facing * gunOffsetX(bigGun),
         u.y + this.assets.sheets[key].offsetY, u.facing < 0);
     }
     if (u.jet?.on && !u.dead) this.drawThrust(u, time);
@@ -467,6 +470,10 @@ export class Renderer {
         break;
       case 'rocket':
         this.sprite('rocket', 0, 0, p.x, p.y, p.xI < 0);
+        break;
+      case 'drunk':
+        this.sprite('rocket_evil', loopFrame(time, 0.05, this.assets.sheets.rocket_evil.cols), 0, p.x, p.y, false,
+          Math.atan2(-p.yI, p.xI)); // DrunkRocket.SetRotation
         break;
       case 'launch':
         this.sprite('rocket', 0, 0, p.x, p.y, false, -Math.PI / 2); // the mortar's RocketLaunch, nose up

@@ -59,6 +59,14 @@ describe('parseValues', () => {
     expect(s.launch).toEqual({ damage: 10, range: 28, blastForce: 20, blastForceExtraY: 300, life: 0.8 });
   });
 
+  it('reads the elite Bruiser (MookBigGuyElite, BigGuyEliteAI) and his DrunkRocket', () => {
+    const s = parseValues(RAW_VALUES);
+    expect(s.units.mook_bruiser_elite).toMatchObject({ health: 125, speed: 40, jumpForce: 320, fireRate: 0.3 });
+    expect(s.ai.mook_bruiser_elite).toMatchObject({ attackTime: 1.1, delayBetweenFiring: 1.8 });
+    expect(s.elite).toEqual({ runSpeedMultiplier: 2.6, jumpRange: 96 });
+    expect(s.drunk).toMatchObject({ life: 1.3, drunkSpeed: 10, acceleration: 100, damage: 10 });
+  });
+
   it('maps values.json onto GameStats', () => {
     expect(parseValues(RAW_VALUES)).toEqual(TEST_STATS);
   });

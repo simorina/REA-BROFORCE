@@ -114,6 +114,7 @@ export function parseValues(raw: Raw): GameStats {
       mook_jetpack_bazooka: unit(raw, 'mook_jetpack_bazooka'),
       mook_ninja: unit(raw, 'mook_ninja'),
       mook_mortar: unit(raw, 'mook_mortar'),
+      mook_bruiser_elite: unit(raw, 'mook_bruiser_elite'),
       mook_alarmist: unit(raw, 'mook_alarmist'),
     },
     bros: {
@@ -127,6 +128,7 @@ export function parseValues(raw: Raw): GameStats {
       mook_jetpack: ai(raw, 'ai_mook_jetpack'), mook_jetpack_bazooka: ai(raw, 'ai_mook_jetpack_bazooka'),
       mook_ninja: ai(raw, 'ai_mook_ninja'), mook_alarmist: ai(raw, 'ai_mook_alarmist'),
       mook_mortar: enemyAi(raw, 'ai_mook_mortar'),
+      mook_bruiser_elite: ai(raw, 'ai_mook_bruiser_elite'),
     },
     paths: {
       mook: path(raw, 'path_mook'), mook_suicide: path(raw, 'path_mook_suicide'), mook_bazooka: path(raw, 'path_mook_bazooka'),
@@ -136,6 +138,7 @@ export function parseValues(raw: Raw): GameStats {
       mook_jetpack: path(raw, 'path_mook_jetpack'), mook_jetpack_bazooka: path(raw, 'path_mook_jetpack_bazooka'),
       mook_ninja: path(raw, 'path_mook_ninja'), mook_alarmist: path(raw, 'path_mook_alarmist'),
       mook_mortar: path(raw, 'path_mook_mortar'),
+      mook_bruiser_elite: path(raw, 'path_mook_bruiser_elite'),
     },
     scoutRunSpeed: num(raw, 'mook_scout', 'runSpeed'),
     dogRunSpeed: num(raw, 'dog', 'awareRunSpeed'),
@@ -157,6 +160,8 @@ export function parseValues(raw: Raw): GameStats {
     },
     rocketMook: rocket(raw, 'rocket_mook'),
     launch: rocket(raw, 'rocket_launch'),
+    drunk: { ...rocket(raw, 'rocket_drunk'), drunkSpeed: num(raw, 'rocket_drunk', 'drunkSpeed'), acceleration: num(raw, 'rocket_drunk', 'acceleration') },
+    elite: { runSpeedMultiplier: num(raw, 'mook_bruiser_elite', 'runSpeedMultiplier'), jumpRange: num(raw, 'ai_mook_bruiser_elite', 'jumpRange') },
     bomb: rocket(raw, 'bomb'),
     marker: { bounceM: num(raw, 'marker', 'bounceM'), frictionM: num(raw, 'marker', 'frictionM') },
     tank: {

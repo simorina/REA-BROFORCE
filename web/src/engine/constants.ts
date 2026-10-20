@@ -175,6 +175,16 @@ export const MINE = { fuse: 0.3, range: 20, groundDamage: 12, unitDamage: 20, fo
 // (seekPlayer): a RocketBombardment from GetScreenMaxY() + 500 at -300 over a player, 16 * (offsetAmount % 7) * offsetSide
 // to one side, rounded to a block; offsetSide flips and offsetAmount grows by Random.Range(1, 3) each time
 export const MORTAR = { ox: 17, oy: 6.5, speed: 450, noise: 40, skyY: 500, fall: 300, spread: 16, spreadMod: 7 };
+// MookBigGuyElite.UseFire: FireWeapon(X + dir*18, Y + 19, dir*200, Random.Range(0, 45) - 15) if IsItSortOfVisible(X, Y + 8,
+// 32, 13). FallDamage: landing faster than 350, ExplodeUnits(10, Crush, 40, 20, .., 100, 250) and DamageGround(16, 44);
+// faster than 180 or after his own jump, ExplodeUnits(1, Crush, 40, 20, .., 70, 100); then four get-up frames at 0.034
+// and a 0.6 s wait. AnimateJumping: frame 21 while he falls slower than 30 up, alerted; ChangeFrame: 21-24 getting up.
+export const ELITE = {
+  ox: 18, oy: 19, speed: 200, visibleX: 32, visibleY: 13, hard: -350, soft: -180, landing: -100,
+  crush: { damage: 10, range: 40, kill: 20, force: 100, extraY: 250, ground: 16, groundRange: 44 },
+  light: { damage: 1, range: 40, kill: 20, force: 70, extraY: 100 },
+  getUp: 4 * 0.034, getUpWait: 0.6, jumpCol: 21, getUpCol: 21, charge: 12, aboveY: 30, jumpTime: 0.4,
+};
 export const DOG = { bite: 3, range: 6 }; // MookDog.RunFiring: Map.HitLivingUnits(3, Melee, 6, X, Y + 4)
 export const JET_ROCKET = { ox: [32, 8], oy: -5, x: 450, y: -285, jitter: 12 }; // HarrierJet.Update: two shots from (X+32, Y-5), (X+8, Y-5) at (450, -285) + insideUnitCircle * 12
 export const JET_DESCENT = { slow: 40, slowZone: 48 }; // HarrierJet.Start: yI -40 over its last 48 px

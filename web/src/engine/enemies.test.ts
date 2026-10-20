@@ -7,6 +7,7 @@ import { parseLevel, type LevelData } from './level';
 import { TEST_STATS } from './testStats';
 import { NO_CONTROLS, type Controls, type EnemyKind, type Projectile, type Unit } from './types';
 import { damageUnit, knock, makeUnit } from './units';
+import { fireDrunkRocket } from './projectiles';
 import { createWorld, stepWorld, type World } from './world';
 
 const COLS = 30;
@@ -280,6 +281,63 @@ describe('the mortar mook (MookMortar, MortarAI)', () => {
       xs.push(bombs[bombs.length - 1].x - Math.round(w.player.x / 16) * 16);
     }
     expect(new Set(xs.map((d) => Math.sign(d))).size).toBeGreaterThan(1);
+  });
+});
+
+describe('the elite Bruiser (MookBigGuyElite, BigGuyEliteAI)', () => {
+  it("reads the elite Bruiser ('G'), with 125 health", () => {
+    expect(parseLevel({ cols: 4, rows: 2, tiles: ['PG.F', 'dddd'] }, TEST_STATS).enemies.map((e) => e.kind)).toEqual(['mook_bruiser_elite']);
+    expect(createWorld(strip('G'), TEST_STATS, [BROLUSCONI], () => 0.5).enemies[0].health).toBe(125);
+  });
+
+  it('every fourth think he fires drunk rockets from (X + dir*18, Y + 19) at dir*200', () => {
+    const { w, m } = alerted('G', 'mook_bruiser_elite', 6);
+    w.player.invulnerable = 999;
+    let first: Projectile | null = null;
+    for (let i = 0; i < steps(8) && !first; i++) {
+      play(w, {}, 1);
+      first = w.projectiles.find((p) => p.kind === 'drunk') ?? null;
+    }
+    expect(first).not.toBeNull();
+    expect(Math.abs(first!.y - (m.y + 19))).toBeLessThan(4);
+    expect(Math.sign(first!.xI)).toBe(m.facing);
+  });
+
+  it('a drunk rocket weaves up and down more and more as it flies, speeding up 100 a second (DrunkRocket.FixedUpdate)', () => {
+    const w = createWorld(strip('.'), TEST_STATS, [BROLUSCONI], () => 0.3);
+    const r = fireDrunkRocket(w.nextId++, { x: 64, y: 80, facing: 1, team: 'enemy' } as Unit, TEST_STATS, () => 0.3);
+    w.projectiles.push(r);
+    const ys: number[] = [];
+    for (let i = 0; i < steps(1); i++) {
+      play(w, {}, 1);
+      if (!r.dead) ys.push(r.yI);
+    }
+    expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(20);
+    expect(Math.hypot(r.xI, r.yI)).toBeGreaterThan(200 + 50);
+  });
+
+  it('alerted with the bro far off, he charges at 2.6 times his speed', () => {
+    const { w, m } = alerted('G', 'mook_bruiser_elite', 20);
+    w.player.invulnerable = 999;
+    let fastest = 0;
+    for (let i = 0; i < steps(6); i++) {
+      play(w, {}, 1);
+      if (m.onGround) fastest = Math.max(fastest, Math.abs(m.xI));
+    }
+    expect(fastest).toBeGreaterThan(40 * 1.5);
+  });
+
+  it('landing hard (falling faster than 350) crushes what is under him: 10 damage, and he takes 0.6 s to get up', () => {
+    const w = createWorld(strip('G'), TEST_STATS, [BROLUSCONI], () => 0.5);
+    const m = w.enemies[0];
+    const victim = w.enemies.length;
+    w.enemies.push(makeUnit(w.nextId++, 'mook', 'enemy', m.x + 10, m.y, TEST_STATS.units.mook));
+    Object.assign(m, { y: m.y + 40, yI: -400, onGround: false });
+    for (let i = 0; i < steps(0.5) && !w.enemies[victim]?.dead; i++) play(w, {}, 1);
+    expect(w.enemies[victim].dead).toBe(true);
+    expect(m.getUp).toBeGreaterThan(0);
+    expect(unitFrame(m).row).toBe(0);
+    expect(unitFrame(m).col).toBeGreaterThanOrEqual(21);
   });
 });
 

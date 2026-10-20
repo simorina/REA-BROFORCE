@@ -18,7 +18,7 @@ export interface SheetInfo {
 export const SHEET_KEYS = [
   'brolusconi', 'putin', 'trump', 'kim', 'bro_in_black', 'samuel', 'che', 'm60_gun', 'molotov', 'meloni', 'flamethrower_gun',
   'flame_green', 'flame_white', 'flame_red', 'rifle_gun', 'blade_gun', 'cricket_gun', 'neuraliser_beam', 'revolver_gun', 'revolver_bullet', 'jet_us', 'epstein', 'goliath', 'tank_ru', 'turret_ru', 'tank_shell', 'tank_rocket', 'mook', 'mook_suicide', 'mook_bazooka', 'mook_scout',
-  'mook_shield', 'mook_grenadier', 'dog', 'mook_bruiser', 'bruiser_gun', 'mook_jetpack', 'mook_jetpack_bazooka', 'mook_ninja', 'mook_alarmist', 'mine', 'mine_sign', 'grenade', 'shield', 'prisoner', 'cage', 'helicopter', 'bullet', 'rocket',
+  'mook_shield', 'mook_grenadier', 'dog', 'mook_bruiser', 'bruiser_gun', 'mook_bruiser_elite', 'bruiser_elite_gun', 'rocket_evil', 'mook_jetpack', 'mook_jetpack_bazooka', 'mook_ninja', 'mook_alarmist', 'mine', 'mine_sign', 'grenade', 'shield', 'prisoner', 'cage', 'helicopter', 'bullet', 'rocket',
   'bomb', 'marker', 'block_dirt', 'block_sand', 'block_brick', 'block_temple', 'block_steel', 'block_barrel', 'flagpole', 'flag',
 ] as const;
 export type SheetKey = (typeof SHEET_KEYS)[number];
@@ -57,7 +57,7 @@ export function gunSheet(weapon: WeaponId, django = false): SheetKey | null {
 
 /** How far forward a gun sprite sits from the body: Blade.SetGunPosition adds 4 to the x offset. */
 export function gunOffsetX(sheet: SheetKey): number {
-  return sheet === 'blade_gun' || sheet === 'bruiser_gun' ? 4 : 0; // the Bruiser's Gun SpriteSM sits 4 forward too
+  return sheet === 'blade_gun' || sheet === 'bruiser_gun' || sheet === 'bruiser_elite_gun' ? 4 : 0; // the Bruisers' Gun SpriteSM sits 4 forward too
 }
 
 export function missingSheets(sheets: Record<string, unknown>): SheetKey[] {

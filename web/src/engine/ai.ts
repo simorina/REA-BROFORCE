@@ -1,5 +1,5 @@
 import {
-  AI_FACE_LINGER, AI_GREET_WAIT, AI_SAME_SPOT_TIME, AI_STUCK_TIME, BUBBLE_TIME, NINJA, SIGHT_EYE, SIGHT_PROBE_BACK,
+  AI_FACE_LINGER, AI_GREET_WAIT, ELITE, AI_SAME_SPOT_TIME, AI_STUCK_TIME, BUBBLE_TIME, NINJA, SIGHT_EYE, SIGHT_PROBE_BACK,
   SIGHT_PROBE_UP, SUICIDE_BLOCKED_M, SUICIDE_DEATH_FUSE, SUICIDE_DELAY, SUICIDE_SPEED_ALERTED, SUICIDE_TIMER,
   SUICIDE_TRIGGER, TILE, UNIT_HALF_WIDTH,
 } from './constants';
@@ -27,6 +27,7 @@ export interface AiContext {
   doors?: readonly DoorPoint[]; // Map.mookInterestPoints: the mook doors, for scouts
   runSpeed?: number; // ScoutMook.runSpeed
   dogRunSpeed?: number; // MookDog.awareRunSpeed
+  jumpRange?: number; // BigGuyEliteAI.jumpRange
 }
 
 /** A ScoutMookInterestPoint: a mook door's cell and position. */
@@ -79,7 +80,7 @@ export function makeAiState(id: number): AiState {
     bubble: null, bubbleTime: 0, attractC: 0, attractR: 0, wasJump: false, agent: makeAgent(), repathCount: 0, speed: null,
     startC: null, startR: 0, interest: null, runDir: 0, alertDelay: 0, rambro: 0, rambroLife: 0,
     litFuse: false, suicideDelay: SUICIDE_DELAY, suicideTimer: SUICIDE_TIMER, deathFuse: SUICIDE_DEATH_FUSE, exploded: false,
-    droppedGrenade: false, attackingDir: 0, alarmFuse: 0, alertedFor: 0,
+    droppedGrenade: false, attackingDir: 0, alarmFuse: 0, alertedFor: 0, target: null, charging: false, attackIndex: 0,
   };
 }
 
@@ -189,7 +190,8 @@ export function fullyAlert(m: Unit, stats: AiStats, x: number, y: number, rng: (
   ai.walkDir = sign(x - m.x);
   ai.queue.push(act('face', 0, getColumn(x), getRow(y)));
   setMental(ai, 'alerted');
-  if (m.kind === 'mook_bruiser') { // BigGuyAI.FullyAlert: he keeps shooting the way the alert came from
+  if (m.kind === 'mook_bruiser_elite') ai.target = { x, y }; // BigGuyEliteAI.FullyAlert
+  if (m.kind === 'mook_bruiser' || m.kind === 'mook_bruiser_elite') { // BigGuyAI.FullyAlert: he keeps shooting the way the alert came from
     if (x < m.x - 8) ai.attackingDir = -1;
     else if (x > m.x + 8) ai.attackingDir = 1;
     ai.thoughtsSinceSeen = 0;
@@ -559,6 +561,38 @@ function mortarThink(m: Unit, ai: AiState, ctx: AiContext): void {
   ai.queue.push(act('wait', 0.26));
 }
 
+/** BigGuyEliteAI.UpdateTargetPosition: while he can see the bro, follow where he is. */
+function eliteTarget(m: Unit, ai: AiState, ctx: AiContext): void {
+  const p = alive(ctx.player);
+  if (p && canSeePlayer(m.x, m.y + 6, 0, ctx.stats.sightX, ctx.stats.sightX, p, ctx.map)) {
+    ai.target = { x: p.x, y: p.y };
+    ai.attackingDir = sign(p.x - m.x);
+  }
+}
+
+/**
+ * BigGuyEliteAI.DoAlertedThink: every fourth think a BigGuyAI burst of drunk rockets; otherwise he leaps at a bro above
+ * him, charges one further than jumpRange (12 columns his way), or leaps at one within it.
+ */
+function eliteThink(m: Unit, ai: AiState, ctx: AiContext): void {
+  ai.charging = false;
+  eliteTarget(m, ai, ctx);
+  const range = ctx.jumpRange ?? 96;
+  const t = ai.target;
+  if (ai.attackIndex % 4 === 0 || !t) {
+    bruiserThink(m, ai, ctx);
+  } else if (t.y > m.y + ELITE.aboveY) {
+    m.facing = sign(t.x - m.x); // ForceFacingDirection
+    ai.queue.push(act('jump', ELITE.jumpTime), act('wait', 1));
+  } else if (Math.abs(t.x - m.x) > range) {
+    ai.queue.push(act('move', 0, getColumn(m.x) + sign(t.x - m.x) * ELITE.charge, getRow(m.y)));
+    ai.charging = true;
+  } else {
+    ai.queue.push(act('jump', ELITE.jumpTime), act('wait', 1));
+  }
+  ai.attackIndex++;
+}
+
 /** SuicideAI.DoAlertedThink: keep running at the last place the player was seen. */
 function suicideThink(m: Unit, ai: AiState, ctx: AiContext): void {
   const p = alive(ctx.player);
@@ -600,6 +634,7 @@ function think(m: Unit, ai: AiState, ctx: AiContext): void {
   else if (m.kind === 'mook_scout') baseAlertedThink(m, ai, ctx);
   else if (m.kind === 'mook_bruiser') bruiserThink(m, ai, ctx);
   else if (m.kind === 'mook_mortar') mortarThink(m, ai, ctx);
+  else if (m.kind === 'mook_bruiser_elite') eliteThink(m, ai, ctx);
   else trooperThink(m, ai, ctx);
 }
 
@@ -768,6 +803,13 @@ export function thinkMook(m: Unit, ctx: AiContext, t: number): AiOutput {
     setupGrid(m, ai, ctx.map, ctx.stats.patrolRadius); // InitialSetup
     if (m.stats.canHideInGrass && ctx.inGrass?.(m.x, m.y, 3)) hideInGrass(ai, ctx.rng);
     ai.setup = true;
+  }
+  if (m.kind === 'mook_bruiser_elite' && ai.mental === 'alerted') {
+    eliteTarget(m, ai, ctx); // BigGuyEliteAI.Update: charging, he leaps as soon as the bro is within jumpRange
+    if (ai.charging && ai.target && Math.abs(ai.target.x - m.x) <= (ctx.jumpRange ?? 96)) {
+      ai.queue = [act('jump', ELITE.jumpTime), act('wait', ELITE.jumpTime)];
+      ai.charging = false;
+    }
   }
   runQueue(m, ai, ctx, t);
   if (thinking && ai.queue.length === 0) think(m, ai, ctx);

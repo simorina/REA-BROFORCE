@@ -21,8 +21,9 @@ export interface Blast {
   team: BlastTeam;
   big: boolean; // shakes the screen
   noise: number; // Map.DisturbWildLife range: mooks this close (plus their hearing) turn to look
-  source: 'rocket' | 'bomb' | 'football' | 'barrel' | 'suicide' | 'shell' | 'bigRocket' | 'tank' | 'cricket' | 'mine'; // whose MakeEffects to show
+  source: 'rocket' | 'bomb' | 'football' | 'barrel' | 'suicide' | 'shell' | 'bigRocket' | 'tank' | 'cricket' | 'mine' | 'stomp'; // whose MakeEffects to show
   owner?: Unit; // the suicide mook that went off
+  spare?: Unit; // who is invulnerable to his own blast (MookBigGuyElite.FallDamage sets invulnerable around it)
   doodadDamage: number; // Map.DamageDoodads: what long grass and other doodads take ...
   doodadRange: number; // ... within this range
 }
@@ -85,7 +86,7 @@ export function applyBlast(map: TileMap, units: readonly Unit[], b: Blast): Blas
   const killed: number[] = [];
   for (const u of units) {
     // corpses are knocked and damaged too, which is how they fly and gib; invulnerable units are skipped
-    if (u.gibbed || u.invulnerable > 0) continue;
+    if (u.gibbed || u.invulnerable > 0 || u === b.spare) continue;
     let dx = u.x - b.x;
     const dy = u.y + UNIT_BOX_HEIGHT / 2 - b.y;
     if (Math.abs(dx) >= b.unitRange || Math.abs(dy) >= b.unitRange) continue;

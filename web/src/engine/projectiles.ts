@@ -1,7 +1,7 @@
 import {
   AIRSTRIKE_FUSE, AIRSTRIKE_ROCKETS, AIRSTRIKE_SPEED_MIN, AIRSTRIKE_SPEED_RAND, AIRSTRIKE_THROW,
   AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, BRUISER, FLAME_WALL, FLAMETHROWER, FOOTBALL, CRICKET, GRAVITY, GRENADE_EXTRA_Y, GRENADE_FUSE, M60, MOLOTOV, MOLOTOV_FIRE, NEURALISER, REVOLVER, GRENADIER, GRENADIER_REACH, HEAVY_SHELL_DIP, JET_BOMB, JET_ROCKET, JUDO_THROW, SHIELD, MOOK_BULLET_SPEED, RIFLE, TANK_CANNON, TANK_ROCKET_CRUSH, TANK_SHELL,
-  TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT, MORTAR,
+  TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT, MORTAR, ELITE,
 } from './constants';
 import { barrelBlast, cricketBlast, rocketBlast, shellBlast, suicideBlast, type Blast } from './explosions';
 import { TileMap, getColumn, getRow } from './map';
@@ -95,6 +95,14 @@ export function fireFrom(id: number, kind: ProjectileKind, team: Team, ox: numbe
 /** MookMortar.UseFire: a RocketLaunch straight up from (X + dir*17, Y + 6.5) at 450. */
 export function fireLaunch(id: number, m: Unit, stats: GameStats): Projectile {
   return make(id, 'launch', m.team, m.x + m.facing * MORTAR.ox, m.y + MORTAR.oy, 0, MORTAR.speed, stats.launch.life);
+}
+
+/** MookBigGuyElite.UseFire: a DrunkRocket from (X + dir*18, Y + 19) at dir*200 (DrunkRocket.Start: the wobble's seeds). */
+export function fireDrunkRocket(id: number, m: Unit, stats: GameStats, rng: () => number, ox = ELITE.ox, oy = ELITE.oy,
+  speed = ELITE.speed): Projectile {
+  const p = make(id, 'drunk', m.team, m.x + m.facing * ox, m.y + oy, m.facing * speed, rng() * 45 - 15, stats.drunk.life);
+  p.drunk = { s1: rng() * 8, s2: rng() * 8, m: 2 + rng() * 5, speed, base: m.facing > 0 ? Math.PI / 2 : -Math.PI / 2, life0: stats.drunk.life };
+  return p;
 }
 
 /** A rocket falling straight down from above the screen, the enemy's (the Goliath's RocketBombardment). */
@@ -687,6 +695,28 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
       if (w.map.blockAt(p.x, p.y) || struck(w, p) || p.life <= 0
         || (p.team === 'enemy' && vehicleAt(w.vehicles ?? [], p.x, p.y) !== null)) {
         explodeAt(p, p.kind === 'rocket' ? w.stats.rocketMook : w.stats.bomb, true, events);
+      }
+      break;
+    }
+    case 'drunk': {
+      // DrunkRocket.FixedUpdate: it weaves about its heading, more and more as its life runs out, and speeds up
+      const d = p.drunk;
+      const s = w.stats.drunk;
+      if (d) {
+        const k = p.life / d.life0;
+        const amp = Math.max(0, Math.min(1, 0.7 - k * k * 0.6));
+        d.s2 += t * s.drunkSpeed;
+        d.s1 += (s.drunkSpeed * 0.5 + d.s2 * 0.4 + Math.sin(d.s2 * d.m) * s.drunkSpeed * 2.5) * t;
+        const a = d.base + Math.sin(d.s1) * amp * 0.7;
+        p.xI = Math.sin(a) * d.speed; // Math.Point2OnCircle: (sin, cos)
+        p.yI = Math.cos(a) * d.speed;
+        d.speed += s.acceleration * t;
+      }
+      p.x += p.xI * t;
+      p.y += p.yI * t;
+      if (w.map.blockAt(p.x, p.y) || struck(w, p) || p.life <= 0
+        || (p.team === 'enemy' && vehicleAt(w.vehicles ?? [], p.x, p.y) !== null)) {
+        explodeAt(p, s, true, events);
       }
       break;
     }

@@ -12,7 +12,7 @@ import {
   SPEECH_DURATION, TILE, UNIT_BOX_HEIGHT, UNIT_WIDTH, BAZOOKA_RECOIL, DOOR_EXIT_INVULNERABLE, DOOR_FIRE_DAMAGE, SCOUT_WAVE_TIME,
   BOMB_FIRE_RANGE_M, SUICIDE_BURN_EXTRA, ALLURE_RANGE, FLEX_EVENT_FRAMES, FLEX_FRAME_RATE, FLEX_FRAMES, FLEX_HOLD,
   FLEX_RESTART_FRAME, FLEX_SLOW_FRAMES, FLEX_SLOW_RATE, TANK_EXIT_YI, MECH, DOG, DOG_BITE_COOLDOWN, GRENADIER_THROW_DELAY, CRICKET,
-  NEURALISER, DJANGO, MOLOTOV, MORTAR,
+  NEURALISER, DJANGO, MOLOTOV, MORTAR, ELITE,
 } from './constants';
 import { alarmDoor, collapseDoor, doorLostSupport, makeDoor, stepDoor, type DoorSpawn, type MookDoor } from './doors';
 import { applyBlast, barrelBlast, suicideBlast, type Blast } from './explosions';
@@ -21,7 +21,7 @@ import { makeBlock, type TileMap } from './map';
 import { mineBlast, plantMine, steppedOn, type Mine, type MineSign } from './mines';
 import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
-  dropGrenade, fireBazookaRocket, fireLaunch, fireMinigunBullet, fireMookBullet, molotovFlames, skyRocket, spawnAirstrike, stepProjectile,
+  dropGrenade, fireBazookaRocket, fireDrunkRocket, fireLaunch, fireMinigunBullet, fireMookBullet, molotovFlames, skyRocket, spawnAirstrike, stepProjectile,
   throwGrenade,
 } from './projectiles';
 import {
@@ -469,6 +469,7 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
       map: w.map, player, rng: w.rng, stats: w.stats.ai[kind], visible: isVisible(w.camera, m.x, m.y, 128, 128),
       onScreen: (x, y, bx, by) => isVisible(w.camera, x, y, bx, by), inGrass: (x, y, range) => inGrass(w, x, y, range),
       path: w.stats.paths[kind], doors: w.doorPoints, runSpeed: w.stats.scoutRunSpeed, dogRunSpeed: w.stats.dogRunSpeed,
+      jumpRange: w.stats.elite.jumpRange,
     }, t);
     // MookNinja.Damage: a hit gives a hidden ninja away
     if (m.kind === 'mook_ninja' && ai?.mental === 'hiding' && m.health < m.stats.health) {
@@ -483,7 +484,14 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
     if (out.alarm) {
       alarmDoor(w.doors[out.alarm.door], out.alarm.c, out.alarm.r, w.map, w.stats.paths.mook, w.stats.door, w.rng);
     }
+    if (m.kind === 'mook_bruiser_elite') {
+      if (ai?.mental === 'alerted') out.intent.speed = m.stats.speed * w.stats.elite.runSpeedMultiplier; // MookBigGuyElite.GetSpeed
+      if (m.getUp > 0) out.intent = { ...NO_INTENT }; // getting up after a stomp
+      if (out.intent.jumpPressed && m.onGround) m.hasJumped = true; // MookBigGuyElite.Jump
+    }
+    m.landYI = 0;
     stepUnit(m, out.intent, w.map, t, w.time);
+    if (m.kind === 'mook_bruiser_elite') stepEliteLanding(m, t, blasts);
     if (m.waveTime > 0) m.waveTime -= t; // ScoutMook.Update
     if (m.kind === 'mook_suicide') {
       if (out.explode) explodeSuicide(w, m, blasts);
@@ -494,7 +502,7 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
     }
     if (jet) stepJetpack(w, m, t, blasts);
     stepBurning(w, m, t);
-    if (m.kind === 'mook_bruiser') runGun(m, t); // MookBigGuy.RunGun: his minigun's muzzle frames
+    if (m.kind === 'mook_bruiser' || m.kind === 'mook_bruiser_elite') runGun(m, t); // MookBigGuy.RunGun: his gun's muzzle frames
     if (m.y < -64) damageUnit(m, m.health);
   }
 }
@@ -677,6 +685,15 @@ function useFire(w: World, m: Unit): void {
     w.projectiles.push(rocket);
     m.fireDelay = BAZOOKA_FIRE_DELAY; // MookBazooka.FireWeapon
     m.xIBlast = -m.facing * BAZOOKA_RECOIL;
+    w.events.push({ type: 'shot', weapon: 'rocket', x: m.x, y: m.y, facing: m.facing });
+  } else if (m.kind === 'mook_bruiser_elite') {
+    if (!isVisible(w.camera, m.x, m.y + 8, ELITE.visibleX, ELITE.visibleY) || m.getUp > 0) return;
+    const rocket = fireDrunkRocket(w.nextId++, m, w.stats, w.rng); // MookBigGuyElite.UseFire
+    if (m.blindTime > 0) rocket.team = 'player';
+    w.projectiles.push(rocket);
+    if (m.gunFrame <= 1) m.gunFrame = 3;
+    m.gunCounter = 0;
+    makeNoise(w, m.x, m.y, 40);
     w.events.push({ type: 'shot', weapon: 'rocket', x: m.x, y: m.y, facing: m.facing });
   } else if (m.kind === 'mook_mortar') {
     w.projectiles.push(fireLaunch(w.nextId++, m, w.stats)); // MookMortar.UseFire
@@ -907,6 +924,26 @@ function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
       }
     }
   }
+}
+
+/** MookBigGuyElite.FallDamage and ChangeFrame: a hard landing crushes what is around his feet, then he gets up. */
+function stepEliteLanding(m: Unit, t: number, blasts: Blast[]): void {
+  if (m.getUp > 0 && m.onGround) m.getUp = Math.max(0, m.getUp - t);
+  const v = m.landYI;
+  if (m.dead || v >= ELITE.landing) return;
+  const hard = v < ELITE.hard;
+  if (hard || v < ELITE.soft || m.hasJumped) {
+    const c = hard ? ELITE.crush : ELITE.light;
+    blasts.push({
+      x: m.x, y: m.y, groundDamage: hard ? ELITE.crush.ground : 0, groundRange: hard ? ELITE.crush.groundRange : 0,
+      unitDamage: c.damage, unitRange: c.range, killRange: c.kill, force: c.force, extraY: c.extraY, team: 'enemy', big: hard,
+      noise: 0, source: 'stomp', doodadDamage: 0, doodadRange: 0, spare: m,
+    });
+    m.getUp = ELITE.getUp;
+    m.xI = 0;
+    if (m.ai) m.ai.queue = [{ type: 'wait', duration: ELITE.getUpWait, c: -1, r: -1 }];
+  }
+  m.hasJumped = false;
 }
 
 /** RocketLaunch.MakeEffects with seekPlayer: a bombardment rocket over the bro, to one side and then the other. */

@@ -104,6 +104,10 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     # the mortar mook: an EnemyAI (MortarAI), one RocketLaunch every 2 s that calls a bombardment down
     assert values["mook_mortar"]["fireRate"] == pytest.approx(2.0) and values["ai_mook_mortar"]["attackTime"] == pytest.approx(2.0)
     assert values["rocket_launch"]["life"] == pytest.approx(0.8) and values["rocket_launch"]["damage"] == 10
+    # the elite Bruiser: 125 health, charging at 2.6x, drunk rockets
+    assert sheets["mook_bruiser_elite"]["frameW"] == 36 and values["mook_bruiser_elite"]["health"] == 125
+    assert values["mook_bruiser_elite"]["runSpeedMultiplier"] == pytest.approx(2.6) and values["ai_mook_bruiser_elite"]["jumpRange"] == 96
+    assert values["rocket_drunk"]["drunkSpeed"] == pytest.approx(10.0) and sheets["rocket_evil"]["cols"] == 8
     # the minefield: the mine's two frames (armed, going off) and the sign over it
     assert (sheets["mine"]["frameW"], sheets["mine"]["frameH"], sheets["mine"]["cols"]) == (16, 16, 2)
     assert (sheets["mine_sign"]["frameW"], sheets["mine_sign"]["frameH"]) == (16, 16)

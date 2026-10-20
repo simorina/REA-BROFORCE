@@ -17,6 +17,7 @@ export function makeUnit(id: number, kind: UnitKind, team: Team, x: number, y: n
     boss: null,
     shield: kind === 'mook_shield' ? SHIELD.points : 0,
     jet: kind === 'mook_jetpack' || kind === 'mook_jetpack_bazooka' ? makeJetpack(y) : null,
+    landYI: 0, getUp: 0, hasJumped: false,
   };
 }
 
@@ -32,6 +33,9 @@ export function makeJetpack(groundY: number, crashDelay = 0.5): JetpackState {
   };
 }
 
+/** MookBigGuy and what derives from it: heavy, and stumbling under big hits. */
+export const isBigGuy = (kind: string): boolean => kind === 'mook_bruiser' || kind === 'mook_bruiser_elite';
+
 export function damageUnit(u: Unit, amount: number, ignoreInvulnerable = false): boolean {
   if (amount <= 0 || (u.invulnerable > 0 && !ignoreInvulnerable) || u.gibbed) return false;
   if (u.boss?.flees) { // the island's boss, with his Goliath still to come, can't die here: he runs (boss.ts)
@@ -41,7 +45,7 @@ export function damageUnit(u: Unit, amount: number, ignoreInvulnerable = false):
   u.health -= amount;
   if (u.health < GIB_THRESHOLD) u.gibbed = true;
   // MookBigGuy.Damage: a hit when he is down to half, or a big one, makes the Bruiser stumble and hold his fire
-  if (u.kind === 'mook_bruiser' && u.health > 0 && !ignoreInvulnerable && (u.health <= u.stats.health / 2 || amount >= BRUISER.stumbleDamage)) {
+  if (isBigGuy(u.kind) && u.health > 0 && !ignoreInvulnerable && (u.health <= u.stats.health / 2 || amount >= BRUISER.stumbleDamage)) {
     u.fireDelay = Math.max(u.fireDelay, BRUISER.stumble);
   }
   // MookJetpack.Damage: a hit that leaves it alive wrecks the jetpack (in the game, a hit in the back or fire); it
@@ -70,7 +74,7 @@ export function runGun(u: Unit, t: number): void {
 
 /** TestVanDammeAnim.Knock: half the push goes to xI and half to xIBlast; heroes fly up less. */
 export function knock(u: Unit, kx: number, ky: number): void {
-  if (u.kind === 'mook_bruiser') { // MookBigGuy.Knock: he is heavy
+  if (isBigGuy(u.kind)) { // MookBigGuy.Knock: he is heavy
     const b = BRUISER;
     u.xI = Math.max(-b.knockMax, Math.min(b.knockMax, u.xI + kx / b.knockX));
     u.xIBlast = Math.max(-b.blastMax, Math.min(b.blastMax, u.xIBlast + kx / 2));

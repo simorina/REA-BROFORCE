@@ -59,6 +59,7 @@ function moveAndCollide(u: Unit, map: TileMap, t: number, now: number): void {
   if (unitHitsSolid(map, u.x, ny)) {
     if (u.yI <= 0) {
       u.y = cellBottom(getRow(ny)) + TILE;
+      if (u.yI < 0) u.landYI = u.yI; // TestVanDammeAnim.Land
       u.onGround = true;
       u.lastGroundedTime = now;
     } else {

@@ -1,5 +1,5 @@
 import {
-  CLIMB_FRAME_RATE, FLEX_FRAMES, FLEX_ROW, JUDO_COL, JUDO_FRAMES, JUDO_ROW, JUMP_FRAME_RATE, RUN_FRAME_RATE, TANK_RUN_FRAME_RATE,
+  CLIMB_FRAME_RATE, ELITE, FLEX_FRAMES, FLEX_ROW, JUDO_COL, JUDO_FRAMES, JUDO_ROW, JUMP_FRAME_RATE, RUN_FRAME_RATE, TANK_RUN_FRAME_RATE,
 } from '../engine/constants';
 import type { TileMap } from '../engine/map';
 import type { Tank, Turret } from '../engine/tank';
@@ -35,6 +35,11 @@ export function unitFrame(u: Unit): Frame {
     return { col: 21 + (Math.floor(u.animTime / PANIC_FRAME_RATE) % (scout ? 4 : 8)), row: 0 };
   }
   if (u.kind === 'mook_ninja' && u.ducking && u.ai?.mental === 'hiding') return { col: 5, row: 6 }; // MookNinja: crouched, hidden
+  if (u.kind === 'mook_bruiser_elite') {
+    // MookBigGuyElite.ChangeFrame: getting up after a stomp, frames 21-24; AnimateJumping: frame 21 leaping at you
+    if (u.getUp > 0) return { col: ELITE.getUpCol + Math.min(3, Math.floor((ELITE.getUp - u.getUp) / (ELITE.getUp / 4))), row: 0 };
+    if (!u.onGround && u.yI < 30 && u.ai?.mental === 'alerted') return { col: ELITE.jumpCol, row: 0 };
+  }
   if (u.ducking) return { col: 6, row: 0 }; // AnimateActualIdleDuckingFrames
   if (u.jet?.spiral && Math.abs(u.xI) + Math.abs(u.yI) > 200) {
     // MookJetpack.SetSpiralFrame: the frame of its flight's angle on row 10

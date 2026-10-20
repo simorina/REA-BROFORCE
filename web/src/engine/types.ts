@@ -2,12 +2,13 @@ export type Team = 'player' | 'enemy';
 export type BlastTeam = Team | 'neutral';
 export type BlockKind = 'dirt' | 'sand' | 'brick' | 'temple' | 'steel' | 'barrel';
 export type EnemyKind = 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout' | 'mook_shield' | 'mook_grenadier' | 'dog' | 'mook_bruiser'
-  | 'mook_jetpack' | 'mook_jetpack_bazooka' | 'mook_ninja' | 'mook_alarmist' | 'mook_mortar';
+  | 'mook_jetpack' | 'mook_jetpack_bazooka' | 'mook_ninja' | 'mook_alarmist' | 'mook_mortar'
+  | 'mook_bruiser_elite';
 export type UnitKind = 'bro' | EnemyKind | 'boss';
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
 export const BRO_BASES = ['bro_base', 'bro_lee', 'bro_soldier', 'bro_in_black', 'bro_rambro', 'bro_ellen'] as const;
 export type BroBase = (typeof BRO_BASES)[number];
-export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket' | 'rifle' | 'jetBomb' | 'grenade' | 'cricket' | 'neuraliser' | 'revolver' | 'molotov' | 'molotovFire' | 'flame' | 'flameWall' | 'minigun' | 'launch';
+export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket' | 'rifle' | 'jetBomb' | 'grenade' | 'cricket' | 'neuraliser' | 'revolver' | 'molotov' | 'molotovFire' | 'flame' | 'flameWall' | 'minigun' | 'launch' | 'drunk';
 
 export interface Block {
   kind: BlockKind;
@@ -139,6 +140,8 @@ export interface GameStats {
   alarm: { delay: number; rate: number; paratrooperRate: number; activeMooks: number }; // DeadManSwitchAlarmTrap, Alarm Megaphones
   rocketMook: RocketStats;
   launch: RocketStats; // the mortar mook's RocketLaunch ("Rocket Launch Airstrike")
+  drunk: RocketStats & { drunkSpeed: number; acceleration: number }; // DrunkRocket ("Rocket Drunk Evil")
+  elite: { runSpeedMultiplier: number; jumpRange: number }; // MookBigGuyElite, BigGuyEliteAI
   bomb: RocketStats;
   marker: GrenadeStats;
   tank: TankStats;
@@ -240,6 +243,9 @@ export interface AiState {
   alarmFuse: number; // DeadManSwitchAlarmTrap.alarmDelay left once he is dead (negative: spent)
   attackingDir: -1 | 0 | 1; // BigGuyAI.attackingDirection: the way the Bruiser keeps shooting
   alertedFor: number; // EnemyAI: Time.time - alertTime, while alerted
+  target: { x: number; y: number } | null; // BigGuyEliteAI.targetX/Y: where the bro was last seen
+  charging: boolean; // BigGuyEliteAI.isCharging
+  attackIndex: number; // BigGuyEliteAI.attackIndex
 }
 
 /** BroLee's forward strike in progress: Putin's judo throw. */
@@ -300,6 +306,9 @@ export interface Unit {
   boss: BossState | null; // Jeffrey Epstein's mind, on the boss only
   shield: number; // MookRiotShield: what his shield can still take (0: he has none)
   jet: JetpackState | null; // MookJetpack's jetpack
+  landYI: number; // TestVanDammeAnim.Land: how fast it was falling when it last landed (read and cleared each step)
+  getUp: number; // MookBigGuyElite.getUpFrames, as time left getting up after a stomp
+  hasJumped: boolean; // MookBigGuyElite.hasJumped
 }
 
 /** MookJetpack: its jetpack, the countdown of a wrecked one, its spiral down and the fuse that blows it up. */
@@ -351,6 +360,7 @@ export interface Projectile {
   crush?: number; // RocketMassive.crushWallLayers left
   variant?: number; // a 'flame': which of FlameThrower Bullet 1-3 it is (drawn green, white, red)
   wall?: FlameWall; // a 'flameWall': FlameWallExplosion's spread
+  drunk?: { s1: number; s2: number; m: number; speed: number; base: number; life0: number }; // DrunkRocket's wobble
 }
 
 /** A cell of a FlameWallExplosion that caught fire (FlashBangPoint): `dc` is the way it spread, sideways. */

@@ -66,6 +66,7 @@ SPRITES = (
     SpriteRef("mook_jetpack_bazooka", "MookJetpackBazooka", "ZMookJetpackBazooka", True),
     SpriteRef("mook_ninja", "MookNinja", "ZMookNinja", True),
     SpriteRef("mook_alarmist", "MookGeneral", "ZMook Alarmist", True),
+    SpriteRef("mook_bruiser_elite", "MookBigGuyElite", "ZMookBigElite", True),
     SpriteRef("grenade", "Grenade", "GrenadeEvilSmall Long fuse", False),  # the grenadier's long-fuse grenade
     SpriteRef("prisoner", "RescueBro", "Hobro", True),
     SpriteRef("cage", "Cage", "CageBig", True),
@@ -100,6 +101,8 @@ TEXTURES = (
     TextureRef("flame_1", "flamethrower_bullet1", frame=(32, 32)),  # FlameThrower Bullet 1-3's flames: green, white, red
     TextureRef("flame_2", "flamethrower_bullet2", frame=(32, 32)),
     TextureRef("flame_3", "flamethrower_bullet3", frame=(32, 32)),
+    TextureRef("bruiser_elite_gun", "mookbigElite_gun_anim", frame=(36, 32)),  # the elite Bruiser's rocket launcher, laid out like the minigun
+    TextureRef("rocket_evil", "rocket Evil", frame=(16, 16)),  # DrunkRocket "Rocket Drunk Evil"
     TextureRef("mine", "LandMine", frame=(16, 16)),  # the Mine prefab's SpriteSM: 0 armed, 1 (lowerLeftPixel x 16) going off
     TextureRef("mine_sign", "MineSign"),  # the Mine Field Sign doodad
 )
@@ -166,6 +169,10 @@ VALUES = (
     ValuesRef("ai_mook_mortar", "MortarAI", "ZMookMortar", ("sightRangeX", "sightRangeY", "attackTime", "sightDelay", "walkTime")),
     ValuesRef("path_mook_mortar", "PathAgent", "ZMookMortar", PATH_FIELDS),
     ValuesRef("rocket_launch", "RocketLaunch", "Rocket Launch Airstrike", ROCKET_FIELDS),
+    ValuesRef("mook_bruiser_elite", "MookBigGuyElite", "ZMookBigElite", MOOK_FIELDS + ("runSpeedMultiplier",)),
+    ValuesRef("ai_mook_bruiser_elite", "BigGuyEliteAI", "ZMookBigElite", AI_FIELDS + ("jumpRange",)),
+    ValuesRef("path_mook_bruiser_elite", "PathAgent", "ZMookBigElite", PATH_FIELDS),
+    ValuesRef("rocket_drunk", "DrunkRocket", "Rocket Drunk Evil", ROCKET_FIELDS + ("drunkSpeed", "acceleration")),
     ValuesRef("grenade_mook", "Grenade", "GrenadeEvilSmall Long fuse",
               ("bounceM", "frictionM", "gravityM", "damage", "range", "blastForce")),
     ValuesRef("path_mook", "PathAgent", "ZMook", PATH_FIELDS),
