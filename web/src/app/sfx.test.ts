@@ -30,6 +30,11 @@ describe('sfx', () => {
     expect(sfxFor({ type: 'shot', weapon: 'grenade', x: 0, y: 0, facing: 1 })).toBe('throw');
   });
 
+  it('gives the alarm a siren', () => {
+    expect(sfxFor({ type: 'siren', x: 0, y: 0 })).toBe('siren');
+    expect(sfxFor({ type: 'alarmWarning', x: 0, y: 0 })).toBeNull();
+  });
+
   it("gives Meloni's flamethrower its whoosh and her flame wall a roar", () => {
     expect(sfxFor({ type: 'shot', weapon: 'flamethrower', x: 0, y: 0, facing: 1 })).toBe('flame');
     expect(sfxFor({ type: 'shot', weapon: 'flameWall', x: 0, y: 0, facing: 1 })).toBe('roar');

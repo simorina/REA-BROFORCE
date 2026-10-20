@@ -162,6 +162,11 @@ export const JETPACK = {
 };
 // MookNinjaAI.LookForEnemy: hidden, he springs on a bro within 48 and 20 of (X, Y + 8)
 export const NINJA = { lookX: 48 };
+// DeadManSwitchAlarmTrap.Update: red warnings every 0.067 s till the alarm. AlarmSystem ("Alarm Megaphones"): the siren
+// every alarmRate (DisturbWildLife 200 and a flashbang, ours: the mooks within 200 come running), and paratrooperRate
+// (the first a third of it in) four mooks at x + (i - 1.5) * 32 from 16 over the screen, if the spot is on screen (256)
+// with open sky 256 up at x and x +- 16. Ours: three waves at most.
+export const ALARM = { warnEvery: 0.067, alertRange: 200, visible: 64, dropVisible: 256, sky: 256, drop: 4, spacing: 32, dropY: 16, waves: 3 };
 export const DOG = { bite: 3, range: 6 }; // MookDog.RunFiring: Map.HitLivingUnits(3, Melee, 6, X, Y + 4)
 export const JET_ROCKET = { ox: [32, 8], oy: -5, x: 450, y: -285, jitter: 12 }; // HarrierJet.Update: two shots from (X+32, Y-5), (X+8, Y-5) at (450, -285) + insideUnitCircle * 12
 export const JET_DESCENT = { slow: 40, slowZone: 48 }; // HarrierJet.Start: yI -40 over its last 48 px

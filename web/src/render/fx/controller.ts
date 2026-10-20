@@ -20,6 +20,7 @@ export interface RangePop {
 
 const WHITE: RGBA = [1, 1, 1, 1];
 const BLUE_SPARK: RGBA = [0.45, 0.85, 1, 1]; // NoisyCricket's SparkShrapnel Blue
+const ALARM_RED: RGBA = [1, 0.15, 0.1, 1];
 const RUN_FRAME_RATE = 0.025; // TestVanDammeAnim.runningFrameRate on the bro and mook prefabs
 
 /** A running FlickerFader: steps through its frames, drifting with drag, after an optional delay. */
@@ -498,6 +499,10 @@ export class Effects {
       case 'django':
         // Samuel becomes Django: a puff of dust around him
         for (let i = 0; i < 5; i++) this.smoke(e.x + (i - 2) * 5, e.y + 4 + (i % 2) * 6, (i - 2) * 20, 20);
+        return;
+      case 'alarmWarning':
+        // DeadManSwitchAlarmTrap: CreateRedWarningEffect (ours: a red flash)
+        this.puff('muzzleFlash', e.x, e.y, 1, 0, 0, ALARM_RED);
         return;
       case 'jetpack':
         // MookJetpack.Update: CreatePlumeParticle at its two nozzles; ours: a puff of smoke from one, the thrust is drawn

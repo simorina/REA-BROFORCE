@@ -5,7 +5,7 @@ import {
 import type { BroDef } from './bro';
 import { followCamera, isVisible, screenMaxY, type Camera } from './camera';
 import {
-  ALERT_TOUCH, BAZOOKA_FIRE_DELAY, FLAME_WALL_SHAKE, JETPACK, SHAKE_TIME, CHECKPOINT_FAST_SPEED, CHECKPOINT_RANGE_X, CHECKPOINT_RANGE_X_FAST,
+  ALARM, ALERT_TOUCH, BAZOOKA_FIRE_DELAY, FLAME_WALL_SHAKE, JETPACK, SHAKE_TIME, CHECKPOINT_FAST_SPEED, CHECKPOINT_RANGE_X, CHECKPOINT_RANGE_X_FAST,
   CHECKPOINT_RANGE_Y, CHECKPOINT_SPAWN_UP, CHECKPOINT_Y_OFFSET, CORPSE_TIME, EXPLOSION_DURATION, EXTRACTION_TIME,
   FLAG_REACH, GRENADE_PANIC_RANGE, GRENADE_PANIC_RATE, GRENADE_PANIC_TIME, GRENADE_WARNING_LIFE, HALF_TILE,
   LIVES_START, PRISONER_RESCUE_DIST, RESCUE_INVULNERABLE, RESPAWN_DELAY, SPAWN_INVULNERABLE, SPECIAL2_TIME,
@@ -111,8 +111,19 @@ export type GameEvent =
   | { type: 'flameWallPuff'; x: number; y: number; variant: number; delay: number; dir: 1 | -1; xI: number } // a cell of the wall catching fire
   | { type: 'exitJet'; x: number; y: number }
   | { type: 'gunSwitch'; x: number; y: number }
-  | { type: 'jetpack'; x: number; y: number; facing: 1 | -1 }; // a jetpack's thrust
+  | { type: 'jetpack'; x: number; y: number; facing: 1 | -1 } // a jetpack's thrust
+  | { type: 'alarmWarning'; x: number; y: number } // the alarmist's dead man's switch, counting down
+  | { type: 'siren'; x: number; y: number }; // an alarm going off
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
+
+/** AlarmSystem, as "Alarm Megaphones": its siren and its paratroopers. */
+export interface Alarm {
+  x: number;
+  y: number;
+  siren: number; // alarmCounter
+  drop: number; // paratrooperCounter
+  waves: number; // paratrooper drops so far
+}
 
 export interface World {
   map: TileMap;
@@ -129,6 +140,7 @@ export interface World {
   checkpoints: Checkpoint[];
   grass: Grass[];
   doors: MookDoor[];
+  alarms: Alarm[]; // set off by the alarmists' dead man's switches
   doorPoints: DoorPoint[]; // the doors as ScoutMookInterestPoints
   tanks: Tank[]; // TankBroTank vehicles on the map
   jets: Jet[]; // Trump's jets
@@ -187,7 +199,7 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
     prisoners: parsed.cages.map((c) => ({ x: cellX(c.c), y: feetY(c.r), freed: false })),
     checkpoints: parsed.checkpoints.map((c) => ({ x: cellX(c.c), y: feetY(c.r), activated: false, raisedAt: 0 })),
     grass: parsed.grass.map((c) => ({ x: cellX(c.c), y: c.r * TILE, health: stats.grass.health, destroyed: false })),
-    doors, doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, django: null, reboard: null, flexPower: level.flexPower ?? null,
+    doors, alarms: [], doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, django: null, reboard: null, flexPower: level.flexPower ?? null,
     flag: { x: cellX(parsed.flag.c), y: feetY(parsed.flag.r) },
     lives: LIVES_START, specialAmmo: bro.specialAmmo ?? stats.bros[bro.base].specialAmmo, respawnTimer: 0,
     state: 'playing', extractionTime: 0, time: 0, nextId, camera, events: [], laughIndex: 0,
@@ -434,6 +446,7 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
       if (m.kind === 'mook_suicide' && ai && !ai.exploded && (ai.deathFuse -= t) <= 0) explodeSuicide(w, m, blasts);
       if (!m.gibbed) stepUnit(m, NO_INTENT, w.map, t, w.time);
       if (m.jet) stepJetpack(w, m, t, blasts);
+      if (m.kind === 'mook_alarmist') stepDeadManSwitch(w, m, t);
       stepBurning(w, m, t);
       continue;
     }
@@ -638,7 +651,7 @@ function dogBite(w: World, m: Unit, t: number): void {
 
 /** Mook.UseFire and MookBazooka.UseFire: they only shoot while on screen. */
 function useFire(w: World, m: Unit): void {
-  if (m.kind === 'mook_shield') return; // MookRiotShield.FireWeapon: nothing
+  if (m.kind === 'mook_shield' || m.kind === 'mook_alarmist') return; // MookRiotShield.FireWeapon, MookGeneral.UseFire: nothing
   if (m.kind === 'mook_grenadier') {
     if (!isVisible(w.camera, m.x, m.y)) return;
     w.projectiles.push(throwGrenade(w.nextId++, m, w.player.x));
@@ -727,6 +740,48 @@ function explodeJetpack(w: World, m: Unit, blasts: Blast[]): void {
     m.deadTime = 0;
   }
   m.gibbed = true;
+}
+
+/** DeadManSwitchAlarmTrap.Update: dead, the alarmist flashes red for alarmDelay, then sets the alarm off where he lies. */
+function stepDeadManSwitch(w: World, m: Unit, t: number): void {
+  const ai = m.ai;
+  if (!ai || ai.alarmFuse < 0) return;
+  const was = ai.alarmFuse;
+  ai.alarmFuse += Math.min(t, 0.0334); // counting up to alarmDelay
+  if (Math.floor(ai.alarmFuse / ALARM.warnEvery) > Math.floor(was / ALARM.warnEvery) || was === 0) {
+    w.events.push({ type: 'alarmWarning', x: m.x, y: m.y + 10 });
+  }
+  if (ai.alarmFuse >= w.stats.alarm.delay) {
+    ai.alarmFuse = -1;
+    w.alarms.push({ x: m.x, y: m.y, siren: 0, drop: w.stats.alarm.paratrooperRate / 3, waves: 0 }); // AlarmSystem.Start / Activate
+  }
+}
+
+/** AlarmSystem.Update for the megaphones: the siren every alarmRate, and paratroopers every paratrooperRate. */
+function stepAlarms(w: World, t: number): void {
+  const s = w.stats.alarm;
+  for (const a of w.alarms) {
+    a.siren -= t;
+    if (a.siren < 0) {
+      a.siren += s.rate;
+      w.events.push({ type: 'siren', x: a.x, y: a.y });
+      if (isVisible(w.camera, a.x, a.y, ALARM.visible, ALARM.visible)) alertMooks(w, a.x, a.y, ALARM.alertRange, ALARM.alertRange);
+    }
+    if (a.waves >= ALARM.waves) continue;
+    a.drop -= t;
+    if (a.drop > 0 || !isVisible(w.camera, a.x, a.y, ALARM.dropVisible, ALARM.dropVisible)) continue;
+    a.drop += s.paratrooperRate;
+    const sky = [a.x, a.x - 16, a.x + 16].every((x) => !w.map.boxHitsSolid(x - 1, a.y + 8, x + 1, a.y + ALARM.sky));
+    const active = w.enemies.filter((e) => !e.dead).length;
+    if (!sky || active >= s.activeMooks) continue;
+    a.waves++;
+    const y = screenMaxY(w.camera) + ALARM.dropY;
+    for (let i = 0; i < ALARM.drop; i++) { // AlarmSystem.CallInParatroopers
+      const m = makeUnit(w.nextId++, 'mook', 'enemy', a.x + (i - (ALARM.drop - 1) / 2) * ALARM.spacing, y + w.rng() * 8, w.stats.units.mook);
+      w.enemies.push(m);
+      fullyAlert(m, w.stats.ai.mook, w.player.x, w.player.y, w.rng);
+    }
+  }
 }
 
 /** MookSuicide.MakeEffects: the blast at its feet, then it gibs. */
@@ -909,6 +964,7 @@ export function stepWorld(w: World, controls: Controls, prev: Controls, t: numbe
   const blasts: Blast[] = [];
   reportUnits(w); // deaths caused outside a step still start the respawn timer
   stepPlayer(w, controls, prev, t, blasts);
+  stepAlarms(w, t);
   stepTanks(w, t, blasts);
   stepJets(w, t, blasts);
   carryDriver(w);

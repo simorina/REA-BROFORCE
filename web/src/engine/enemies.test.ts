@@ -184,6 +184,46 @@ describe('the ninja (MookNinja, MookNinjaAI)', () => {
   });
 });
 
+describe('the alarmist (MookGeneral "ZMook Alarmist", DeadManSwitchAlarmTrap)', () => {
+  it("reads the alarmist ('A'): he carries no gun", () => {
+    expect(parseLevel({ cols: 4, rows: 2, tiles: ['PA.F', 'dddd'] }, TEST_STATS).enemies.map((e) => e.kind)).toEqual(['mook_alarmist']);
+    const { w } = alerted('A', 'mook_alarmist', 9);
+    play(w, {}, steps(4));
+    expect(w.projectiles).toHaveLength(0);
+  });
+
+  it('killed, his dead man\'s switch sets off an alarm 0.25 s later, flashing red till then', () => {
+    const w = createWorld(strip('A'), TEST_STATS, [BROLUSCONI], () => 0.5);
+    const m = w.enemies[0];
+    damageUnit(m, m.health);
+    play(w, {}, steps(0.2));
+    expect(w.alarms).toHaveLength(0);
+    expect(w.events.some((e) => e.type === 'alarmWarning')).toBe(true);
+    play(w, {}, steps(0.1));
+    expect(w.alarms).toHaveLength(1);
+    expect(w.events.some((e) => e.type === 'siren')).toBe(true);
+  });
+
+  it("the siren brings the mooks around running, and every 9 s (the first after 3) four paratroopers drop in, three waves at most", () => {
+    const lvl = strip('A', 12);
+    lvl.tiles[5] = lvl.tiles[5].slice(0, 20) + 'm' + lvl.tiles[5].slice(21);
+    const w = createWorld(lvl, TEST_STATS, [BROLUSCONI], () => 0.5);
+    w.player.invulnerable = 1e9;
+    const [a, m] = w.enemies;
+    damageUnit(a, a.health);
+    play(w, {}, steps(0.4));
+    expect(m.ai?.mental).toBe('alerted');
+    const count = () => w.enemies.filter((e) => e.kind === 'mook' && !e.dead).length;
+    play(w, {}, steps(2.5));
+    expect(count()).toBe(1);
+    play(w, {}, steps(1));
+    expect(count()).toBe(5);
+    expect(w.enemies.filter((e) => e.kind === 'mook').slice(1).every((e) => e.ai?.mental === 'alerted')).toBe(true);
+    play(w, {}, steps(40));
+    expect(w.enemies.filter((e) => e.kind === 'mook').length).toBeLessThanOrEqual(13);
+  });
+});
+
 describe("the riot shield mook (MookRiotShield)", () => {
   it('his shield stops shots at his face; shots in his back hurt him', () => {
     const w = createWorld(strip('h'), TEST_STATS, [BROLUSCONI], () => 0.5);

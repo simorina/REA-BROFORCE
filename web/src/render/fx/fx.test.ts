@@ -187,6 +187,15 @@ describe('Effects call sites', () => {
   });
 });
 
+describe("the alarmist's dead man's switch", () => {
+  it('flashes red where he lies (EffectsController.CreateRedWarningEffect)', () => {
+    const fx = new Effects(TEST_EFFECTS, () => 0.5);
+    fx.onEvent({ type: 'alarmWarning', x: 50, y: 18 }, () => 'mook');
+    expect(fx.puffs).toHaveLength(1);
+    expect(fx.puffs[0].color[1]).toBeLessThan(0.5);
+  });
+});
+
 describe("the jetpack mooks' thrust", () => {
   it('leaves a little puff of smoke from between its nozzles, pushed down', () => {
     const fx = new Effects(TEST_EFFECTS, () => 0.5);

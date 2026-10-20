@@ -79,7 +79,7 @@ export function makeAiState(id: number): AiState {
     bubble: null, bubbleTime: 0, attractC: 0, attractR: 0, wasJump: false, agent: makeAgent(), repathCount: 0, speed: null,
     startC: null, startR: 0, interest: null, runDir: 0, alertDelay: 0, rambro: 0, rambroLife: 0,
     litFuse: false, suicideDelay: SUICIDE_DELAY, suicideTimer: SUICIDE_TIMER, deathFuse: SUICIDE_DEATH_FUSE, exploded: false,
-    droppedGrenade: false, attackingDir: 0,
+    droppedGrenade: false, attackingDir: 0, alarmFuse: 0,
   };
 }
 

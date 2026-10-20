@@ -98,6 +98,9 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert values["ai_mook_jetpack"]["delayBetweenFiring"] == pytest.approx(0.33) and values["ai_mook_jetpack_bazooka"]["sightRangeY"] == 96
     # the ninja: a trooper who waits crouched until you come close (MookNinjaAI)
     assert sheets["mook_ninja"]["frameW"] == 32 and values["mook_ninja"]["health"] == 3 and values["ai_mook_ninja"]["sightRangeX"] > 0
+    # the alarmist: unarmed, his dead man's switch sets off the megaphones that call paratroopers in
+    assert sheets["mook_alarmist"]["frameW"] == 32 and values["alarm_switch"]["alarmDelay"] == pytest.approx(0.25)
+    assert values["alarm"]["paratrooperRate"] == pytest.approx(9.0) and values["alarm"]["alarmRate"] == pytest.approx(3.0)
     assert values["block_sand"]["health"] > 0 and values["block_dirt"]["health"] > 0
 
 

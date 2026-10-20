@@ -98,6 +98,7 @@ export function parseValues(raw: Raw): GameStats {
       mook_jetpack: unit(raw, 'mook_jetpack'),
       mook_jetpack_bazooka: unit(raw, 'mook_jetpack_bazooka'),
       mook_ninja: unit(raw, 'mook_ninja'),
+      mook_alarmist: unit(raw, 'mook_alarmist'),
     },
     bros: {
       bro_base: unit(raw, 'bro_base', true), bro_lee: unit(raw, 'bro_lee', true), bro_soldier: unit(raw, 'bro_soldier', true),
@@ -108,7 +109,7 @@ export function parseValues(raw: Raw): GameStats {
       mook_scout: ai(raw, 'ai_mook_scout'), mook_shield: ai(raw, 'ai_mook_shield'),
       mook_grenadier: ai(raw, 'ai_mook_grenadier'), dog: ai(raw, 'ai_dog'), mook_bruiser: ai(raw, 'ai_mook_bruiser'),
       mook_jetpack: ai(raw, 'ai_mook_jetpack'), mook_jetpack_bazooka: ai(raw, 'ai_mook_jetpack_bazooka'),
-      mook_ninja: ai(raw, 'ai_mook_ninja'),
+      mook_ninja: ai(raw, 'ai_mook_ninja'), mook_alarmist: ai(raw, 'ai_mook_alarmist'),
     },
     paths: {
       mook: path(raw, 'path_mook'), mook_suicide: path(raw, 'path_mook_suicide'), mook_bazooka: path(raw, 'path_mook_bazooka'),
@@ -116,7 +117,7 @@ export function parseValues(raw: Raw): GameStats {
       mook_shield: path(raw, 'path_mook'), // ZMookRiotShield has no PathAgent: a trooper's
       mook_grenadier: path(raw, 'path_mook_grenadier'), dog: path(raw, 'path_dog'), mook_bruiser: path(raw, 'path_mook_bruiser'),
       mook_jetpack: path(raw, 'path_mook_jetpack'), mook_jetpack_bazooka: path(raw, 'path_mook_jetpack_bazooka'),
-      mook_ninja: path(raw, 'path_mook_ninja'),
+      mook_ninja: path(raw, 'path_mook_ninja'), mook_alarmist: path(raw, 'path_mook_alarmist'),
     },
     scoutRunSpeed: num(raw, 'mook_scout', 'runSpeed'),
     dogRunSpeed: num(raw, 'dog', 'awareRunSpeed'),
@@ -128,6 +129,10 @@ export function parseValues(raw: Raw): GameStats {
     door: door(raw, 'mook_door'),
     bullet: { damage: num(raw, 'bullet', 'damage'), life: num(raw, 'bullet', 'life') },
     minigun: { damage: num(raw, 'minigun_bullet', 'damage'), life: num(raw, 'minigun_bullet', 'life') },
+    alarm: {
+      delay: num(raw, 'alarm_switch', 'alarmDelay'), rate: num(raw, 'alarm', 'alarmRate'),
+      paratrooperRate: num(raw, 'alarm', 'paratrooperRate'), activeMooks: num(raw, 'alarm', 'activeMookThreshold'),
+    },
     jetpack: {
       range: num(raw, 'mook_jetpack', 'explosionRange'), blastForce: num(raw, 'mook_jetpack', 'blastForce'),
       spiralDelay: num(raw, 'mook_jetpack', 'spiralDelayDuration'),
