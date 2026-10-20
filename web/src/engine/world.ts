@@ -487,6 +487,7 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
   const player = w.player.dead ? null : w.player;
   for (const m of w.enemies) {
     const ai = m.ai;
+    if (m.invulnerable > 0) m.invulnerable = m.invulnerable - t > 1e-9 ? m.invulnerable - t : 0; // TestVanDammeAnim.Update
     if (m.hell?.summoned != null) continue; // rising out of a warlock's portal, which moves it
     if (m.hell && !m.dead) m.hell.hurt = false; // the portals have seen it
     if (m.dolph) {

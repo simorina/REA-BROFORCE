@@ -148,6 +148,19 @@ describe('stepWorld', () => {
     expect(damageUnit(w.player, 1)).toBe(true);
   });
 
+  it("a mook's invulnerability wears off too (TestVanDammeAnim.Update: a door's 0.6 s, a bailing rider's 0.1 s)", () => {
+    const w = createWorld(level([[2, 'P'], [20, 'm'], [27, 'F']]), TEST_STATS, [BROLUSCONI], () => 0.5);
+    const m = w.enemies[0];
+    m.invulnerable = 0.6;
+    play(w, {}, 30);
+    expect(m.invulnerable).toBeGreaterThan(0);
+    expect(damageUnit(m, 1)).toBe(false);
+    play(w, {}, 10);
+    expect(m.invulnerable).toBe(0);
+    damageUnit(m, 1);
+    expect(m.health).toBe(m.stats.health - 1);
+  });
+
   it('barrels chain-explode once each', () => {
     const barrels: Array<[number, string]> = [];
     for (let c = 10; c <= 19; c++) barrels.push([c, 'x']);
