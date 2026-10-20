@@ -100,6 +100,8 @@ TEXTURES = (
     TextureRef("flame_1", "flamethrower_bullet1", frame=(32, 32)),  # FlameThrower Bullet 1-3's flames: green, white, red
     TextureRef("flame_2", "flamethrower_bullet2", frame=(32, 32)),
     TextureRef("flame_3", "flamethrower_bullet3", frame=(32, 32)),
+    TextureRef("mine", "LandMine", frame=(16, 16)),  # the Mine prefab's SpriteSM: 0 armed, 1 (lowerLeftPixel x 16) going off
+    TextureRef("mine_sign", "MineSign"),  # the Mine Field Sign doodad
 )
 
 VALUES = (

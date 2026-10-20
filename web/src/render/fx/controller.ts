@@ -1,4 +1,4 @@
-import { BARREL_Y_OFFSET, UNIT_BOX_HEIGHT, UNIT_HEIGHT } from '../../engine/constants';
+import { BARREL_Y_OFFSET, MINE, UNIT_BOX_HEIGHT, UNIT_HEIGHT } from '../../engine/constants';
 import type { Blast } from '../../engine/explosions';
 import type { TileMap } from '../../engine/map';
 import type { Block, Unit, UnitKind } from '../../engine/types';
@@ -383,6 +383,29 @@ export class Effects {
     }
   }
 
+  /** Mine.Explode: a range pop, six puffs of smoke, three large explosions and a medium one, and ten flames thrown up. */
+  private mineBlast(x: number, y: number): void {
+    const fx: BlastFx = this.data.suicide;
+    const range = MINE.range;
+    this.rangePop(x, y, range * 4);
+    for (let i = 0; i < 6; i++) {
+      const [ux, uy] = this.insideUnitCircle();
+      this.delayedPuff(fx.smoke[i < 3 ? 0 : 1], x + ux * range * 0.25, y + uy * range * 0.25, this.rng() * (i % 3 === 2 ? 0.2 : 0.5),
+        ux * range * 3, uy * range * 3);
+    }
+    for (const [size, m, delay] of [['large', 0.25, this.rng() * 0.5], ['large', 0.25, this.rng() * 0.5], ['large', 0.25, 0], ['medium', 0.15, 0]] as const) {
+      const [ux, uy] = this.insideUnitCircle();
+      this.shaderExplosion(size, x + ux * range * m, y + uy * range * m, delay);
+    }
+    const fire = fx.fire ?? [];
+    for (let i = 0; fire.length > 0 && i < 10; i++) {
+      const a = this.rng() * Math.PI; // Math.RandomPointOnCircle, flipped upwards
+      const [ux, uy] = [Math.cos(a), Math.sin(a)];
+      this.flame(this.flameNamed(fire[i % fire.length]), x + ux * range * 0.25, y + uy * range * 0.25, 0.1 + this.rng() * (i < 9 ? 0.4 : 0.3),
+        ux * range * (i < 6 || i === 9 ? 3 : 4), uy * range * (i < 6 || i === 9 ? 3 : 4));
+    }
+  }
+
   /** GrenadeAirstrike.MakeEffects: as the marker calls the strike in, sparks and six puffs of smoke. */
   airstrikeCalled(x: number, y: number): void {
     const fx = this.data.airstrike;
@@ -550,6 +573,9 @@ export class Effects {
       }
       case 'suicide':
         this.suicideBlast(x, y);
+        return;
+      case 'mine':
+        this.mineBlast(x, y - MINE.unitY);
         return;
       case 'shell':
         // HeavyShell.MakeEffects: a range pop and a medium explosion

@@ -36,6 +36,7 @@ export interface ParsedLevel {
   checkpoints: Cell[];
   grass: Cell[]; // DoodadGrass: long grass mooks can hide in
   doors: Cell[]; // DoodadMookDoor: mooks walk out of these
+  signs: Cell[]; // 'w': Mine Field Signs, each with a mine buried near it
   flag: Cell;
   boss: Cell | null; // 'E': Jeffrey Epstein
   mech: Cell | null; // 'M': Epstein again, in his Goliath mech
@@ -57,6 +58,7 @@ export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
   const checkpoints: Cell[] = [];
   const grass: Cell[] = [];
   const doors: Cell[] = [];
+  const signs: Cell[] = [];
   let player: Cell | null = null;
   let flag: Cell | null = null;
   let boss: Cell | null = null;
@@ -74,6 +76,7 @@ export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
       else if (ch === 'C') checkpoints.push({ c, r });
       else if (ch === 'g') grass.push({ c, r });
       else if (ch === 'D') doors.push({ c, r });
+      else if (ch === 'w') signs.push({ c, r });
       else if (ch === 'P') {
         if (player) throw new Error('level has more than one P');
         player = { c, r };
@@ -97,5 +100,5 @@ export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
   }
   if (!player) throw new Error('level has no player start (P)');
   if (!flag) throw new Error('level has no flag (F)');
-  return { map, player, enemies, cages, checkpoints, grass, doors, flag, boss, mech };
+  return { map, player, enemies, cages, checkpoints, grass, doors, signs, flag, boss, mech };
 }

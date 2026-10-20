@@ -167,6 +167,10 @@ export const NINJA = { lookX: 48 };
 // (the first a third of it in) four mooks at x + (i - 1.5) * 32 from 16 over the screen, if the spot is on screen (256)
 // with open sky 256 up at x and x +- 16. Ours: three waves at most.
 export const ALARM = { warnEvery: 0.067, alertRange: 200, visible: 64, dropVisible: 256, sky: 256, drop: 4, spacing: 32, dropY: 16, waves: 3 };
+// Mine: stepped on (a foot within 10 above its block, on rays at X and X +- 3), it goes off detonationTime later;
+// Explode: DamageGround(12, range 20) at its centre, ExplodeUnits(20, 40, 40, 200, 300) 6 below it, DisturbWildLife 120.
+// MineFieldSign plants it up to two blocks either side of the sign.
+export const MINE = { fuse: 0.3, range: 20, groundDamage: 12, unitDamage: 20, force: 200, extraY: 300, unitY: -6, noise: 120, trigger: 10, feet: 3, signReach: 2 };
 export const DOG = { bite: 3, range: 6 }; // MookDog.RunFiring: Map.HitLivingUnits(3, Melee, 6, X, Y + 4)
 export const JET_ROCKET = { ox: [32, 8], oy: -5, x: 450, y: -285, jitter: 12 }; // HarrierJet.Update: two shots from (X+32, Y-5), (X+8, Y-5) at (450, -285) + insideUnitCircle * 12
 export const JET_DESCENT = { slow: 40, slowZone: 48 }; // HarrierJet.Start: yI -40 over its last 48 px

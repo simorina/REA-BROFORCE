@@ -10,6 +10,7 @@ import type { BlastTeam, BlockKind, GameStats, RocketStats, Team, Unit } from '.
 export interface Blast {
   x: number;
   y: number;
+  groundY?: number; // where DamageGround centres, when not at y (the mine hits units 6 below its centre)
   groundDamage: number;
   groundRange: number; // DamageGround uses a sphere of radius range * 0.5
   unitDamage: number;
@@ -20,7 +21,7 @@ export interface Blast {
   team: BlastTeam;
   big: boolean; // shakes the screen
   noise: number; // Map.DisturbWildLife range: mooks this close (plus their hearing) turn to look
-  source: 'rocket' | 'bomb' | 'football' | 'barrel' | 'suicide' | 'shell' | 'bigRocket' | 'tank' | 'cricket'; // whose MakeEffects to show
+  source: 'rocket' | 'bomb' | 'football' | 'barrel' | 'suicide' | 'shell' | 'bigRocket' | 'tank' | 'cricket' | 'mine'; // whose MakeEffects to show
   owner?: Unit; // the suicide mook that went off
   doodadDamage: number; // Map.DamageDoodads: what long grass and other doodads take ...
   doodadRange: number; // ... within this range
@@ -77,7 +78,7 @@ export function canDamage(blast: BlastTeam, unit: Team): boolean {
 
 export function applyBlast(map: TileMap, units: readonly Unit[], b: Blast): BlastResult {
   const destroyed: BlastResult['destroyed'] = [];
-  for (const [c, r] of map.cellsInCircle(b.x, b.y, b.groundRange * 0.5)) {
+  for (const [c, r] of map.cellsInCircle(b.x, b.groundY ?? b.y, b.groundRange * 0.5)) {
     const kind = map.damage(c, r, b.groundDamage);
     if (kind) destroyed.push({ c, r, kind });
   }

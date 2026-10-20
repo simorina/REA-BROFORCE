@@ -101,6 +101,9 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     # the alarmist: unarmed, his dead man's switch sets off the megaphones that call paratroopers in
     assert sheets["mook_alarmist"]["frameW"] == 32 and values["alarm_switch"]["alarmDelay"] == pytest.approx(0.25)
     assert values["alarm"]["paratrooperRate"] == pytest.approx(9.0) and values["alarm"]["alarmRate"] == pytest.approx(3.0)
+    # the minefield: the mine's two frames (armed, going off) and the sign over it
+    assert (sheets["mine"]["frameW"], sheets["mine"]["frameH"], sheets["mine"]["cols"]) == (16, 16, 2)
+    assert (sheets["mine_sign"]["frameW"], sheets["mine_sign"]["frameH"]) == (16, 16)
     assert values["block_sand"]["health"] > 0 and values["block_dirt"]["health"] > 0
 
 

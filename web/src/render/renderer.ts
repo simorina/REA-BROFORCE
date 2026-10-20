@@ -93,6 +93,7 @@ export class Renderer {
     for (const e of w.enemies) if (e.exitDoor) this.drawUnit(e, w.time);
     this.drawDoors(w, 'frame');
     this.drawGrass(w, 'backing');
+    this.drawMines(w);
     this.drawCheckpoints(w);
     this.drawFlag(w);
     this.drawPrisoners(w);
@@ -434,6 +435,12 @@ export class Renderer {
       const k = Math.min(1, (w.time - cp.raisedAt) / FLAG_RAISE_TIME);
       this.sprite('flag', loopFrame(w.time, 0.08, this.assets.sheets.flag.cols), 0, cp.x + 8, cp.y + 8 + (pole.frameH - 16) * k);
     }
+  }
+
+  /** Mine (z -3, over its block: dark, red once it is going off) and the Mine Field Sign doodads (z 3). */
+  private drawMines(w: World): void {
+    for (const s of w.signs) if (!s.fallen) this.sprite('mine_sign', 0, 0, s.x, s.y);
+    for (const m of w.mines) if (m.state !== 'exploded') this.sprite('mine', m.state === 'detonating' ? 1 : 0, 0, m.x, m.y);
   }
 
   private drawFlag(w: World): void {

@@ -18,6 +18,7 @@ import { alarmDoor, collapseDoor, doorLostSupport, makeDoor, stepDoor, type Door
 import { applyBlast, barrelBlast, suicideBlast, type Blast } from './explosions';
 import { parseLevel, type LevelData } from './level';
 import { makeBlock, type TileMap } from './map';
+import { mineBlast, plantMine, steppedOn, type Mine, type MineSign } from './mines';
 import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
   dropGrenade, fireBazookaRocket, fireMinigunBullet, fireMookBullet, molotovFlames, spawnAirstrike, stepProjectile, throwGrenade,
@@ -113,7 +114,8 @@ export type GameEvent =
   | { type: 'gunSwitch'; x: number; y: number }
   | { type: 'jetpack'; x: number; y: number; facing: 1 | -1 } // a jetpack's thrust
   | { type: 'alarmWarning'; x: number; y: number } // the alarmist's dead man's switch, counting down
-  | { type: 'siren'; x: number; y: number }; // an alarm going off
+  | { type: 'siren'; x: number; y: number } // an alarm going off
+  | { type: 'mineArmed'; x: number; y: number }; // a mine stepped on: its click
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
 
 /** AlarmSystem, as "Alarm Megaphones": its siren and its paratroopers. */
@@ -141,6 +143,8 @@ export interface World {
   grass: Grass[];
   doors: MookDoor[];
   alarms: Alarm[]; // set off by the alarmists' dead man's switches
+  mines: Mine[];
+  signs: MineSign[]; // the Mine Field Signs over them
   doorPoints: DoorPoint[]; // the doors as ScoutMookInterestPoints
   tanks: Tank[]; // TankBroTank vehicles on the map
   jets: Jet[]; // Trump's jets
@@ -185,6 +189,7 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
   if (boss) enemies.push(boss);
   const mech = parsed.mech ? makeMech(nextId++, cellX(parsed.mech.c), feetY(parsed.mech.r), stats, parsed.map) : null;
   const doors = parsed.doors.map((d) => makeDoor(d.c, d.r, parsed.map, stats.door));
+  const mines = parsed.signs.map((s) => plantMine(parsed.map, s, rng)).filter((m): m is Mine => m !== null);
   const camera = { x: spawn.x, y: spawn.y };
   followCamera(camera, spawn, parsed.map, 1);
   // CheckPoint.Update: the three blocks under a flagpole turn to steel when destroyed
@@ -199,7 +204,7 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
     prisoners: parsed.cages.map((c) => ({ x: cellX(c.c), y: feetY(c.r), freed: false })),
     checkpoints: parsed.checkpoints.map((c) => ({ x: cellX(c.c), y: feetY(c.r), activated: false, raisedAt: 0 })),
     grass: parsed.grass.map((c) => ({ x: cellX(c.c), y: c.r * TILE, health: stats.grass.health, destroyed: false })),
-    doors, alarms: [], doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, django: null, reboard: null, flexPower: level.flexPower ?? null,
+    doors, alarms: [], mines, signs: parsed.signs.map((s) => ({ c: s.c, r: s.r, x: cellX(s.c), y: s.r * TILE, fallen: false })), doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, django: null, reboard: null, flexPower: level.flexPower ?? null,
     flag: { x: cellX(parsed.flag.c), y: feetY(parsed.flag.r) },
     lives: LIVES_START, specialAmmo: bro.specialAmmo ?? stats.bros[bro.base].specialAmmo, respawnTimer: 0,
     state: 'playing', extractionTime: 0, time: 0, nextId, camera, events: [], laughIndex: 0,
@@ -784,6 +789,31 @@ function stepAlarms(w: World, t: number): void {
   }
 }
 
+/**
+ * Mine: TestVanDammeAnim.CheckForTraps sets it off under anyone not invulnerable (corpses too), Detonate's fuse runs
+ * out into Explode; Block.Collapse sets it off at once. A sign falls when the ground under it goes.
+ */
+function stepMines(w: World, t: number, blasts: Blast[]): void {
+  const units = [w.player, ...w.enemies];
+  for (const m of w.mines) {
+    if (m.state === 'exploded') continue;
+    if (w.map.get(m.c, m.r) !== m.block) m.fuse = 0;
+    else if (m.state === 'armed' && units.some((u) => !u.gibbed && u.invulnerable <= 0 && !u.exitDoor && steppedOn(m, u))) {
+      m.state = 'detonating';
+      w.events.push({ type: 'mineArmed', x: m.x, y: m.y });
+    }
+    if (m.state === 'detonating') m.fuse -= t;
+    if (m.fuse <= 0) {
+      m.state = 'exploded';
+      blasts.push(mineBlast(m));
+    }
+  }
+}
+
+function dropSigns(w: World): void {
+  for (const s of w.signs) if (!s.fallen && !w.map.get(s.c, s.r - 1)) s.fallen = true;
+}
+
 /** MookSuicide.MakeEffects: the blast at its feet, then it gibs. */
 function explodeSuicide(w: World, m: Unit, blasts: Blast[]): void {
   if (!m.ai || m.ai.exploded) return;
@@ -972,7 +1002,9 @@ export function stepWorld(w: World, controls: Controls, prev: Controls, t: numbe
   stepMech(w, t, blasts);
   stepDoors(w, t);
   stepProjectiles(w, t, blasts);
+  stepMines(w, t, blasts);
   resolveBlasts(w, blasts);
+  dropSigns(w);
   reportUnits(w);
   ageEffects(w, t);
   followCamera(w.camera, w.player, w.map, t);
