@@ -79,7 +79,7 @@ export function makeAiState(id: number): AiState {
     bubble: null, bubbleTime: 0, attractC: 0, attractR: 0, wasJump: false, agent: makeAgent(), repathCount: 0, speed: null,
     startC: null, startR: 0, interest: null, runDir: 0, alertDelay: 0, rambro: 0, rambroLife: 0,
     litFuse: false, suicideDelay: SUICIDE_DELAY, suicideTimer: SUICIDE_TIMER, deathFuse: SUICIDE_DEATH_FUSE, exploded: false,
-    droppedGrenade: false, attackingDir: 0, alarmFuse: 0,
+    droppedGrenade: false, attackingDir: 0, alarmFuse: 0, alertedFor: 0,
   };
 }
 
@@ -537,6 +537,28 @@ function bruiserThink(m: Unit, ai: AiState, ctx: AiContext): void {
   ai.queue.push(act('wait', 0.4), act('wait', stats.delayBetweenFiring));
 }
 
+/**
+ * MortarAI.DoAlertedThink (an EnemyAI, thinkCount % 4): turn to the bro, fire for attackTime, a long pause (2 s, then
+ * 2.8-3.35 s once 6 s have passed since the alert), another shot if he is near the way he faces (300 or 400 by 50,
+ * 70% or 75%) or a pause, and 0.26 s. StartMoving does nothing, so he never walks.
+ */
+function mortarThink(m: Unit, ai: AiState, ctx: AiContext): void {
+  const { rng, stats } = ctx;
+  const p = alive(ctx.player);
+  const late = ai.alertedFor > 6;
+  if (p && !isThisWay(p, m.x, ai.walkDir)) {
+    ai.walkDir = ai.walkDir === 1 ? -1 : 1;
+    ai.queue.push(act('face', 0, getColumn(m.x) + ai.walkDir * 2, getRow(m.y)), act('wait', stats.sightDelay * 0.5));
+  }
+  ai.queue.push(act('fire', stats.attackTime), act('wait', late ? 2.8 + rng() * 0.55 : 2));
+  const range = late ? 400 : 300;
+  const ox = m.x - ai.walkDir * 30;
+  const near = p !== null && isThisWay(p, ox, ai.walkDir) && Math.abs(p.x - ox) < range && Math.abs(p.y - (m.y + 10)) < 50;
+  if (near && rng() < (late ? 0.75 : 0.7)) ai.queue.push(act('fire', stats.attackTime));
+  else ai.queue.push(act('wait', 1 - rng() * 0.1));
+  ai.queue.push(act('wait', 0.26));
+}
+
 /** SuicideAI.DoAlertedThink: keep running at the last place the player was seen. */
 function suicideThink(m: Unit, ai: AiState, ctx: AiContext): void {
   const p = alive(ctx.player);
@@ -577,6 +599,7 @@ function think(m: Unit, ai: AiState, ctx: AiContext): void {
   else if (m.kind === 'mook_bazooka' || m.kind === 'mook_grenadier' || m.kind === 'mook_jetpack_bazooka') bazookaThink(m, ai, ctx); // the grenadier's and the jetpack bazooka's AI is MookBazookaAi
   else if (m.kind === 'mook_scout') baseAlertedThink(m, ai, ctx);
   else if (m.kind === 'mook_bruiser') bruiserThink(m, ai, ctx);
+  else if (m.kind === 'mook_mortar') mortarThink(m, ai, ctx);
   else trooperThink(m, ai, ctx);
 }
 
@@ -734,6 +757,7 @@ export function thinkMook(m: Unit, ctx: AiContext, t: number): AiOutput {
   if (!ai || m.dead || ai.exploded) return IDLE;
   if (ai.bubble && (ai.bubbleTime -= t) <= 0) ai.bubble = null;
   if (ai.rambro > 0) ai.rambro -= t;
+  ai.alertedFor = ai.mental === 'alerted' ? ai.alertedFor + t : 0;
   if (m.blindTime > 0 && (m.blindTime -= t) <= 0) {
     m.blindTime = 0;
     stopBeingBlind(m, ai, ctx);

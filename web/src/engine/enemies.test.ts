@@ -224,6 +224,65 @@ describe('the alarmist (MookGeneral "ZMook Alarmist", DeadManSwitchAlarmTrap)', 
   });
 });
 
+describe('the mortar mook (MookMortar, MortarAI)', () => {
+  it("reads the mortar mook ('R'), who stays put", () => {
+    expect(parseLevel({ cols: 4, rows: 2, tiles: ['PR.F', 'dddd'] }, TEST_STATS).enemies.map((e) => e.kind)).toEqual(['mook_mortar']);
+  });
+
+  it('alerted, he launches a rocket straight up from (X + dir*17, Y + 6.5) at 450, one every 2 s (fireRate), without moving', () => {
+    const { w, m } = alerted('R', 'mook_mortar', 9);
+    w.player.invulnerable = 999;
+    const x0 = m.x;
+    const launches = new Map<number, Projectile>();
+    for (let i = 0; i < steps(5); i++) {
+      play(w, {}, 1);
+      for (const p of w.projectiles) if (p.kind === 'launch' && !launches.has(p.id)) launches.set(p.id, { ...p });
+    }
+    expect(launches.size).toBeGreaterThanOrEqual(1);
+    expect(launches.size).toBeLessThanOrEqual(3);
+    const first = [...launches.values()][0];
+    expect(first.xI).toBe(0);
+    expect(first.yI).toBe(450);
+    expect(Math.abs(first.x - (x0 + m.facing * 17))).toBeLessThan(2);
+    expect(m.x).toBe(x0);
+  });
+
+  it('when the launch burns out (RocketLaunch.MakeEffects, seekPlayer) a bombardment rocket falls at 300 onto the bro, from 500 over the screen', () => {
+    const { w, m } = alerted('R', 'mook_mortar', 9);
+    w.player.invulnerable = 999;
+    w.projectiles.push({ id: 900, kind: 'launch', team: 'enemy', x: m.x, y: 200, xI: 0, yI: 450, life: 0.01, bounces: 0, dead: false });
+    play(w, {}, 2);
+    const bomb = w.projectiles.find((p) => p.kind === 'bomb');
+    expect(bomb).toBeDefined();
+    expect(bomb!.yI).toBe(-300);
+    expect(bomb!.x % 16).toBe(0);
+    expect(Math.abs(bomb!.x - w.player.x)).toBeLessThanOrEqual(16 * 7);
+    expect(bomb!.y).toBeGreaterThan(w.camera.y + 500);
+  });
+
+  it('a launch that hits something blows up there, and still calls its strike', () => {
+    const { w } = alerted('R', 'mook_mortar', 9);
+    w.player.invulnerable = 999;
+    w.projectiles.push({ id: 901, kind: 'launch', team: 'enemy', x: 200, y: 20, xI: 0, yI: -450, life: 0.5, bounces: 0, dead: false });
+    play(w, {}, 3);
+    expect(w.projectiles.some((p) => p.kind === 'bomb')).toBe(true);
+    expect(w.projectiles.find((p) => p.id === 901)).toBeUndefined();
+  });
+
+  it('strikes land to either side of the bro in turn (offsetSide flips, offsetAmount grows)', () => {
+    const { w, m } = alerted('R', 'mook_mortar', 9);
+    w.player.invulnerable = 999;
+    const xs: number[] = [];
+    for (let k = 0; k < 4; k++) {
+      w.projectiles.push({ id: 910 + k, kind: 'launch', team: 'enemy', x: m.x, y: 200, xI: 0, yI: 450, life: 0.01, bounces: 0, dead: false });
+      play(w, {}, 2);
+      const bombs = w.projectiles.filter((p) => p.kind === 'bomb');
+      xs.push(bombs[bombs.length - 1].x - Math.round(w.player.x / 16) * 16);
+    }
+    expect(new Set(xs.map((d) => Math.sign(d))).size).toBeGreaterThan(1);
+  });
+});
+
 describe("the riot shield mook (MookRiotShield)", () => {
   it('his shield stops shots at his face; shots in his back hurt him', () => {
     const w = createWorld(strip('h'), TEST_STATS, [BROLUSCONI], () => 0.5);

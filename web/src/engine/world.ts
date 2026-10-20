@@ -12,7 +12,7 @@ import {
   SPEECH_DURATION, TILE, UNIT_BOX_HEIGHT, UNIT_WIDTH, BAZOOKA_RECOIL, DOOR_EXIT_INVULNERABLE, DOOR_FIRE_DAMAGE, SCOUT_WAVE_TIME,
   BOMB_FIRE_RANGE_M, SUICIDE_BURN_EXTRA, ALLURE_RANGE, FLEX_EVENT_FRAMES, FLEX_FRAME_RATE, FLEX_FRAMES, FLEX_HOLD,
   FLEX_RESTART_FRAME, FLEX_SLOW_FRAMES, FLEX_SLOW_RATE, TANK_EXIT_YI, MECH, DOG, DOG_BITE_COOLDOWN, GRENADIER_THROW_DELAY, CRICKET,
-  NEURALISER, DJANGO, MOLOTOV,
+  NEURALISER, DJANGO, MOLOTOV, MORTAR,
 } from './constants';
 import { alarmDoor, collapseDoor, doorLostSupport, makeDoor, stepDoor, type DoorSpawn, type MookDoor } from './doors';
 import { applyBlast, barrelBlast, suicideBlast, type Blast } from './explosions';
@@ -21,7 +21,8 @@ import { makeBlock, type TileMap } from './map';
 import { mineBlast, plantMine, steppedOn, type Mine, type MineSign } from './mines';
 import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
-  dropGrenade, fireBazookaRocket, fireMinigunBullet, fireMookBullet, molotovFlames, spawnAirstrike, stepProjectile, throwGrenade,
+  dropGrenade, fireBazookaRocket, fireLaunch, fireMinigunBullet, fireMookBullet, molotovFlames, skyRocket, spawnAirstrike, stepProjectile,
+  throwGrenade,
 } from './projectiles';
 import {
   allVehicles, boardVehicles, callJet, callTank, carryDriver, driveVehicle, exitVehicle, hitVehicle, stepJets, stepTanks,
@@ -143,6 +144,7 @@ export interface World {
   grass: Grass[];
   doors: MookDoor[];
   alarms: Alarm[]; // set off by the alarmists' dead man's switches
+  mortarSpread: { amount: number; side: 1 | -1 }; // RocketLaunch.offsetAmount / offsetSide (static in Broforce)
   mines: Mine[];
   signs: MineSign[]; // the Mine Field Signs over them
   doorPoints: DoorPoint[]; // the doors as ScoutMookInterestPoints
@@ -204,7 +206,7 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
     prisoners: parsed.cages.map((c) => ({ x: cellX(c.c), y: feetY(c.r), freed: false })),
     checkpoints: parsed.checkpoints.map((c) => ({ x: cellX(c.c), y: feetY(c.r), activated: false, raisedAt: 0 })),
     grass: parsed.grass.map((c) => ({ x: cellX(c.c), y: c.r * TILE, health: stats.grass.health, destroyed: false })),
-    doors, alarms: [], mines, signs: parsed.signs.map((s) => ({ c: s.c, r: s.r, x: cellX(s.c), y: s.r * TILE, fallen: false })), doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, django: null, reboard: null, flexPower: level.flexPower ?? null,
+    doors, alarms: [], mortarSpread: { amount: 0, side: 1 }, mines, signs: parsed.signs.map((s) => ({ c: s.c, r: s.r, x: cellX(s.c), y: s.r * TILE, fallen: false })), doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, django: null, reboard: null, flexPower: level.flexPower ?? null,
     flag: { x: cellX(parsed.flag.c), y: feetY(parsed.flag.r) },
     lives: LIVES_START, specialAmmo: bro.specialAmmo ?? stats.bros[bro.base].specialAmmo, respawnTimer: 0,
     state: 'playing', extractionTime: 0, time: 0, nextId, camera, events: [], laughIndex: 0,
@@ -676,6 +678,10 @@ function useFire(w: World, m: Unit): void {
     m.fireDelay = BAZOOKA_FIRE_DELAY; // MookBazooka.FireWeapon
     m.xIBlast = -m.facing * BAZOOKA_RECOIL;
     w.events.push({ type: 'shot', weapon: 'rocket', x: m.x, y: m.y, facing: m.facing });
+  } else if (m.kind === 'mook_mortar') {
+    w.projectiles.push(fireLaunch(w.nextId++, m, w.stats)); // MookMortar.UseFire
+    makeNoise(w, m.x, m.y, MORTAR.noise);
+    w.events.push({ type: 'shot', weapon: 'shell', x: m.x, y: m.y, facing: m.facing });
   } else if (m.kind === 'mook_bruiser') {
     if (!isVisible(w.camera, m.x, m.y + 8, 6, 13)) return; // SortOfFollow.IsItSortOfVisible(X, Y + 8, 6, 13)
     const bullet = fireMinigunBullet(w.nextId++, m, w.stats, w.rng);
@@ -877,6 +883,8 @@ function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
         fireUnits(w, ev.x, ev.y, MOLOTOV.burst, MOLOTOV.burstDamage, 0);
         w.projectiles.push(...molotovFlames(() => w.nextId++, ev.x, ev.y, w.stats, w.rng, p.team));
         w.events.push({ type: 'molotovBurst', x: ev.x, y: ev.y });
+      } else if (ev.type === 'callMortar') {
+        callMortarStrike(w);
       } else if (ev.type === 'callNuke') {
         w.events.push({ type: 'airstrike', x: ev.x, y: ev.y });
         const y = screenMaxY(w.camera) + 160;
@@ -899,6 +907,16 @@ function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
       }
     }
   }
+}
+
+/** RocketLaunch.MakeEffects with seekPlayer: a bombardment rocket over the bro, to one side and then the other. */
+function callMortarStrike(w: World): void {
+  if (w.player.dead) return;
+  const s = w.mortarSpread;
+  const x = Math.round((w.player.x + MORTAR.spread * (s.amount % MORTAR.spreadMod) * s.side) / TILE) * TILE;
+  s.amount += 1 + Math.floor(w.rng() * 2);
+  s.side = s.side === 1 ? -1 : 1;
+  w.projectiles.push(skyRocket(w.nextId++, x, screenMaxY(w.camera) + MORTAR.skyY, MORTAR.fall, w.stats));
 }
 
 /** Map.DisturbWildLife: mooks within the noise range plus their own hearing range hear it. */

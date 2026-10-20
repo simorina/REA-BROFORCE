@@ -26,6 +26,7 @@ const ENEMY_SHEETS: Record<Exclude<UnitKind, 'bro'>, SheetKey> = {
   mook: 'mook', mook_suicide: 'mook_suicide', mook_bazooka: 'mook_bazooka', mook_scout: 'mook_scout', boss: 'epstein',
   mook_shield: 'mook_shield', mook_grenadier: 'mook_grenadier', dog: 'dog', mook_bruiser: 'mook_bruiser',
   mook_jetpack: 'mook_jetpack', mook_jetpack_bazooka: 'mook_jetpack_bazooka', mook_ninja: 'mook_ninja', mook_alarmist: 'mook_alarmist',
+  mook_mortar: 'mook', // ZMookMortar wears the trooper's mook2_anim
 };
 const BLOCK_SHEETS: Record<BlockKind, SheetKey> = {
   dirt: 'block_dirt', sand: 'block_sand', brick: 'block_brick', temple: 'block_temple', steel: 'block_steel', barrel: 'block_barrel',
@@ -466,6 +467,9 @@ export class Renderer {
         break;
       case 'rocket':
         this.sprite('rocket', 0, 0, p.x, p.y, p.xI < 0);
+        break;
+      case 'launch':
+        this.sprite('rocket', 0, 0, p.x, p.y, false, -Math.PI / 2); // the mortar's RocketLaunch, nose up
         break;
       case 'bomb':
       case 'jetBomb':

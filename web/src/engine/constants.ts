@@ -171,6 +171,10 @@ export const ALARM = { warnEvery: 0.067, alertRange: 200, visible: 64, dropVisib
 // Explode: DamageGround(12, range 20) at its centre, ExplodeUnits(20, 40, 40, 200, 300) 6 below it, DisturbWildLife 120.
 // MineFieldSign plants it up to two blocks either side of the sign.
 export const MINE = { fuse: 0.3, range: 20, groundDamage: 12, unitDamage: 20, force: 200, extraY: 300, unitY: -6, noise: 120, trigger: 10, feet: 3, signReach: 2 };
+// MookMortar.UseFire: FireWeapon(X + dir*17, Y + 6.5, 0, 450) and DisturbWildLife 40; RocketLaunch.MakeEffects
+// (seekPlayer): a RocketBombardment from GetScreenMaxY() + 500 at -300 over a player, 16 * (offsetAmount % 7) * offsetSide
+// to one side, rounded to a block; offsetSide flips and offsetAmount grows by Random.Range(1, 3) each time
+export const MORTAR = { ox: 17, oy: 6.5, speed: 450, noise: 40, skyY: 500, fall: 300, spread: 16, spreadMod: 7 };
 export const DOG = { bite: 3, range: 6 }; // MookDog.RunFiring: Map.HitLivingUnits(3, Melee, 6, X, Y + 4)
 export const JET_ROCKET = { ox: [32, 8], oy: -5, x: 450, y: -285, jitter: 12 }; // HarrierJet.Update: two shots from (X+32, Y-5), (X+8, Y-5) at (450, -285) + insideUnitCircle * 12
 export const JET_DESCENT = { slow: 40, slowZone: 48 }; // HarrierJet.Start: yI -40 over its last 48 px

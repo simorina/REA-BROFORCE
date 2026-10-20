@@ -74,6 +74,21 @@ function ai(raw: Raw, key: string): AiStats {
   };
 }
 
+/** The old EnemyAI (MortarAI): sight, attackTime and sightDelay; it has no PolymorphicAI patrol or idle waits. */
+function enemyAi(raw: Raw, key: string): AiStats {
+  return {
+    sightX: num(raw, key, 'sightRangeX'),
+    sightY: num(raw, key, 'sightRangeY'),
+    attackTime: num(raw, key, 'attackTime'),
+    sightDelay: num(raw, key, 'sightDelay'),
+    delayBetweenFiring: 0,
+    patrolRadius: 0, // MortarAI.StartMoving does nothing: he stays put
+    minIdleWait: 0.9, // EnemyAI.DoIdleThink: 0.9 - Random.value * 0.1 to the next think
+    maxIdleWait: 1,
+    hidingLookX: 64,
+  };
+}
+
 function rocket(raw: Raw, key: string): RocketStats {
   return {
     damage: num(raw, key, 'damage'),
@@ -98,6 +113,7 @@ export function parseValues(raw: Raw): GameStats {
       mook_jetpack: unit(raw, 'mook_jetpack'),
       mook_jetpack_bazooka: unit(raw, 'mook_jetpack_bazooka'),
       mook_ninja: unit(raw, 'mook_ninja'),
+      mook_mortar: unit(raw, 'mook_mortar'),
       mook_alarmist: unit(raw, 'mook_alarmist'),
     },
     bros: {
@@ -110,6 +126,7 @@ export function parseValues(raw: Raw): GameStats {
       mook_grenadier: ai(raw, 'ai_mook_grenadier'), dog: ai(raw, 'ai_dog'), mook_bruiser: ai(raw, 'ai_mook_bruiser'),
       mook_jetpack: ai(raw, 'ai_mook_jetpack'), mook_jetpack_bazooka: ai(raw, 'ai_mook_jetpack_bazooka'),
       mook_ninja: ai(raw, 'ai_mook_ninja'), mook_alarmist: ai(raw, 'ai_mook_alarmist'),
+      mook_mortar: enemyAi(raw, 'ai_mook_mortar'),
     },
     paths: {
       mook: path(raw, 'path_mook'), mook_suicide: path(raw, 'path_mook_suicide'), mook_bazooka: path(raw, 'path_mook_bazooka'),
@@ -118,6 +135,7 @@ export function parseValues(raw: Raw): GameStats {
       mook_grenadier: path(raw, 'path_mook_grenadier'), dog: path(raw, 'path_dog'), mook_bruiser: path(raw, 'path_mook_bruiser'),
       mook_jetpack: path(raw, 'path_mook_jetpack'), mook_jetpack_bazooka: path(raw, 'path_mook_jetpack_bazooka'),
       mook_ninja: path(raw, 'path_mook_ninja'), mook_alarmist: path(raw, 'path_mook_alarmist'),
+      mook_mortar: path(raw, 'path_mook_mortar'),
     },
     scoutRunSpeed: num(raw, 'mook_scout', 'runSpeed'),
     dogRunSpeed: num(raw, 'dog', 'awareRunSpeed'),
@@ -138,6 +156,7 @@ export function parseValues(raw: Raw): GameStats {
       spiralDelay: num(raw, 'mook_jetpack', 'spiralDelayDuration'),
     },
     rocketMook: rocket(raw, 'rocket_mook'),
+    launch: rocket(raw, 'rocket_launch'),
     bomb: rocket(raw, 'bomb'),
     marker: { bounceM: num(raw, 'marker', 'bounceM'), frictionM: num(raw, 'marker', 'frictionM') },
     tank: {

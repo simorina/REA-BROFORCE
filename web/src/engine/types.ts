@@ -2,12 +2,12 @@ export type Team = 'player' | 'enemy';
 export type BlastTeam = Team | 'neutral';
 export type BlockKind = 'dirt' | 'sand' | 'brick' | 'temple' | 'steel' | 'barrel';
 export type EnemyKind = 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout' | 'mook_shield' | 'mook_grenadier' | 'dog' | 'mook_bruiser'
-  | 'mook_jetpack' | 'mook_jetpack_bazooka' | 'mook_ninja' | 'mook_alarmist';
+  | 'mook_jetpack' | 'mook_jetpack_bazooka' | 'mook_ninja' | 'mook_alarmist' | 'mook_mortar';
 export type UnitKind = 'bro' | EnemyKind | 'boss';
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
 export const BRO_BASES = ['bro_base', 'bro_lee', 'bro_soldier', 'bro_in_black', 'bro_rambro', 'bro_ellen'] as const;
 export type BroBase = (typeof BRO_BASES)[number];
-export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket' | 'rifle' | 'jetBomb' | 'grenade' | 'cricket' | 'neuraliser' | 'revolver' | 'molotov' | 'molotovFire' | 'flame' | 'flameWall' | 'minigun';
+export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket' | 'rifle' | 'jetBomb' | 'grenade' | 'cricket' | 'neuraliser' | 'revolver' | 'molotov' | 'molotovFire' | 'flame' | 'flameWall' | 'minigun' | 'launch';
 
 export interface Block {
   kind: BlockKind;
@@ -138,6 +138,7 @@ export interface GameStats {
   jetpack: { range: number; blastForce: number; spiralDelay: number }; // MookJetpack.explosionRange, blastForce, spiralDelayDuration
   alarm: { delay: number; rate: number; paratrooperRate: number; activeMooks: number }; // DeadManSwitchAlarmTrap, Alarm Megaphones
   rocketMook: RocketStats;
+  launch: RocketStats; // the mortar mook's RocketLaunch ("Rocket Launch Airstrike")
   bomb: RocketStats;
   marker: GrenadeStats;
   tank: TankStats;
@@ -238,6 +239,7 @@ export interface AiState {
   droppedGrenade: boolean; // MookGrenadier.DropDeathGrenade, once
   alarmFuse: number; // DeadManSwitchAlarmTrap.alarmDelay left once he is dead (negative: spent)
   attackingDir: -1 | 0 | 1; // BigGuyAI.attackingDirection: the way the Bruiser keeps shooting
+  alertedFor: number; // EnemyAI: Time.time - alertTime, while alerted
 }
 
 /** BroLee's forward strike in progress: Putin's judo throw. */

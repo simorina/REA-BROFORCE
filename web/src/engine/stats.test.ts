@@ -52,6 +52,13 @@ describe('parseValues', () => {
     expect(s.jetpack).toEqual({ range: 40, blastForce: 20, spiralDelay: 0.5 });
   });
 
+  it('reads the mortar mook (MookMortar with MortarAI, an EnemyAI) and its RocketLaunch', () => {
+    const s = parseValues(RAW_VALUES);
+    expect(s.units.mook_mortar).toMatchObject({ health: 3, fireRate: 2 });
+    expect(s.ai.mook_mortar).toMatchObject({ sightX: 300, sightY: 20, attackTime: 2, sightDelay: 0.55, patrolRadius: 0 });
+    expect(s.launch).toEqual({ damage: 10, range: 28, blastForce: 20, blastForceExtraY: 300, life: 0.8 });
+  });
+
   it('maps values.json onto GameStats', () => {
     expect(parseValues(RAW_VALUES)).toEqual(TEST_STATS);
   });

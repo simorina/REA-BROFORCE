@@ -1,7 +1,7 @@
 import {
   AIRSTRIKE_FUSE, AIRSTRIKE_ROCKETS, AIRSTRIKE_SPEED_MIN, AIRSTRIKE_SPEED_RAND, AIRSTRIKE_THROW,
   AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, BRUISER, FLAME_WALL, FLAMETHROWER, FOOTBALL, CRICKET, GRAVITY, GRENADE_EXTRA_Y, GRENADE_FUSE, M60, MOLOTOV, MOLOTOV_FIRE, NEURALISER, REVOLVER, GRENADIER, GRENADIER_REACH, HEAVY_SHELL_DIP, JET_BOMB, JET_ROCKET, JUDO_THROW, SHIELD, MOOK_BULLET_SPEED, RIFLE, TANK_CANNON, TANK_ROCKET_CRUSH, TANK_SHELL,
-  TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT,
+  TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT, MORTAR,
 } from './constants';
 import { barrelBlast, cricketBlast, rocketBlast, shellBlast, suicideBlast, type Blast } from './explosions';
 import { TileMap, getColumn, getRow } from './map';
@@ -24,6 +24,7 @@ export type ProjectileEvent =
   | { type: 'molotov'; x: number; y: number } // GrenadeMolotov.Death
   | { type: 'flameFx'; x: number; y: number } // a little fire's flames
   | { type: 'callNuke'; x: number; y: number }
+  | { type: 'callMortar'; x: number; y: number } // RocketLaunch.MakeEffects: the strike it calls in
   | { type: 'hitVehicle'; vehicle: Vehicle; damage: number }
   | { type: 'hitMech'; damage: number }
   | { type: 'shieldHit'; unit: Unit; x: number; y: number; broke: boolean }
@@ -89,6 +90,11 @@ export function fireFrom(id: number, kind: ProjectileKind, team: Team, ox: numbe
   ty: number, speed: number, maxAim: number, life: number): Projectile {
   const a = Math.max(-maxAim, Math.min(maxAim, Math.atan2(ty - oy, Math.abs(tx - ox))));
   return make(id, kind, team, ox, oy, facing * Math.cos(a) * speed, Math.sin(a) * speed, life);
+}
+
+/** MookMortar.UseFire: a RocketLaunch straight up from (X + dir*17, Y + 6.5) at 450. */
+export function fireLaunch(id: number, m: Unit, stats: GameStats): Projectile {
+  return make(id, 'launch', m.team, m.x + m.facing * MORTAR.ox, m.y + MORTAR.oy, 0, MORTAR.speed, stats.launch.life);
 }
 
 /** A rocket falling straight down from above the screen, the enemy's (the Goliath's RocketBombardment). */
@@ -681,6 +687,18 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
       if (w.map.blockAt(p.x, p.y) || struck(w, p) || p.life <= 0
         || (p.team === 'enemy' && vehicleAt(w.vehicles ?? [], p.x, p.y) !== null)) {
         explodeAt(p, p.kind === 'rocket' ? w.stats.rocketMook : w.stats.bomb, true, events);
+      }
+      break;
+    }
+    case 'launch': {
+      // RocketLaunch: up it goes; burnt out, or hitting something (then it blows up too), it calls its strike
+      p.x += p.xI * t;
+      p.y += p.yI * t;
+      const hit = w.map.blockAt(p.x, p.y) !== null || struck(w, p);
+      if (hit) explodeAt(p, w.stats.launch, true, events);
+      if (hit || p.life <= 0) {
+        p.dead = true;
+        events.push({ type: 'callMortar', x: p.x, y: p.y });
       }
       break;
     }
