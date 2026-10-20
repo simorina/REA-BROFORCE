@@ -8,34 +8,44 @@ const parsed = parseLevel(level, TEST_STATS);
 const count = (k: string) => parsed.enemies.filter((e) => e.kind === k).length;
 
 describe("level 1: Epstein's island", () => {
-  it('is 480 x 22 with aligned rows, four times the old level', () => {
-    expect(level.cols).toBe(480);
+  it('is 580 x 22 with aligned rows, the longest mission', () => {
+    expect(level.cols).toBe(580);
     expect(level.rows).toBe(22);
-    expect(level.tiles.every((row) => row.length === 480)).toBe(true);
+    expect(level.tiles.every((row) => row.length === 580)).toBe(true);
   });
 
-  it('has 28 mooks, 10 suicide mooks, 8 bazooka mooks, 4 scouts, 4 mook doors and 8 prisoners', () => {
-    expect(count('mook')).toBe(28);
-    expect(count('mook_suicide')).toBe(10);
-    expect(count('mook_bazooka')).toBe(8);
+  it('has 37 mooks, 13 suicide mooks, 9 bazooka mooks, 4 scouts, 4 mook doors and 9 prisoners', () => {
+    expect(count('mook')).toBe(37);
+    expect(count('mook_suicide')).toBe(13);
+    expect(count('mook_bazooka')).toBe(9);
     expect(count('mook_scout')).toBe(4);
     expect(parsed.doors).toHaveLength(4);
-    expect(parsed.cages).toHaveLength(8);
+    expect(parsed.cages).toHaveLength(9);
   });
 
-  it('has the new enemies too: 4 riot shield mooks, 4 grenadiers and 5 dogs', () => {
-    expect(count('mook_shield')).toBe(4);
-    expect(count('mook_grenadier')).toBe(4);
-    expect(count('dog')).toBe(5);
+  it('has the new enemies too: 5 riot shield mooks, 6 grenadiers and 6 dogs', () => {
+    expect(count('mook_shield')).toBe(5);
+    expect(count('mook_grenadier')).toBe(6);
+    expect(count('dog')).toBe(6);
   });
 
-  it('and the newest: a Bruiser, two ninjas, an alarmist, two jetpack mooks and a minefield', () => {
-    expect(count('mook_bruiser')).toBe(1);
-    expect(count('mook_ninja')).toBe(2);
+  it('and the newest: two Bruisers, three ninjas, an alarmist, three jetpack mooks and a minefield', () => {
+    expect(count('mook_bruiser')).toBe(2);
+    expect(count('mook_ninja')).toBe(3);
     expect(count('mook_alarmist')).toBe(1);
-    expect(count('mook_jetpack')).toBe(1);
+    expect(count('mook_jetpack')).toBe(2);
     expect(count('mook_jetpack_bazooka')).toBe(1);
     expect(parsed.signs).toHaveLength(2);
+  });
+
+  it("Epstein's last garrison, before his Goliath: mortar mooks on a bunker, an elite Bruiser, a troop truck and two motorbikes, and aliens out of his lab", () => {
+    expect(count('mook_mortar')).toBe(2);
+    expect(count('mook_bruiser_elite')).toBe(1);
+    expect(parsed.foes.map((f) => f.kind).sort()).toEqual(['bike', 'bike', 'truck']);
+    for (const k of ['alien_xeno', 'alien_xeno_brain', 'alien_hugger', 'alien_snake', 'alien_melter', 'alien_mosquito']) expect(count(k), k).toBeGreaterThan(0);
+    expect(parsed.enemies).toHaveLength(99);
+    const garrison = parsed.enemies.filter((e) => e.c > 395 && e.c < parsed.mech!.c);
+    expect(garrison).toHaveLength(30);
   });
 
   it('is the jungle-themed final mission', () => {
@@ -66,12 +76,12 @@ describe("level 1: Epstein's island", () => {
     }
   });
 
-  it('has seven checkpoints: before Epstein, between his two fights and before his Goliath', () => {
+  it('has eight checkpoints: before Epstein, between his two fights and before his Goliath', () => {
     const cs = parsed.checkpoints.map((c) => c.c).sort((a, b) => a - b); // the parser lists them row by row
-    expect(cs).toHaveLength(7);
+    expect(cs).toHaveLength(8);
     expect(cs[0]).toBeGreaterThan(parsed.player.c);
     expect(cs.some((c) => c > parsed.boss!.c && c < parsed.mech!.c)).toBe(true);
-    expect(cs[6]).toBeLessThan(parsed.mech!.c);
+    expect(cs[7]).toBeLessThan(parsed.mech!.c);
   });
 
   it('meets Epstein at his temple under open sky (his guards drop in)', () => {

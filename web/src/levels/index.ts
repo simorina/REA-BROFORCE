@@ -4,6 +4,7 @@ import { buildBurning } from './burning';
 import { buildConvoy } from './convoy';
 import { buildDesert } from './desert';
 import { buildHarbor } from './harbor';
+import { buildLab } from './lab';
 import { buildLevel1 } from './level1';
 import { buildTemple } from './temple';
 import { buildTower } from './tower';
@@ -21,7 +22,7 @@ export interface Mission {
 /**
  * The campaign "Operation: Little Saint James" — missions tracing the Epstein files from
  * desert intelligence intercepts through harbor raids, burning evidence, a Manhattan skyscraper,
- * a private airstrip, an underground temple and an armoured convoy, to the final assault on Epstein's island.
+ * a private airstrip, an underground temple, an armoured convoy and an alien lab, to the final assault on Epstein's island.
  */
 export const MISSIONS: readonly Mission[] = [
   {
@@ -60,8 +61,13 @@ export const MISSIONS: readonly Mission[] = [
     build: buildConvoy, map: { x: 0.79, y: 0.30 }, territory: 'ukraine',
   },
   {
+    id: 'lab', name: 'Il laboratorio',
+    briefing: "Nel cuore della foresta del Congo l'isola finanzia un laboratorio segreto che alleva creature aliene, e qualcuno ha aperto le gabbie: xenomorfi, facehugger, melter acidi, zanzare giganti e due bruti corazzati girano tra le guardie in preda al panico. Attraversalo e libera i prigionieri. Se un facehugger ti salta in faccia, fletti i muscoli (F) prima che sia tardi!",
+    build: buildLab, map: { x: 0.83, y: 0.48 }, territory: 'congo',
+  },
+  {
     id: 'island', name: "L'isola di Epstein",
-    briefing: "La destinazione finale: Little Saint James. Attraversa la spiaggia, la giungla, il tempio dove Epstein ti attende. Battilo — poi inseguilo nel bunker dove comanda il Goliath.",
+    briefing: "La destinazione finale: Little Saint James. Attraversa la spiaggia, la giungla, il tempio dove Epstein ti attende. Battilo — poi inseguilo oltre la sua ultima guarnigione, fino al bunker dove comanda il Goliath.",
     build: buildLevel1, map: { x: 0.86, y: 0.74 }, territory: 'hawaii',
   },
 ];

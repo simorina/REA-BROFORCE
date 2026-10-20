@@ -1,13 +1,14 @@
 import type { Cell, LevelData, ParallaxDoodad } from '../engine/level';
 
-const COLS = 480;
+const COLS = 580;
 const ROWS = 22;
 
 /**
  * Level 1, Epstein's island, built with helpers so the rows stay aligned. Rows count from the bottom (0 = bedrock).
  * From the beach the bro climbs through the jungle, a cave, a ravine of bottomless gaps, a guarded compound and the
  * road up to the temple, where Jeffrey Epstein waits. Beaten, he runs; the bro follows him down past the temple,
- * through a secret base, to the steel pad where Epstein waits again in his Goliath. The flag opens once it is down.
+ * through a secret base and his last garrison, to the steel pad where Epstein waits again in his Goliath. The flag
+ * opens once it is down.
  */
 export function buildLevel1(): LevelData {
   const grid = Array.from({ length: ROWS }, () => Array<string>(COLS).fill('.'));
@@ -190,11 +191,55 @@ export function buildLevel1(): LevelData {
   put(368, 9, 'q');
   put(390, 4, 'C');
 
-  // The pad (396-479): a steel floor under open sky, Epstein's Goliath on it, the flag at its far end.
-  ground(396, 479, 3, 's');
-  put(444, 4, 'M');
-  put(474, 4, 'F');
-  fill(479, 479, 4, ROWS - 1, 's');
+  // The garrison (396-495): Epstein's last guard. A bunker with an elite Bruiser inside and mortar mooks on its roof,
+  // a troop truck and two motorbikes on the road, and the aliens escaped from his lab in the Congo among the mooks.
+  ground(396, 495, 3);
+  put(400, 4, 'm');
+  put(403, 4, 'm');
+  put(406, 4, 'h');
+  put(408, 4, 'k');
+  fill(410, 410, 4, 8, 'b');
+  fill(422, 422, 4, 8, 'b');
+  fill(410, 422, 9, 9, 'b');
+  fill(410, 410, 4, 5, '.'); // the way in
+  fill(422, 422, 4, 5, '.'); // and out
+  put(413, 4, 'm');
+  put(416, 4, 'G');
+  put(419, 4, 'n');
+  put(412, 10, 'R');
+  put(416, 10, 'R');
+  put(420, 10, 'z');
+  put(424, 4, 'm');
+  put(426, 4, 'k');
+  put(429, 4, 'X');
+  put(432, 4, 'f');
+  put(435, 4, 'm');
+  put(438, 4, 'S');
+  put(441, 4, 'T');
+  put(447, 4, 'I');
+  put(450, 4, 'I');
+  put(452, 4, 'n');
+  put(454, 4, 'm');
+  put(457, 4, 'L');
+  put(460, 4, 'q');
+  put(463, 4, 'm');
+  put(466, 4, 'Y');
+  put(469, 4, 'j');
+  put(472, 4, 'm');
+  put(475, 4, 'k');
+  put(478, 4, 'W');
+  put(481, 4, 'N');
+  put(484, 4, 'm');
+  put(487, 4, 'B');
+  put(489, 4, 'c');
+  put(490, 4, 'X');
+  put(492, 4, 'C');
+
+  // The pad (496-579): a steel floor under open sky, Epstein's Goliath on it, the flag at its far end.
+  ground(496, 579, 3, 's');
+  put(544, 4, 'M');
+  put(574, 4, 'F');
+  fill(579, 579, 4, ROWS - 1, 's');
 
   // Long grass: mooks wait hidden in it (PolymorphicAI.HideInGrass), more tufts for cover.
   const grass: Cell[] = [
@@ -214,9 +259,9 @@ export function buildLevel1(): LevelData {
  */
 export function jungle(): ParallaxDoodad[] {
   const layers = [
-    { layer: 'distant', from: -800, to: 8400, step: 300, y: 148, variants: 3 },
-    { layer: 'mid', from: -480, to: 8200, step: 420, y: 47, variants: 2 },
-    { layer: 'near', from: -390, to: 8100, step: 260, y: 31, variants: 3 },
+    { layer: 'distant', from: -800, to: 10000, step: 300, y: 148, variants: 3 },
+    { layer: 'mid', from: -480, to: 9800, step: 420, y: 47, variants: 2 },
+    { layer: 'near', from: -390, to: 9700, step: 260, y: 31, variants: 3 },
   ] as const;
   const out: ParallaxDoodad[] = [];
   for (const l of layers) {

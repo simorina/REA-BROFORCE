@@ -12,7 +12,7 @@ const enemies = (i: number, kind?: string) => built[i].parsed.enemies.filter((e)
 
 describe('the campaign missions', () => {
   it("are missions tracing the Epstein files to the final battle on Epstein's island", () => {
-    expect(MISSIONS.map((m) => m.id)).toEqual(['desert', 'harbor', 'burning', 'tower', 'airstrip', 'temple', 'convoy', 'island']);
+    expect(MISSIONS.map((m) => m.id)).toEqual(['desert', 'harbor', 'burning', 'tower', 'airstrip', 'temple', 'convoy', 'lab', 'island']);
     expect(MISSIONS.map((m) => m.name)).toEqual([
       'Il deserto',
       'Il porto dei segreti',
@@ -21,12 +21,13 @@ describe('the campaign missions', () => {
       "La pista d'atterraggio",
       'Il tempio sotterraneo',
       'Il convoglio',
+      'Il laboratorio',
       "L'isola di Epstein",
     ]);
   });
 
   it("each mission sits on a territory of Broforce's globe", () => {
-    expect(MISSIONS.map((m) => m.territory)).toEqual(['afghanistan', 'hongkong', 'vietnam', 'usa', 'panama', 'amazon', 'ukraine', 'hawaii']);
+    expect(MISSIONS.map((m) => m.territory)).toEqual(['afghanistan', 'hongkong', 'vietnam', 'usa', 'panama', 'amazon', 'ukraine', 'congo', 'hawaii']);
   });
 
   it('each mission has a lore briefing explaining the story', () => {
@@ -45,6 +46,7 @@ describe('the campaign missions', () => {
       'desert',
       'burning',
       'city',
+      'forest',
       'jungle',
     ]);
   });
@@ -103,8 +105,8 @@ describe('the campaign missions', () => {
   });
 
   it('only the island, the final mission, has Epstein and his Goliath', () => {
-    expect(built.map((b) => b.parsed.boss !== null)).toEqual([false, false, false, false, false, false, false, true]);
-    expect(built.map((b) => b.parsed.mech !== null)).toEqual([false, false, false, false, false, false, false, true]);
+    expect(built.map((b) => b.parsed.boss !== null)).toEqual([false, false, false, false, false, false, false, false, true]);
+    expect(built.map((b) => b.parsed.mech !== null)).toEqual([false, false, false, false, false, false, false, false, true]);
   });
 
   it('every level starts the bro on solid ground and ends at a flag past him', () => {
