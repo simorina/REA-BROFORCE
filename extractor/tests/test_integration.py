@@ -135,7 +135,9 @@ def test_extracts_the_jungle_background_and_the_effects(tmp_path):
     assert bg["sky"]["parallax"] == [1.0, 1.0]
     assert bg["theme"] == "Themeholder Jungle" and round(bg["near"][0]["parallax"][0], 2) == 0.3
     assert [len(bg[k]) for k in ("near", "mid", "distant")] == [3, 2, 3]
-    for name, theme, folder in (("desert", "Themeholder Desert", "sprites/bg/desert/"), ("burning", "Themeholder Jungle Burning", "sprites/bg/burning/")):
+    for name, theme, folder in (("desert", "Themeholder Desert", "sprites/bg/desert/"), ("burning", "Themeholder Jungle Burning", "sprites/bg/burning/"),
+                                ("city", "Themeholder City", "sprites/bg/city/"), ("forest", "Themeholder Forest", "sprites/bg/forest/"),
+                                ("hell", "Themeholder Hell", "sprites/bg/hell/")):
         other = json.loads((tmp_path / f"background_{name}.json").read_text(encoding="utf-8"))
         assert other["theme"] == theme and other["sky"]["file"].startswith(folder)
         assert all((tmp_path / l["file"]).is_file() for k in ("near", "mid", "distant") for l in other[k])

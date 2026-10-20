@@ -202,8 +202,8 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
   for (const p of parsed.foes) {
     const f = makeFoe(nextId++, p.kind, cellX(p.c), feetY(p.r), stats.foes[p.kind], parsed.map);
     foes.push(f);
-    if (f.kind === 'apc') { // MookAPC.Start: its motorbike waits inside, disabled
-      const bike = makeFoe(nextId++, 'bike', f.x + FOE.apc.bikeX, f.y, stats.foes.bike, parsed.map);
+    if (f.kind === 'apc') { // MookAPC.Start: its motorbike waits on its roof (MotorBikeDummy1), disabled
+      const bike = makeFoe(nextId++, 'bike', f.x - f.facing * FOE.apc.roofX, f.y + FOE.apc.roofY, stats.foes.bike, parsed.map);
       Object.assign(bike, { hidden: true, carrier: f.id, facing: 1 });
       foes.push(bike);
     }
@@ -973,9 +973,9 @@ function stepEliteLanding(m: Unit, t: number, blasts: Blast[]): void {
 function stepFoes(w: World, t: number, blasts: Blast[]): void {
   const player = w.player.dead ? null : w.player;
   for (const f of [...w.foes]) {
-    if (f.hidden) { // riding in its APC
+    if (f.hidden) { // riding on its APC's roof
       const apc = w.foes.find((c) => c.id === f.carrier);
-      if (apc) Object.assign(f, { x: apc.x + FOE.apc.bikeX, y: apc.y });
+      if (apc) Object.assign(f, { x: apc.x - apc.facing * FOE.apc.roofX, y: apc.y + FOE.apc.roofY });
       continue;
     }
     stepFoe(f, w.stats.foes[f.kind], {
@@ -1012,7 +1012,7 @@ function spawnFoeMook(w: World, kind: 'mook' | 'mook_suicide', x: number, y: num
 function releaseBike(w: World, apc: Foe): boolean {
   const bike = w.foes.find((f) => f.hidden && f.carrier === apc.id);
   if (!bike) return false;
-  Object.assign(bike, { hidden: false, x: apc.x + FOE.apc.bikeX, y: apc.y, carrier: -1 });
+  Object.assign(bike, { hidden: false, x: apc.x - apc.facing * FOE.apc.roofX, y: apc.y + FOE.apc.roofY, carrier: -1, onGround: false });
   return true;
 }
 

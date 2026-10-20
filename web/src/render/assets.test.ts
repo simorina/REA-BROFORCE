@@ -17,6 +17,9 @@ const BACKGROUNDS = {
   '/background.json': { status: 200, body: JSON.stringify(TEST_BACKGROUND) },
   '/background_desert.json': { status: 200, body: JSON.stringify(themed('desert')) },
   '/background_burning.json': { status: 200, body: JSON.stringify(themed('burning')) },
+  '/background_city.json': { status: 200, body: JSON.stringify(themed('city')) },
+  '/background_forest.json': { status: 200, body: JSON.stringify(themed('forest')) },
+  '/background_hell.json': { status: 200, body: JSON.stringify(themed('hell')) },
 };
 const sheets = Object.fromEntries(SHEET_KEYS.map((k) => [k, { file: `sprites/${k}.png`, frameW: 16, frameH: 16, offsetY: 0, cols: 1, rows: 1 }]));
 
@@ -147,7 +150,7 @@ describe('loadData', () => {
     expect(effectFiles(data.effects, data.backgrounds.jungle)).toContain('sprites/fx/BloodRed.png');
   });
 
-  it('loads a background for each level theme: the island jungle, the desert and the burning jungle', async () => {
+  it('loads a background for each level theme: the island jungle, the desert, the burning jungle, the city, the forest and hell', async () => {
     const data = await loadData(fakeFetch({
       '/sheets.json': { status: 200, body: JSON.stringify(sheets) },
       '/values.json': { status: 200, body: JSON.stringify(RAW_VALUES) },
@@ -158,6 +161,8 @@ describe('loadData', () => {
     expect(data.backgrounds.jungle.sky.file).toBe(TEST_BACKGROUND.sky.file);
     expect(data.backgrounds.desert.sky.file).toBe('sprites/bg/desert/Sky.png');
     expect(data.backgrounds.burning.sky.file).toBe('sprites/bg/burning/Sky.png');
+    expect(data.backgrounds.city.sky.file).toBe('sprites/bg/city/Sky.png');
+    expect(data.backgrounds.hell.sky.file).toBe('sprites/bg/hell/Sky.png');
     expect(effectFiles(data.effects, ...Object.values(data.backgrounds))).toEqual(
       expect.arrayContaining(['sprites/bg/desert/Sky.png', 'sprites/bg/burning/Sky.png']));
     const { ['/background_burning.json']: _, ...withoutBurning } = BACKGROUNDS;

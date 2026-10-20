@@ -91,6 +91,7 @@ export interface GameData {
 /** Each level theme's ThemeHolder background, as the extractor writes it. */
 const BACKGROUND_FILES: Record<LevelTheme, string> = {
   jungle: '/background.json', desert: '/background_desert.json', burning: '/background_burning.json',
+  city: '/background_city.json', forest: '/background_forest.json', hell: '/background_hell.json',
 };
 
 export async function loadData(fetcher: typeof fetch = fetch): Promise<GameData> {

@@ -17,7 +17,7 @@ export interface ParallaxDoodad {
 
 /** tiles[0] is the TOP row. */
 /** The ThemeHolder a level's background comes from. */
-export type LevelTheme = 'jungle' | 'desert' | 'burning';
+export type LevelTheme = 'jungle' | 'desert' | 'burning' | 'city' | 'forest' | 'hell';
 
 export interface LevelData {
   cols: number;

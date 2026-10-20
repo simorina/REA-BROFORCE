@@ -1,6 +1,6 @@
 """Background, effects and doodads, read from Broforce's theme and scene bundles (read only).
 
-- background.json (and background_desert.json, background_burning.json): a ThemeHolder's sky, BlueSky clouds and parallax hills, each with its
+- background.json (and background_desert/burning/city/forest/hell.json): a ThemeHolder's sky, BlueSky clouds and parallax hills, each with its
   ParallaxFollow factors and SpriteSM size/offset (Map.SetupLevel / Map.PlaceDoodad instantiate them).
 - effects.json: legacy particle emitters (EllipsoidParticleEmitter + ParticleRenderer + the custom
   ParticleCollisionAnimator), Puff sprite animations, the theme's particle colours, the blood colours,
@@ -30,7 +30,10 @@ THEME = "Themeholder Jungle"  # the island
 # file -> (ThemeHolder, sprite folder): each mission's background, the island's in background.json
 # and the ColorShiftController LUT that grades it (the jungle's is Preset_Blank and the desert has none)
 BACKGROUNDS = {"background.json": (THEME, "bg", None), "background_desert.json": ("Themeholder Desert", "bg/desert", None),
-               "background_burning.json": ("Themeholder Jungle Burning", "bg/burning", "colorMapBurningJungleDay")}
+               "background_burning.json": ("Themeholder Jungle Burning", "bg/burning", "colorMapBurningJungleDay"),
+               "background_city.json": ("Themeholder City", "bg/city", "colorMapCityDay"),
+               "background_forest.json": ("Themeholder Forest", "bg/forest", "colorMapForestDay"),
+               "background_hell.json": ("Themeholder Hell", "bg/hell", "colorMapHellDay")}
 COLOR_SHIFT = ("ColorShiftController", "BackgroundCamera")
 EFFECTS_CONTROLLER = ("EffectsController", "EffectsContoller")  # sic
 EFFECTS_THEME = ("EffectsHolderTheme", "EffectsHollderThemeVietnam")  # sic
@@ -184,6 +187,8 @@ class Scene:
     @staticmethod
     def material_texture(renderer) -> tuple:
         for m in renderer.read().m_Materials:
+            if not m.m_PathID:  # an empty material slot
+                continue
             mat = m.read()
             for name, te in mat.m_SavedProperties.m_TexEnvs:
                 if name == "_MainTex" and te.m_Texture.m_PathID:
@@ -251,7 +256,15 @@ def _background(scene: Scene, theme_name: str = THEME, folder: str = "bg", lut_f
 
     def layers(field: str) -> list:
         objs = getattr(theme.read(), field)
-        return [layer(p.deref()) for p in objs if p.m_PathID]
+        out = []
+        for p in objs:
+            if not p.m_PathID:
+                continue
+            try:
+                out.append(layer(p.deref()))
+            except AssetNotFound:  # Themeholder Hell's near spikes have no material in this build
+                continue
+        return out
 
     scatter = ("None", "Stormy", "BlueSky")[tt["cloudScatterType"]]
     out = {"theme": theme_name, "cloudScatter": scatter, "sky": layer(scene.field(theme, "sky")),

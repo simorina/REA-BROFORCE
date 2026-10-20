@@ -57,7 +57,7 @@ export interface Foe {
   spawned: number; // MookTruck.mookSpawnCount
   open: boolean; // MookAPC: the back panel down, its suicide mooks coming out
   passenger: boolean; // MookMotorBike: its suicide mook (or nuclear bomb) still aboard
-  hidden: boolean; // MookMotorBike inside an APC, disabled until released
+  hidden: boolean; // MookMotorBike on an APC's roof, disabled until released
   carrier: number; // the APC it rides in (its id), -1 if none
   immune: number; // a bike let out of a blown-up APC is clear of its blast (ours)
   unfold: number; // MookArtilleryTruck.unfoldFrame: its cannon raised at 59

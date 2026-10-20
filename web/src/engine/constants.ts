@@ -197,7 +197,7 @@ export const FOE = {
   // MookAPC: collumnLookAhead -3; FireWeapon: its motorbike out (0.8 s), then a suicide mook every 0.5 s from (X + 10, Y + 26)
   // at -10; Death: the bikes left, and (if mooks are left) three suicide mooks jumping out from X - 12, X and X + 8
   apc: {
-    lookAhead: -3, bikeDelay: 0.8, mookDelay: 0.5, spawnX: 10, spawnY: 26, spawnXI: -10, drawX: -7, bikeX: -12,
+    lookAhead: -3, bikeDelay: 0.8, mookDelay: 0.5, spawnX: 10, spawnY: 26, spawnXI: -10, drawX: -7, roofX: 3, roofY: 44, narrow: 64, drawDrop: 10,
     deathMooks: [[-12, -60, 230], [0, -10, 280], [8, 60, 230]] as ReadonlyArray<readonly [number, number, number]>,
   },
   // MookMotorBikePolyAI: alert 0.3 s after IsItSortOfVisible(+16 up, 48, 12); fires with a bro within attackXRange of X - 16,

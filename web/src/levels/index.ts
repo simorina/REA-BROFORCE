@@ -1,6 +1,7 @@
 import type { LevelData } from '../engine/level';
 import { buildAirstrip } from './airstrip';
 import { buildBurning } from './burning';
+import { buildConvoy } from './convoy';
 import { buildDesert } from './desert';
 import { buildHarbor } from './harbor';
 import { buildLevel1 } from './level1';
@@ -18,9 +19,9 @@ export interface Mission {
 }
 
 /**
- * The campaign "Operation: Little Saint James" — seven missions tracing the Epstein files from
+ * The campaign "Operation: Little Saint James" — missions tracing the Epstein files from
  * desert intelligence intercepts through harbor raids, burning evidence, a Manhattan skyscraper,
- * a private airstrip, an underground temple, and the final assault on Epstein's island.
+ * a private airstrip, an underground temple and an armoured convoy, to the final assault on Epstein's island.
  */
 export const MISSIONS: readonly Mission[] = [
   {
@@ -52,6 +53,11 @@ export const MISSIONS: readonly Mission[] = [
     id: 'temple', name: 'Il tempio sotterraneo',
     briefing: "Sotto la pista c'è un tempio sotterraneo, sede del culto di Epstein. Scendi nelle sue viscere: corridoi segreti, stanze rituali, trappole esplosive. La verità è sepolta qui.",
     build: buildTemple, map: { x: 0.72, y: 0.60 }, territory: 'amazon',
+  },
+  {
+    id: 'convoy', name: 'Il convoglio',
+    briefing: "Dal tempio parte un convoglio blindato carico di prove: camion, blindati, motociclisti suicidi, artiglieria e un elicottero d'assalto. In testa marcia il Soldato Universale, che a terra non ci resta mai. Fermali tutti.",
+    build: buildConvoy, map: { x: 0.79, y: 0.30 }, territory: 'ukraine',
   },
   {
     id: 'island', name: "L'isola di Epstein",

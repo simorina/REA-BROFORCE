@@ -100,7 +100,8 @@ export class Renderer {
     this.drawCheckpoints(w);
     this.drawFlag(w);
     this.drawPrisoners(w);
-    for (const f of w.foes) this.drawFoe(f, w.time);
+    for (const f of w.foes) if (!f.hidden) this.drawFoe(f, w.time);
+    for (const f of w.foes) if (f.hidden) this.drawFoe(f, w.time); // on top of its APC
     for (const k of w.tanks) this.drawTank(k);
     for (const j of w.jets) this.drawJet(j);
     if (w.mech && !w.mech.destroyed) this.drawMech(w.mech, w.time);
@@ -351,8 +352,7 @@ export class Renderer {
 
   /** An enemy vehicle (Tank): its rolling frames, the death frame once wrecked, white for a moment when hit. */
   private drawFoe(f: Foe, time: number): void {
-    if (f.hidden) return;
-    const flip = f.facing > 0; // the art faces left (localScale.x 1)
+    const flip = f.facing > 0; // the art faces left (localScale.x 1); a bike on an APC's roof faces right (ForceFaceDirection)
     if (f.hurt > 0) this.ctx.filter = 'brightness(3)';
     if (f.kind === 'truck') {
       // MookTruck.AnimateRolling, SetDeathFrame
@@ -368,9 +368,17 @@ export class Renderer {
       const sheet = this.assets.sheets.artillery;
       this.sprite('artillery', col, row, f.x, f.y + sheet.frameH / 2 + sheet.offsetY, flip); // its SpriteSM is anchored at the bottom
     } else if (f.kind === 'apc') {
-      // MookAPC: rolling, its panel down once its mooks come out, the wreck
-      const [col, row] = f.dead ? [8, 0] : f.open ? [0, 1] : [f.frame % 2, 0];
-      this.sprite('apc', col, row, f.x - f.facing * FOE.apc.drawX, f.y + this.assets.sheets.apc.offsetY, flip);
+      // MookAPC: its panel down once its mooks come out (row 1, 96-wide frames); rolling and the wreck sit on row 0 on a
+      // 64-pixel grid (the art's own), drawn where they fall in its 96-wide frame; its art stands 10 above the frame's foot
+      const sheet = this.assets.sheets.apc;
+      const y = f.y + sheet.offsetY - FOE.apc.drawDrop;
+      if (f.open && !f.dead) {
+        this.sprite('apc', 0, 1, f.x - f.facing * FOE.apc.drawX, y, flip);
+      } else {
+        const col = f.dead ? 8 : 0;
+        const x = f.x - f.facing * (FOE.apc.drawX + FOE.apc.narrow / 2 - sheet.frameW / 2);
+        this.quad(this.assets.images.apc, [col * FOE.apc.narrow, 0, FOE.apc.narrow, sheet.frameH], x, y, FOE.apc.narrow, sheet.frameH, flip ? -1 : 1);
+      }
     } else {
       // MookMotorBike: the bike, its driver and passenger (or bomb) bobbing a pixel as it rolls (AnimateRolling)
       const b = FOE.bike;

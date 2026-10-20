@@ -15,8 +15,9 @@ const SEA_START: Vec3 = fromLatLon(0.25, 1.0); // where the first flight comes i
 // Broforce's threat levels are colour names (THREAT LEVEL: Salmon, Burgundy, Infinite...): ours climb with the campaign
 const THREATS: ReadonlyArray<readonly [string, string]> = [
   ['Giallo', '#ffe400'], ['Ambra', '#ffbb00'], ['Salmone', '#ff717e'], ['Rosso', '#ff0000'], ['Cremisi', '#eb133e'],
-  ['Bordeaux', '#c00030'], ['Infinito', '#ff0000'],
+  ['Bordeaux', '#c00030'], ['Vinaccia', '#9e0028'], ['Porpora', '#a0135f'], ['Nero', '#5a0010'],
 ];
+const LAST_THREAT: readonly [string, string] = ['Infinito', '#ff0000']; // the island, always
 
 interface Props {
   assets: Assets;
@@ -177,7 +178,7 @@ export function WorldMap({ assets, done, message, onPlay, onMenu }: Props) {
   }, [mode, assets, selected, themes, states]);
 
   const mission = MISSIONS[selected];
-  const [threat, threatColor] = THREATS[Math.min(selected, THREATS.length - 1)];
+  const [threat, threatColor] = selected === MISSIONS.length - 1 ? LAST_THREAT : THREATS[Math.min(selected, THREATS.length - 1)];
   const iconPx = Math.round((size.height * ICON_UNITS) / (2 * UI_HALF_HEIGHT));
   return (
     <div className="screen worldmap">

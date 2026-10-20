@@ -11,8 +11,8 @@ const built = MISSIONS.map((m) => {
 const enemies = (i: number, kind?: string) => built[i].parsed.enemies.filter((e) => !kind || e.kind === kind).length;
 
 describe('the campaign missions', () => {
-  it("are seven missions tracing the Epstein files to the final battle on Epstein's island", () => {
-    expect(MISSIONS.map((m) => m.id)).toEqual(['desert', 'harbor', 'burning', 'tower', 'airstrip', 'temple', 'island']);
+  it("are missions tracing the Epstein files to the final battle on Epstein's island", () => {
+    expect(MISSIONS.map((m) => m.id)).toEqual(['desert', 'harbor', 'burning', 'tower', 'airstrip', 'temple', 'convoy', 'island']);
     expect(MISSIONS.map((m) => m.name)).toEqual([
       'Il deserto',
       'Il porto dei segreti',
@@ -20,12 +20,13 @@ describe('the campaign missions', () => {
       'Il grattacielo',
       "La pista d'atterraggio",
       'Il tempio sotterraneo',
+      'Il convoglio',
       "L'isola di Epstein",
     ]);
   });
 
   it("each mission sits on a territory of Broforce's globe", () => {
-    expect(MISSIONS.map((m) => m.territory)).toEqual(['afghanistan', 'hongkong', 'vietnam', 'usa', 'panama', 'amazon', 'hawaii']);
+    expect(MISSIONS.map((m) => m.territory)).toEqual(['afghanistan', 'hongkong', 'vietnam', 'usa', 'panama', 'amazon', 'ukraine', 'hawaii']);
   });
 
   it('each mission has a lore briefing explaining the story', () => {
@@ -43,6 +44,7 @@ describe('the campaign missions', () => {
       'jungle',
       'desert',
       'burning',
+      'city',
       'jungle',
     ]);
   });
@@ -101,8 +103,8 @@ describe('the campaign missions', () => {
   });
 
   it('only the island, the final mission, has Epstein and his Goliath', () => {
-    expect(built.map((b) => b.parsed.boss !== null)).toEqual([false, false, false, false, false, false, true]);
-    expect(built.map((b) => b.parsed.mech !== null)).toEqual([false, false, false, false, false, false, true]);
+    expect(built.map((b) => b.parsed.boss !== null)).toEqual([false, false, false, false, false, false, false, true]);
+    expect(built.map((b) => b.parsed.mech !== null)).toEqual([false, false, false, false, false, false, false, true]);
   });
 
   it('every level starts the bro on solid ground and ends at a flag past him', () => {
