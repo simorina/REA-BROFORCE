@@ -8,6 +8,7 @@ import { TileMap, getColumn, getRow } from './map';
 import { damageUnit, inHitBox, knock } from './units';
 import type { BlockKind, EnemyKind, FlameWall, GameStats, Projectile, ProjectileKind, RocketStats, Team, Unit } from './types';
 import { vehicleAt, type Vehicle } from './vehicle';
+import { foeAt, type Foe } from './foes';
 import { mechAt, type Mech } from './mech';
 
 export type ProjectileEvent =
@@ -27,6 +28,7 @@ export type ProjectileEvent =
   | { type: 'callMortar'; x: number; y: number } // RocketLaunch.MakeEffects: the strike it calls in
   | { type: 'hitVehicle'; vehicle: Vehicle; damage: number }
   | { type: 'hitMech'; damage: number }
+  | { type: 'hitFoe'; foe: Foe; damage: number }
   | { type: 'shieldHit'; unit: Unit; x: number; y: number; broke: boolean }
   | { type: 'scorch'; x: number; y: number; range: number; damage: number; xI: number } // Map.HitUnits(.., Fire, ..): mooks catch fire
   | { type: 'quench'; x: number; y: number; range: number } // Map.HitProjectiles(.., Fire, ..): the shots around go out
@@ -40,10 +42,12 @@ export interface ProjectileWorld {
   vehicles?: readonly Vehicle[];
   mech?: Mech | null; // Epstein's Goliath: the bro's shots stop on it
   rng?: () => number; // the world's: which flame puffs, and when
+  foes?: readonly Foe[]; // the enemy vehicles: the bro's shots stop on them
 }
 
 const hitsMech = (w: ProjectileWorld, p: Projectile): boolean => p.team === 'player' && mechAt(w.mech, p.x, p.y);
-const struck = (w: ProjectileWorld, p: Projectile): boolean => unitAt(w.units, p.x, p.y, p.team) !== null || hitsMech(w, p);
+const foeHit = (w: ProjectileWorld, p: Projectile): Foe | null => (p.team === 'player' ? foeAt(w.foes ?? [], p.x, p.y) : null);
+const struck = (w: ProjectileWorld, p: Projectile): boolean => unitAt(w.units, p.x, p.y, p.team) !== null || hitsMech(w, p) || foeHit(w, p) !== null;
 
 const HIT_MARGIN = 2;
 const FOOTBALL_BLAST: RocketStats = {
@@ -365,6 +369,9 @@ function stepFlame(p: Projectile, w: ProjectileWorld, t: number, events: Project
   } else if (hitsMech(w, p)) {
     events.push({ type: 'hitMech', damage: w.stats.flame.damage });
     p.dead = true;
+  } else if (foeHit(w, p)) {
+    events.push({ type: 'hitFoe', foe: foeHit(w, p)!, damage: w.stats.flame.damage });
+    p.dead = true;
   } else if (w.units.some((u) => !u.dead && u.team !== p.team && u.invulnerable <= 0 && inHitBox(u, p.x, p.y, FLAMETHROWER.hitRange))) {
     events.push({ type: 'scorch', x: p.x, y: p.y, range: FLAMETHROWER.hitRange, damage: w.stats.flame.damage, xI: p.xI });
     p.dead = true;
@@ -667,6 +674,12 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
       }
       if (hitsMech(w, p)) {
         events.push({ type: 'hitMech', damage });
+        p.dead = true;
+        break;
+      }
+      const foe = foeHit(w, p);
+      if (foe) {
+        events.push({ type: 'hitFoe', foe, damage });
         p.dead = true;
         break;
       }

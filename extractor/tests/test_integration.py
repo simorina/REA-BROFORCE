@@ -108,6 +108,9 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert sheets["mook_bruiser_elite"]["frameW"] == 36 and values["mook_bruiser_elite"]["health"] == 125
     assert values["mook_bruiser_elite"]["runSpeedMultiplier"] == pytest.approx(2.6) and values["ai_mook_bruiser_elite"]["jumpRange"] == 96
     assert values["rocket_drunk"]["drunkSpeed"] == pytest.approx(10.0) and sheets["rocket_evil"]["cols"] == 8
+    # the troop truck: 20 health, 80 a second, seven mooks in the back
+    assert (sheets["truck"]["frameW"], sheets["truck"]["frameH"], sheets["truck"]["offsetY"]) == (74, 64, 32)
+    assert values["foe_truck"]["mooksToSpawn"] == 7 and values["ai_foe_truck"]["sightRangeX"] == 120
     # the minefield: the mine's two frames (armed, going off) and the sign over it
     assert (sheets["mine"]["frameW"], sheets["mine"]["frameH"], sheets["mine"]["cols"]) == (16, 16, 2)
     assert (sheets["mine_sign"]["frameW"], sheets["mine_sign"]["frameH"]) == (16, 16)

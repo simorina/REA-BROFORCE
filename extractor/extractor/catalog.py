@@ -67,6 +67,7 @@ SPRITES = (
     SpriteRef("mook_ninja", "MookNinja", "ZMookNinja", True),
     SpriteRef("mook_alarmist", "MookGeneral", "ZMook Alarmist", True),
     SpriteRef("mook_bruiser_elite", "MookBigGuyElite", "ZMookBigElite", True),
+    SpriteRef("truck", "MookTruck", "MookTruck", True),  # 74x64: rolling 0-1, wrecked 2
     SpriteRef("grenade", "Grenade", "GrenadeEvilSmall Long fuse", False),  # the grenadier's long-fuse grenade
     SpriteRef("prisoner", "RescueBro", "Hobro", True),
     SpriteRef("cage", "Cage", "CageBig", True),
@@ -173,6 +174,8 @@ VALUES = (
     ValuesRef("ai_mook_bruiser_elite", "BigGuyEliteAI", "ZMookBigElite", AI_FIELDS + ("jumpRange",)),
     ValuesRef("path_mook_bruiser_elite", "PathAgent", "ZMookBigElite", PATH_FIELDS),
     ValuesRef("rocket_drunk", "DrunkRocket", "Rocket Drunk Evil", ROCKET_FIELDS + ("drunkSpeed", "acceleration")),
+    ValuesRef("foe_truck", "MookTruck", "MookTruck", ("health", "tankSpeed", "mooksToSpawn")),
+    ValuesRef("ai_foe_truck", "MookTruckPolyAI", "MookTruck", ("sightRangeX", "sightRangeY")),
     ValuesRef("grenade_mook", "Grenade", "GrenadeEvilSmall Long fuse",
               ("bounceM", "frictionM", "gravityM", "damage", "range", "blastForce")),
     ValuesRef("path_mook", "PathAgent", "ZMook", PATH_FIELDS),

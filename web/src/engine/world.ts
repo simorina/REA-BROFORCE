@@ -12,12 +12,13 @@ import {
   SPEECH_DURATION, TILE, UNIT_BOX_HEIGHT, UNIT_WIDTH, BAZOOKA_RECOIL, DOOR_EXIT_INVULNERABLE, DOOR_FIRE_DAMAGE, SCOUT_WAVE_TIME,
   BOMB_FIRE_RANGE_M, SUICIDE_BURN_EXTRA, ALLURE_RANGE, FLEX_EVENT_FRAMES, FLEX_FRAME_RATE, FLEX_FRAMES, FLEX_HOLD,
   FLEX_RESTART_FRAME, FLEX_SLOW_FRAMES, FLEX_SLOW_RATE, TANK_EXIT_YI, MECH, DOG, DOG_BITE_COOLDOWN, GRENADIER_THROW_DELAY, CRICKET,
-  NEURALISER, DJANGO, MOLOTOV, MORTAR, ELITE,
+  NEURALISER, DJANGO, MOLOTOV, MORTAR, ELITE, FOE,
 } from './constants';
 import { alarmDoor, collapseDoor, doorLostSupport, makeDoor, stepDoor, type DoorSpawn, type MookDoor } from './doors';
 import { applyBlast, barrelBlast, suicideBlast, type Blast } from './explosions';
 import { parseLevel, type LevelData } from './level';
 import { makeBlock, type TileMap } from './map';
+import { damageFoe, foeBlast, foeInBlast, makeFoe, stepFoe, type Foe } from './foes';
 import { mineBlast, plantMine, steppedOn, type Mine, type MineSign } from './mines';
 import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
@@ -146,6 +147,7 @@ export interface World {
   alarms: Alarm[]; // set off by the alarmists' dead man's switches
   mortarSpread: { amount: number; side: 1 | -1 }; // RocketLaunch.offsetAmount / offsetSide (static in Broforce)
   mines: Mine[];
+  foes: Foe[]; // enemy vehicles
   signs: MineSign[]; // the Mine Field Signs over them
   doorPoints: DoorPoint[]; // the doors as ScoutMookInterestPoints
   tanks: Tank[]; // TankBroTank vehicles on the map
@@ -191,6 +193,7 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
   if (boss) enemies.push(boss);
   const mech = parsed.mech ? makeMech(nextId++, cellX(parsed.mech.c), feetY(parsed.mech.r), stats, parsed.map) : null;
   const doors = parsed.doors.map((d) => makeDoor(d.c, d.r, parsed.map, stats.door));
+  const foes = parsed.foes.map((f) => makeFoe(nextId++, f.kind, cellX(f.c), feetY(f.r), stats.foes[f.kind], parsed.map));
   const camera = { x: spawn.x, y: spawn.y };
   followCamera(camera, spawn, parsed.map, 1);
   // CheckPoint.Update: the three blocks under a flagpole turn to steel when destroyed
@@ -206,7 +209,7 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
     prisoners: parsed.cages.map((c) => ({ x: cellX(c.c), y: feetY(c.r), freed: false })),
     checkpoints: parsed.checkpoints.map((c) => ({ x: cellX(c.c), y: feetY(c.r), activated: false, raisedAt: 0 })),
     grass: parsed.grass.map((c) => ({ x: cellX(c.c), y: c.r * TILE, health: stats.grass.health, destroyed: false })),
-    doors, alarms: [], mortarSpread: { amount: 0, side: 1 }, mines, signs: parsed.signs.map((s) => ({ c: s.c, r: s.r, x: cellX(s.c), y: s.r * TILE, fallen: false })), doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, django: null, reboard: null, flexPower: level.flexPower ?? null,
+    doors, alarms: [], mortarSpread: { amount: 0, side: 1 }, mines, foes, signs: parsed.signs.map((s) => ({ c: s.c, r: s.r, x: cellX(s.c), y: s.r * TILE, fallen: false })), doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, django: null, reboard: null, flexPower: level.flexPower ?? null,
     flag: { x: cellX(parsed.flag.c), y: feetY(parsed.flag.r) },
     lives: LIVES_START, specialAmmo: bro.specialAmmo ?? stats.bros[bro.base].specialAmmo, respawnTimer: 0,
     state: 'playing', extractionTime: 0, time: 0, nextId, camera, events: [], laughIndex: 0,
@@ -850,7 +853,7 @@ function explodeSuicide(w: World, m: Unit, blasts: Blast[]): void {
 }
 
 function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
-  const pw = { map: w.map, units: [w.player, ...w.enemies], stats: w.stats, vehicles: allVehicles(w), mech: w.mech, rng: w.rng };
+  const pw = { map: w.map, units: [w.player, ...w.enemies], stats: w.stats, vehicles: allVehicles(w), mech: w.mech, rng: w.rng, foes: w.foes };
   for (const p of w.projectiles) {
     // Grenade.RunWarnings: in its last half second a grenade sends the mooks around it running
     if (p.kind !== 'marker' || p.dead || p.life >= GRENADE_WARNING_LIFE) continue;
@@ -900,6 +903,8 @@ function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
         fireUnits(w, ev.x, ev.y, MOLOTOV.burst, MOLOTOV.burstDamage, 0);
         w.projectiles.push(...molotovFlames(() => w.nextId++, ev.x, ev.y, w.stats, w.rng, p.team));
         w.events.push({ type: 'molotovBurst', x: ev.x, y: ev.y });
+      } else if (ev.type === 'hitFoe') {
+        hitFoe(w, ev.foe, ev.damage, blasts);
       } else if (ev.type === 'callMortar') {
         callMortarStrike(w);
       } else if (ev.type === 'callNuke') {
@@ -946,6 +951,30 @@ function stepEliteLanding(m: Unit, t: number, blasts: Blast[]): void {
   m.hasJumped = false;
 }
 
+/** The enemy vehicles: each its own AI (foes.ts); the mooks they let out join the enemies. */
+function stepFoes(w: World, t: number): void {
+  const player = w.player.dead ? null : w.player;
+  for (const f of w.foes) {
+    stepFoe(f, w.stats.foes[f.kind], {
+      map: w.map, player, visible: (x, y, bx, by) => isVisible(w.camera, x, y, bx, by),
+      spawnMook: (x, y, xI, yI, alerted) => {
+        const m = makeUnit(w.nextId++, 'mook', 'enemy', x, y, w.stats.units.mook);
+        Object.assign(m, { xI, yI, onGround: false });
+        w.enemies.push(m);
+        if (alerted && player) fullyAlert(m, w.stats.ai.mook, player.x, player.y, w.rng);
+      },
+    }, t);
+    if (f.y < -64 && !f.dead) damageFoe(f, f.health, w.time);
+  }
+}
+
+/** Tank.Damage and, at 0, Death: MakeEffectsDeath's blast and BurnUnitsAround (64). */
+function hitFoe(w: World, f: Foe, damage: number, blasts: Blast[]): void {
+  if (!damageFoe(f, damage, w.time)) return;
+  blasts.push(foeBlast(f));
+  burnAround(w, null, f.x, f.y, FOE.death.burn);
+}
+
 /** RocketLaunch.MakeEffects with seekPlayer: a bombardment rocket over the bro, to one side and then the other. */
 function callMortarStrike(w: World): void {
   if (w.player.dead) return;
@@ -989,6 +1018,7 @@ function resolveBlasts(w: World, blasts: Blast[]): void {
     if (b.team !== 'player') for (const v of allVehicles(w)) if (!v.exploded && vehicleInBlast(v, b)) hitVehicle(w, v, b.unitDamage, blasts);
     if (b.team === 'player' && w.mech && mechInBlast(w.mech, b)) damageMech(w, w.mech, b.unitDamage); // the bro's blasts on the Goliath
     // MookSuicide.Gib: a suicide mook blown apart before it went off goes off right away
+    for (const f of w.foes) if (!f.dead && foeInBlast(f, b)) hitFoe(w, f, b.unitDamage, blasts); // Map.ExplodeUnits on the enemy vehicles
     for (const m of w.enemies) if (m.kind === 'mook_suicide' && m.gibbed) explodeSuicide(w, m, blasts);
     for (const d of res.destroyed) {
       w.events.push({ type: 'block', x: cellX(d.c), y: d.r * TILE, kind: d.kind, damage: b.groundDamage });
@@ -1054,6 +1084,7 @@ export function stepWorld(w: World, controls: Controls, prev: Controls, t: numbe
   stepJets(w, t, blasts);
   carryDriver(w);
   stepEnemies(w, t, blasts);
+  stepFoes(w, t);
   stepMech(w, t, blasts);
   stepDoors(w, t);
   stepProjectiles(w, t, blasts);

@@ -185,6 +185,16 @@ export const ELITE = {
   light: { damage: 1, range: 40, kill: 20, force: 70, extraY: 100 },
   getUp: 4 * 0.034, getUpWait: 0.6, jumpCol: 21, getUpCol: 21, charge: 12, aboveY: 30, jumpTime: 0.4,
 };
+// Broforce's enemy vehicles (Tank): Damage flashes the hurt material 0.0334 s and caps a second hit within 0.096 s to 1;
+// MakeEffectsDeath: ExplodeUnits(12, 48, 32, .., 200, 120) as playerNum 10; MookTruck.BounceOnDeath: up 250.
+// AnimateRolling: a frame every 0.0334 s. MookTruckPolyAI: LookForEnemy every 0.8 s (wait 0.4, look, wait 0.4) once
+// IsItSortOfVisible(position + 16 up, 128, 12); MookTruck.FireWeapon: a mook every 0.6 s from (X + 28, Y + 32) at
+// (55 + count % 4 * 15, 150). CheckNearbyBlocks: 240 at most.
+export const FOE = {
+  hurt: 0.0334, hitWindow: 0.096, bounce: 250, frameRate: 0.0334, roadMax: 240,
+  death: { damage: 12, range: 48, kill: 32, force: 200, extraY: 120, noise: 120, burn: 64 },
+  truck: { lookEvery: 0.8, lookX: 128, lookY: 12, fireDelay: 0.6, spawnX: 28, spawnY: 32, spawnXI: 55, spawnXIStep: 15, spawnYI: 150, drawX: 4 },
+};
 export const DOG = { bite: 3, range: 6 }; // MookDog.RunFiring: Map.HitLivingUnits(3, Melee, 6, X, Y + 4)
 export const JET_ROCKET = { ox: [32, 8], oy: -5, x: 450, y: -285, jitter: 12 }; // HarrierJet.Update: two shots from (X+32, Y-5), (X+8, Y-5) at (450, -285) + insideUnitCircle * 12
 export const JET_DESCENT = { slow: 40, slowZone: 48 }; // HarrierJet.Start: yI -40 over its last 48 px

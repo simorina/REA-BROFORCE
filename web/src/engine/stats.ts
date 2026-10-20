@@ -1,4 +1,4 @@
-import type { AiStats, DoorStats, GameStats, PathCaps, RocketStats, UnitStats } from './types';
+import type { AiStats, DoorStats, FoeStats, GameStats, PathCaps, RocketStats, UnitStats } from './types';
 
 type Raw = Record<string, Record<string, unknown>>;
 
@@ -89,6 +89,17 @@ function enemyAi(raw: Raw, key: string): AiStats {
   };
 }
 
+/** A Tank's health, speed and mooks, and its AI's sight. */
+function foe(raw: Raw, key: string): FoeStats {
+  return {
+    health: num(raw, `foe_${key}`, 'health'),
+    speed: num(raw, `foe_${key}`, 'tankSpeed'),
+    mooks: num(raw, `foe_${key}`, 'mooksToSpawn'),
+    sightX: num(raw, `ai_foe_${key}`, 'sightRangeX'),
+    sightY: num(raw, `ai_foe_${key}`, 'sightRangeY'),
+  };
+}
+
 function rocket(raw: Raw, key: string): RocketStats {
   return {
     damage: num(raw, key, 'damage'),
@@ -161,6 +172,7 @@ export function parseValues(raw: Raw): GameStats {
     rocketMook: rocket(raw, 'rocket_mook'),
     launch: rocket(raw, 'rocket_launch'),
     drunk: { ...rocket(raw, 'rocket_drunk'), drunkSpeed: num(raw, 'rocket_drunk', 'drunkSpeed'), acceleration: num(raw, 'rocket_drunk', 'acceleration') },
+    foes: { truck: foe(raw, 'truck') },
     elite: { runSpeedMultiplier: num(raw, 'mook_bruiser_elite', 'runSpeedMultiplier'), jumpRange: num(raw, 'ai_mook_bruiser_elite', 'jumpRange') },
     bomb: rocket(raw, 'bomb'),
     marker: { bounceM: num(raw, 'marker', 'bounceM'), frictionM: num(raw, 'marker', 'frictionM') },

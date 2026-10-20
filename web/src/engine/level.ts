@@ -1,4 +1,5 @@
 import { TileMap, makeBlock } from './map';
+import type { FoeKind } from './foes';
 import type { BlockKind, EnemyKind, GameStats } from './types';
 
 export interface Cell {
@@ -36,12 +37,14 @@ export interface ParsedLevel {
   checkpoints: Cell[];
   grass: Cell[]; // DoodadGrass: long grass mooks can hide in
   doors: Cell[]; // DoodadMookDoor: mooks walk out of these
+  foes: Array<Cell & { kind: FoeKind }>; // enemy vehicles
   signs: Cell[]; // 'w': Mine Field Signs, each with a mine buried near it
   flag: Cell;
   boss: Cell | null; // 'E': Jeffrey Epstein
   mech: Cell | null; // 'M': Epstein again, in his Goliath mech
 }
 
+const FOES: Record<string, FoeKind> = { T: 'truck' };
 const BLOCKS: Record<string, BlockKind> = { d: 'dirt', a: 'sand', b: 'brick', t: 'temple', s: 'steel', x: 'barrel' };
 const ENEMIES: Record<string, EnemyKind> = {
   m: 'mook', k: 'mook_suicide', z: 'mook_bazooka', o: 'mook_scout', h: 'mook_shield', n: 'mook_grenadier', q: 'dog',
@@ -59,6 +62,7 @@ export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
   const grass: Cell[] = [];
   const doors: Cell[] = [];
   const signs: Cell[] = [];
+  const foes: ParsedLevel['foes'] = [];
   let player: Cell | null = null;
   let flag: Cell | null = null;
   let boss: Cell | null = null;
@@ -77,6 +81,7 @@ export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
       else if (ch === 'g') grass.push({ c, r });
       else if (ch === 'D') doors.push({ c, r });
       else if (ch === 'w') signs.push({ c, r });
+      else if (ch in FOES) foes.push({ c, r, kind: FOES[ch] });
       else if (ch === 'P') {
         if (player) throw new Error('level has more than one P');
         player = { c, r };
@@ -100,5 +105,5 @@ export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
   }
   if (!player) throw new Error('level has no player start (P)');
   if (!flag) throw new Error('level has no flag (F)');
-  return { map, player, enemies, cages, checkpoints, grass, doors, signs, flag, boss, mech };
+  return { map, player, enemies, cages, checkpoints, grass, doors, signs, foes, flag, boss, mech };
 }

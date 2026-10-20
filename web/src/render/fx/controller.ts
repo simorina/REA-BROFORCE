@@ -593,6 +593,13 @@ export class Effects {
         this.shaderExplosion('medium', x + ux * range * 0.05, y + uy * range * 0.05);
         this.plumes(x, y, 3, 15, 240, 0, 0);
         return;
+      case 'vehicle':
+        // Tank.MakeEffectsDeath: CreateExplosion over the hull, glass shards (ours: the massive explosion's sparks)
+        this.rangePop(x, y + 16, range * 2 + 48);
+        this.sparkShower(x, y + 16, 50, 3, 200, 0, 250, 0.6, 0.5);
+        this.plumes(x, y + 16, 3, 8, 270, 0, 0);
+        this.shaderExplosion('large', x, y + 16);
+        return;
       case 'tank':
         // MookArmouredGuy.Gib: CreateMassiveExplosion
         this.rangePop(x, y, range * 2);

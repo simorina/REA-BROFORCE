@@ -1,7 +1,8 @@
 import { VIEW_H, VIEW_W } from '../engine/camera';
 import {
-  BUBBLE_TIME, ELITE, EXTRACTION_TIME, FLAG_RAISE_TIME, INVULNERABLE_FLASH, NEURALISER, SHAKE_AMOUNT, SHAKE_TIME, TILE,
+  BUBBLE_TIME, ELITE, EXTRACTION_TIME, FLAG_RAISE_TIME, FOE, INVULNERABLE_FLASH, NEURALISER, SHAKE_AMOUNT, SHAKE_TIME, TILE,
 } from '../engine/constants';
+import type { Foe } from '../engine/foes';
 import type { LevelTheme, ParallaxDoodad } from '../engine/level';
 import { getColumn, getRow } from '../engine/map';
 import type { Jet } from '../engine/jet';
@@ -99,6 +100,7 @@ export class Renderer {
     this.drawCheckpoints(w);
     this.drawFlag(w);
     this.drawPrisoners(w);
+    for (const f of w.foes) this.drawFoe(f, w.time);
     for (const k of w.tanks) this.drawTank(k);
     for (const j of w.jets) this.drawJet(j);
     if (w.mech && !w.mech.destroyed) this.drawMech(w.mech, w.time);
@@ -340,6 +342,16 @@ export class Renderer {
     // MookRiotShield: the shield is his gun sprite, held until it is knocked away
     if (u.shield > 0 && !u.dead) this.sprite('shield', 0, 0, u.x, u.y + this.assets.sheets[key].offsetY, u.facing < 0);
     if (b !== 1) this.ctx.filter = 'none';
+  }
+
+  /** An enemy vehicle (Tank): its rolling frames, the death frame once wrecked, white for a moment when hit. */
+  private drawFoe(f: Foe, time: number): void {
+    const flip = f.facing > 0; // the art faces left (localScale.x 1)
+    const col = f.dead ? 2 : f.frame % 2; // MookTruck.AnimateRolling, SetDeathFrame
+    if (f.hurt > 0) this.ctx.filter = 'brightness(3)';
+    this.sprite('truck', col, 0, f.x - f.facing * FOE.truck.drawX, f.y + this.assets.sheets.truck.offsetY, flip);
+    if (f.hurt > 0) this.ctx.filter = 'none';
+    void time;
   }
 
   /** TankBroTank's hull with the turret on top (bobbing a pixel while it rolls), flashing in its death countdown. */

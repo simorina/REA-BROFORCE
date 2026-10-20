@@ -91,6 +91,15 @@ export interface BulletStats {
   life: number;
 }
 
+/** An enemy vehicle's prefab values (Tank and its PolymorphicAI). */
+export interface FoeStats {
+  health: number;
+  speed: number; // Tank.tankSpeed
+  mooks: number; // MookTruck.mooksToSpawn
+  sightX: number;
+  sightY: number;
+}
+
 export interface RocketStats {
   damage: number;
   range: number;
@@ -142,6 +151,7 @@ export interface GameStats {
   launch: RocketStats; // the mortar mook's RocketLaunch ("Rocket Launch Airstrike")
   drunk: RocketStats & { drunkSpeed: number; acceleration: number }; // DrunkRocket ("Rocket Drunk Evil")
   elite: { runSpeedMultiplier: number; jumpRange: number }; // MookBigGuyElite, BigGuyEliteAI
+  foes: { truck: FoeStats };
   bomb: RocketStats;
   marker: GrenadeStats;
   tank: TankStats;
