@@ -257,3 +257,29 @@ threat level that climbs from Giallo to Infinito. The panel that slides up from 
 (`WorldMapInterfaceTerritoryDetails`, "GOD SPEED BROFORCE!") belongs to the old 2D map (`Helicopter2D`); ours borrows
 its farewell for the landing. Left out: flying freely with the arrows, the territories' states (burning, infested,
 terror spreading), the general, the birds and seagulls and the map's mooks.
+
+## Giorgia Meloni: Ellen Ripbro's body, B.A. Broracus's flamethrower (seventh pass)
+
+Meloni plays as `EllenRipbro` (speed 110, jump 260, three specials), her sheet repainted blonde in a navy suit. Ellen's
+own primary is the Aliens pulse rifle (`PlasmaBullet`); the only flamethrower a bro carries is B.A. Broracus's, so
+Meloni has his: `BaBroracus.RunFiring` fires every `fireRate` 0.1 s, each `UseFire` two `FireWeapon`s from
+(X + dir*11, Y + 6 and Y + 7) at dir*120 and dir*150 plus the bro's own xI, up to 30 and 35 off level, each a random
+`FlameThrower Bullet 1-3` (`FlameBullet`: life 0.35, damage 1 Fire, its sprite an `AnimatedTexture` of 10 frames at
+0.0334 sinking 32 a second; `HitUnits` is `Map.HitUnits(.., Fire, 8)`, and the flame goes out on what it hits). His
+gun sprite holds the flamethrower in his hands, repainted to hers; the three flames are painted green, white and red
+(their green channel says how hot a pixel is, #FF3E00 to #FFE200, and the tone keeps that heat).
+
+Her special is Ellen's: `UseSpecial` (frame 3 of her special row) lays a `flameWallExplosion` from (X + dir*5, Y + 9)
+the way she faces. `FlameWallExplosion` burns a band 14 columns ahead (`maxCollumns`) and 3 rows up (`maxRows`): it
+starts on its cell and every `explosionRate` 0.11 s each burning cell spreads to the free cells beside it, level and a
+row up or down, never twice to a cell; `CreateFlashBangPoint` makes the diagonal with the cell's own sideways
+direction, so the start's column fills upward and the front is 44 cells in open ground. Each cell hurts what is 12
+around its centre with 3 of Fire (`HitUnits`, so mooks catch fire), puts out the shots 9 around the cell it spread
+from (`HitProjectiles`), shakes the screen a little and shows one of its three `Flame Wall Puff Test` puffs (20 frames
+at 0.0234, pushed dc*66 the way it spreads), which we paint in the tricolour too. Burnt out when a step spreads
+nowhere, or after its 50 cells. Epstein has no mook mind to catch fire with, so fire hurts him outright.
+
+Left out: Ellen's pulse rifle; the wall's `burnGround` and `damageDoodads` (no flammable blocks or doodads here: only
+barrels mind fire, and go up), the block its `burnBlocksInPath` damages (`BurnDamageBlock` at col + 1, row + 1, the
+diagonal, whichever way it spreads); its doors; rockets and grenades it would put out (only bullets go out); the
+special's 0.1 s wind-up.
