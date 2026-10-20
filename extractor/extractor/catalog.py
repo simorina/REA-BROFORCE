@@ -70,6 +70,7 @@ SPRITES = (
     SpriteRef("truck", "MookTruck", "MookTruck", True),  # 74x64: rolling 0-1, wrecked 2
     SpriteRef("apc", "MookAPC", "MookAPC", True),  # 96x64: row 0 rolling (wreck at 8), row 1 the panel down
     SpriteRef("bike", "MookMotorBike", "MookMotorBike", True),  # 64x32: row 1 rolling 0-1, wrecked 2
+    SpriteRef("kopter", "Mookopter", "MookKopter", True),  # 80x64 chassis: 0 flying, 9 wrecked
     SpriteRef("artillery", "MookArtilleryTruck", "MookArtilleryTruck", True),  # 64x96, anchored at its bottom: unfold row 0, fire row 2, wrecks row 4
     SpriteRef("grenade", "Grenade", "GrenadeEvilSmall Long fuse", False),  # the grenadier's long-fuse grenade
     SpriteRef("prisoner", "RescueBro", "Hobro", True),
@@ -108,6 +109,10 @@ TEXTURES = (
     TextureRef("bruiser_elite_gun", "mookbigElite_gun_anim", frame=(36, 32)),  # the elite Bruiser's rocket launcher, laid out like the minigun
     TextureRef("rocket_evil", "rocket Evil", frame=(16, 16)),  # DrunkRocket "Rocket Drunk Evil"
     TextureRef("nuke_bomb", "Nuclear Bomb", frame=(32, 32)),  # the nuclear motorbike's bomb
+    TextureRef("kopter_gun", "mook_Kopter_Chaingun", frame=(48, 64)),  # TankChaingun: spinning 0-3, firing 4-7, turning 8+, dead 13
+    TextureRef("kopter_rotor", "mook_Kopter_Rotor_Main", frame=(64, 16)),
+    TextureRef("kopter_tail", "mook_Kopter_Rotor_Side", frame=(32, 16)),
+    TextureRef("kopter_missiles", "mook_Kopter_Missiles", frame=(80, 32)),  # the rack, emptying as it bombs
     TextureRef("mine", "LandMine", frame=(16, 16)),  # the Mine prefab's SpriteSM: 0 armed, 1 (lowerLeftPixel x 16) going off
     TextureRef("mine_sign", "MineSign"),  # the Mine Field Sign doodad
 )
@@ -184,6 +189,9 @@ VALUES = (
     ValuesRef("ai_foe_apc", "MookTruckPolyAI", "MookAPC", ("sightRangeX", "sightRangeY")),
     ValuesRef("foe_bike", "MookMotorBike", "MookMotorBike", ("health", "tankSpeed", "mookJumpForce")),
     ValuesRef("foe_artillery", "MookArtilleryTruck", "MookArtilleryTruck", ("health", "tankSpeed")),
+    ValuesRef("foe_kopter", "Mookopter", "MookKopter", ("health", "tankSpeed", "verticalSpeed")),
+    ValuesRef("ai_foe_kopter", "MookopterPolyAI", "MookKopter", ("sightRangeX", "sightRangeY", "sightDelay")),
+    ValuesRef("bullet_huge", "Projectile", "Bullet Huge", BULLET_FIELDS),
     ValuesRef("ai_foe_artillery", "MookArtilleryTruckPolyAI", "MookArtilleryTruck", ("sightRangeX", "sightRangeY", "attackTime", "sightDelay")),
     ValuesRef("ai_foe_bike", "MookMotorBikePolyAI", "MookMotorBike", ("sightRangeX", "sightRangeY", "attackXRange")),
     ValuesRef("foe_nukebike", "MookMotorBike", "MookMotorBike Nuclear", ("health", "tankSpeed", "mookJumpForce")),

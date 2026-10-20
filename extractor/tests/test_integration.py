@@ -115,6 +115,9 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert values["foe_apc"]["health"] == 40 and sheets["apc"]["frameW"] == 96 and sheets["bike"]["frameW"] == 64
     assert values["foe_artillery"]["health"] == 25 and values["ai_foe_artillery"]["sightRangeX"] == 256
     assert (sheets["artillery"]["frameW"], sheets["artillery"]["frameH"]) == (64, 96)
+    # the Mookopter: 65 health, its chaingun's huge bullets 5 each
+    assert values["foe_kopter"]["health"] == 65 and values["ai_foe_kopter"]["sightDelay"] == pytest.approx(2.5)
+    assert values["bullet_huge"]["damage"] == 5 and sheets["kopter"]["frameW"] == 80
     assert values["foe_bike"]["tankSpeed"] == pytest.approx(150.0) and values["ai_foe_nukebike"]["attackXRange"] == pytest.approx(8.0)
     # the minefield: the mine's two frames (armed, going off) and the sign over it
     assert (sheets["mine"]["frameW"], sheets["mine"]["frameH"], sheets["mine"]["cols"]) == (16, 16, 2)

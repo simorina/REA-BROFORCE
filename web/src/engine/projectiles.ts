@@ -662,8 +662,10 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
   switch (p.kind) {
     case 'bullet':
     case 'rifle':
-    case 'minigun': {
-      const damage = p.kind === 'rifle' ? w.stats.rifle.damage : p.kind === 'minigun' ? w.stats.minigun.damage : w.stats.bullet.damage;
+    case 'minigun':
+    case 'hugeBullet': {
+      const damage = p.kind === 'rifle' ? w.stats.rifle.damage : p.kind === 'minigun' ? w.stats.minigun.damage
+        : p.kind === 'hugeBullet' ? w.stats.hugeBullet.damage : w.stats.bullet.damage;
       p.x += p.xI * t;
       p.y += p.yI * t;
       if (w.map.blockAt(p.x, p.y)) {

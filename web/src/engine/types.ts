@@ -8,7 +8,7 @@ export type UnitKind = 'bro' | EnemyKind | 'boss';
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
 export const BRO_BASES = ['bro_base', 'bro_lee', 'bro_soldier', 'bro_in_black', 'bro_rambro', 'bro_ellen'] as const;
 export type BroBase = (typeof BRO_BASES)[number];
-export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket' | 'rifle' | 'jetBomb' | 'grenade' | 'cricket' | 'neuraliser' | 'revolver' | 'molotov' | 'molotovFire' | 'flame' | 'flameWall' | 'minigun' | 'launch' | 'drunk';
+export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket' | 'rifle' | 'jetBomb' | 'grenade' | 'cricket' | 'neuraliser' | 'revolver' | 'molotov' | 'molotovFire' | 'flame' | 'flameWall' | 'minigun' | 'launch' | 'drunk' | 'hugeBullet';
 
 export interface Block {
   kind: BlockKind;
@@ -102,6 +102,7 @@ export interface FoeStats {
   jumpForce?: number; // MookMotorBike.mookJumpForce
   attackTime?: number;
   sightDelay?: number;
+  speedY?: number; // Mookopter.verticalSpeed
 }
 
 export interface RocketStats {
@@ -155,7 +156,8 @@ export interface GameStats {
   launch: RocketStats; // the mortar mook's RocketLaunch ("Rocket Launch Airstrike")
   drunk: RocketStats & { drunkSpeed: number; acceleration: number }; // DrunkRocket ("Rocket Drunk Evil")
   elite: { runSpeedMultiplier: number; jumpRange: number }; // MookBigGuyElite, BigGuyEliteAI
-  foes: { truck: FoeStats; apc: FoeStats; bike: FoeStats; nukebike: FoeStats; artillery: FoeStats };
+  foes: { truck: FoeStats; apc: FoeStats; bike: FoeStats; nukebike: FoeStats; artillery: FoeStats; kopter: FoeStats };
+  hugeBullet: BulletStats; // the Mookopter chaingun's "Bullet Huge"
   bomb: RocketStats;
   marker: GrenadeStats;
   tank: TankStats;

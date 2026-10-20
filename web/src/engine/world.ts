@@ -980,6 +980,11 @@ function stepFoes(w: World, t: number, blasts: Blast[]): void {
         w.events.push({ type: 'shot', weapon: 'shell', x, y, facing: xI < 0 ? -1 : 1 });
       },
       rng: w.rng,
+      fireHuge: (x, y, xI, yI) => {
+        w.projectiles.push({ id: w.nextId++, kind: 'hugeBullet', team: 'enemy', x, y, xI, yI, life: w.stats.hugeBullet.life, bounces: 0, dead: false });
+        w.events.push({ type: 'shot', weapon: 'minigun', x, y, facing: xI < 0 ? -1 : 1 });
+      },
+      warn: (x, y) => { w.events.push({ type: 'alarmWarning', x, y }); },
     }, t);
     if (f.y < -64 && !f.dead) damageFoe(f, f.health, w.time);
   }

@@ -4,7 +4,36 @@ import { getColumn, getRow, type TileMap } from './map';
 import type { FoeStats, Unit } from './types';
 
 /** Broforce's enemy vehicles (Tank subclasses driven by a PolymorphicAI). */
-export type FoeKind = 'truck' | 'apc' | 'bike' | 'nukebike' | 'artillery';
+export type FoeKind = 'truck' | 'apc' | 'bike' | 'nukebike' | 'artillery' | 'kopter';
+
+/** MookopterPolyAI's queue: PolymorphicAI actions as the kopter runs them. */
+export type KopterAction = { type: 'wait'; t: number } | { type: 'move'; x: number; y: number } | { type: 'face'; x: number } | { type: 'fire' };
+
+/** The Mookopter: its flight setpoint, its arena (CheckKopterExtents), its pattern, its bombs and its chaingun. */
+export interface KopterState {
+  tx: number; // kopterTargetX: the point it flies at, moved by its input
+  ty: number;
+  ground: number; // groundHeight at its start
+  xMin: number;
+  xMax: number;
+  xMinDesc: number; // xMinDescending
+  xMaxDesc: number;
+  minL: number; // xMinMinHeight / xMinMaxHeight
+  maxL: number;
+  minR: number; // xMaxMinHeight / xMaxMaxHeight
+  maxR: number;
+  pattern: number; // KopterPattern: Hovering, MovingLeft, DescendingLeft, AscendingLeft, MovingRight, DescendingRight, AscendingRight, Restart
+  queue: KopterAction[];
+  look: number; // idle: time to its next look
+  greet: number; // FullyAlert's sightDelay wait
+  bombDelay: number;
+  bombCounter: number; // Mookopter.specialCounter
+  bombs: number; // bombDropCount
+  missiles: number; // its missile rack's frame
+  gun: { firing: boolean; frame: number; counter: number; rate: number; shots: number; windDown: number; delay: number };
+  crashed: boolean;
+  held: { x: number; y: number }; // last step's input along and up/down (-1, 0, 1): released, the setpoint stops (RunAI)
+}
 
 export interface Foe {
   kind: FoeKind;
@@ -38,6 +67,7 @@ export interface Foe {
   fired: boolean; // MookArtilleryTruckPolyAI.hasAlreadyFired
   aim: number; // the wait (sightDelay) before the volley starts, -1 when none
   target: { x: number; y: number } | null; // MookArtilleryTruck.targetPosition
+  kopter: KopterState | null;
   frame: number;
   frameCounter: number;
 }
@@ -53,15 +83,18 @@ export interface FoeContext {
   nuke: (f: Foe) => void; // MookMotorBike.ExplodeNuclearBomb
   fireShell: (x: number, y: number, xI: number, yI: number) => void; // a HeavyShell "Shell Heavy"
   rng: () => number;
+  fireHuge: (x: number, y: number, xI: number, yI: number) => void; // the kopter chaingun's Bullet Huge
+  warn: (x: number, y: number) => void; // CreateRedWarningDiamondHuge
 }
 
 /** The boxes the bro's shots and blasts find them by (their colliders, from the sprites). */
-export const FOE_BOX: Record<FoeKind, { halfWidth: number; height: number }> = {
+export const FOE_BOX: Record<FoeKind, { halfWidth: number; height: number; yOff?: number }> = {
   truck: { halfWidth: 30, height: 40 },
   apc: { halfWidth: 40, height: 44 },
   bike: { halfWidth: 14, height: 20 },
   nukebike: { halfWidth: 14, height: 20 },
   artillery: { halfWidth: 26, height: 40 },
+  kopter: { halfWidth: 36, height: 36, yOff: -8 },
 };
 
 const isBike = (k: FoeKind): boolean => k === 'bike' || k === 'nukebike';
@@ -79,12 +112,67 @@ export function roadEnd(map: TileMap, x: number, y: number, lookAhead = 0): numb
   return x - FOE.roadMax;
 }
 
+/** The top of the ground under (x, y) within `depth` (Physics.Raycast down), or null. */
+function groundBelow(map: TileMap, x: number, y: number, depth: number): number | null {
+  const c = getColumn(x);
+  for (let r = getRow(y); r >= getRow(y - depth); r--) if (map.get(c, r)) return r * TILE + TILE / 2;
+  return null;
+}
+
+/** The first wall left or right of x at height y within 224 (Physics.Raycast sideways), or null. */
+function wallSide(map: TileMap, x: number, y: number, dir: -1 | 1): number | null {
+  for (let d = 0; d <= FOE.kopter.wallReach; d += 4) {
+    const px = x + dir * d;
+    if (map.blockAt(px, y)) return dir < 0 ? Math.floor((px + TILE / 2) / TILE) * TILE + TILE / 2 : Math.floor((px + TILE / 2) / TILE) * TILE - TILE / 2;
+  }
+  return null;
+}
+
+/**
+ * MookopterPolyAI.CheckKopterExtents / CheckGroundHeight / CheckHeight: 160 either side of its start, kept 64 off any
+ * wall at 42-112 over the ground; the lowest it comes at each end is 28 over the ground there, the highest at least
+ * 128 over its own.
+ */
+function makeKopter(map: TileMap, x: number, y: number): KopterState {
+  const k = FOE.kopter;
+  let ground = y;
+  for (const dx of [0, -16, 16]) {
+    const g = groundBelow(map, x + dx, y + 16, 64);
+    if (g !== null && (dx === 0 || g > ground)) ground = dx === 0 ? g : Math.max(ground, g);
+  }
+  let xMin = x - k.half;
+  let xMax = x + k.half;
+  for (const h of k.wallHeights) {
+    const l = wallSide(map, x, ground + h, -1);
+    if (l !== null && l + k.wallMargin > xMin) xMin = l + k.wallMargin;
+    const r = wallSide(map, x, ground + h, 1);
+    if (r !== null && r - k.wallMargin < xMax) xMax = r - k.wallMargin;
+  }
+  if (xMin > xMax) xMin = xMax = x;
+  const lowest = (ex: number): number => {
+    let m = ground - 48;
+    for (const dx of k.heightProbes) {
+      const g = groundBelow(map, ex + dx, ground + 64, 90);
+      if (g !== null) m = Math.max(m, g + 28);
+    }
+    return m;
+  };
+  const minL = lowest(xMin);
+  const minR = lowest(xMax);
+  return {
+    tx: x, ty: y, ground, xMin, xMax, xMinDesc: x - 192, xMaxDesc: x + 128, minL, minR,
+    maxL: Math.max(minL + 32, minR + 16, ground + 128), maxR: Math.max(minR + 32, minL + 16, ground + 128),
+    pattern: 0, queue: [], look: 0, greet: -1, bombDelay: 0, bombCounter: 0, bombs: 0, missiles: 0,
+    gun: { firing: false, frame: 0, counter: 0, rate: k.gunStartRate, shots: 0, windDown: 0, delay: 0 }, crashed: false, held: { x: 0, y: 0 },
+  };
+}
+
 export function makeFoe(id: number, kind: FoeKind, x: number, y: number, s: FoeStats, map: TileMap): Foe {
   return {
     kind, id, x, y, xI: 0, yI: 0, facing: -1, health: s.health, onGround: true, dead: false, deadTime: 0, hurt: 0,
     lastHit: -1, mental: 'idle', alerted: false, xMin: roadEnd(map, x, y, kind === 'apc' ? FOE.apc.lookAhead : 0), think: 0,
     fireDelay: FOE.truck.fireDelay, spawned: 0, open: false, passenger: isBike(kind), hidden: false, carrier: -1, immune: 0, unfold: 0, firing: false,
-    fireFrame: 0, fireCount: 0, fired: false, aim: -1, target: null, frame: 0,
+    fireFrame: 0, fireCount: 0, fired: false, aim: -1, target: null, kopter: kind === 'kopter' ? makeKopter(map, x, y) : null, frame: 0,
     frameCounter: 0,
   };
 }
@@ -96,7 +184,8 @@ export function foeAt(foes: readonly Foe[], x: number, y: number): Foe | null {
   for (const f of foes) {
     if (f.dead || f.hidden) continue;
     const b = FOE_BOX[f.kind];
-    if (Math.abs(x - f.x) <= b.halfWidth + HIT_MARGIN && y >= f.y - HIT_MARGIN && y <= f.y + b.height + HIT_MARGIN) return f;
+    const bottom = f.y + (b.yOff ?? 0);
+    if (Math.abs(x - f.x) <= b.halfWidth + HIT_MARGIN && y >= bottom - HIT_MARGIN && y <= bottom + b.height + HIT_MARGIN) return f;
   }
   return null;
 }
@@ -105,7 +194,7 @@ export function foeAt(foes: readonly Foe[], x: number, y: number): Foe | null {
 export function foeInBlast(f: Foe, b: Blast): boolean {
   if (f.hidden) return false;
   const box = FOE_BOX[f.kind];
-  return Math.abs(f.x - b.x) < b.unitRange + box.halfWidth && Math.abs(f.y + box.height / 2 - b.y) < b.unitRange + box.height / 2;
+  return Math.abs(f.x - b.x) < b.unitRange + box.halfWidth && Math.abs(f.y + (box.yOff ?? 0) + box.height / 2 - b.y) < b.unitRange + box.height / 2;
 }
 
 /**
@@ -356,6 +445,185 @@ function stepArtillery(f: Foe, s: FoeStats, ctx: FoeContext, t: number): void {
   if (f.firing) runVolley(f, ctx, t);
 }
 
+/** MookopterPolyAI.DoAlertedThink: the next pattern's actions, at the bro's height (clamped) at either end. */
+function kopterThink(f: Foe, k: KopterState, p: Unit | null): void {
+  k.pattern++;
+  const px = p ? p.x : f.x;
+  const py = p ? p.y : f.y;
+  const rowY = (y: number): number => getRow(y) * TILE + 12; // PolymorphicAI.GetTargetY
+  const colX = (x: number): number => getColumn(x) * TILE;
+  const q = k.queue;
+  const clampL = Math.max(k.minL, Math.min(k.maxL, py));
+  const clampR = Math.max(k.minR, Math.min(k.maxR, py));
+  switch (k.pattern) {
+    case 0: // Hovering
+      q.push({ type: 'wait', t: 0.5 + Math.random() });
+      k.pattern = 1;
+      break;
+    case 1: // MovingLeft
+      k.bombDelay = FOE.kopter.bombDelay;
+      q.push({ type: 'move', x: colX(k.xMin), y: rowY(f.y) }, { type: 'wait', t: 0.2 });
+      break;
+    case 2: // DescendingLeft
+      if (px < k.xMaxDesc) {
+        q.push({ type: 'move', x: colX(k.xMin), y: rowY(clampL) }, { type: 'face', x: px }, { type: 'wait', t: 0.6 }, { type: 'fire' }, { type: 'wait', t: 1.3 });
+      } else {
+        k.pattern--;
+        q.push({ type: 'wait', t: 1 });
+      }
+      break;
+    case 3: // AscendingLeft
+      q.push({ type: 'move', x: colX(k.xMin), y: rowY(clampL) }, { type: 'face', x: px }, { type: 'wait', t: 0.6 }, { type: 'fire' }, { type: 'wait', t: 1.3 },
+        { type: 'move', x: colX(k.xMin), y: rowY(k.maxL * 0.75) }, { type: 'wait', t: 1 });
+      break;
+    case 4: // MovingRight
+      k.bombDelay = FOE.kopter.bombDelay;
+      q.push({ type: 'move', x: colX(k.xMax), y: rowY(k.maxR * 0.75) }, { type: 'wait', t: 0.2 });
+      break;
+    case 5: // DescendingRight
+      if (px > k.xMinDesc) {
+        q.push({ type: 'move', x: colX(k.xMax), y: rowY(clampR) }, { type: 'face', x: px }, { type: 'wait', t: 0.6 }, { type: 'fire' }, { type: 'wait', t: 1.3 });
+      } else {
+        k.pattern--;
+        q.push({ type: 'wait', t: 1 });
+      }
+      break;
+    case 6: // AscendingRight
+      q.push({ type: 'move', x: colX(k.xMax), y: rowY(clampR) }, { type: 'face', x: px }, { type: 'wait', t: 0.6 }, { type: 'fire' }, { type: 'wait', t: 1.3 },
+        { type: 'move', x: colX(k.xMax), y: rowY(k.maxR * 0.75) }, { type: 'wait', t: 1 });
+      break;
+    default: // Restart
+      k.pattern = 0;
+  }
+}
+
+/**
+ * TankChaingun.RunFiring / ChangeChaingunFrame: wind up five spins (each frame quicker, 0.065 s down to 0.015, a red
+ * warning every fifth), then a Bullet Huge on every fourth frame (0.0175 s) at dir*450, 15 up or down, six in all, each
+ * pushing the kopter back 20; wind down as long; then 1.1 s before it can fire again.
+ */
+function runChaingun(f: Foe, k: KopterState, ctx: FoeContext, t: number): void {
+  const g = k.gun;
+  const c = FOE.kopter;
+  if (g.delay > 0) g.delay -= t;
+  if (!g.firing || g.delay > 0) return;
+  g.counter += t;
+  while (g.firing && g.counter >= g.rate) {
+    g.counter -= g.rate;
+    g.frame++;
+    const spin = c.gunFrames * c.gunSpins;
+    if (g.frame < spin) {
+      if (g.frame % 5 === 1) ctx.warn(f.x + f.facing * c.gunX, f.y + c.gunY + 3);
+      g.rate = c.gunFast + ((spin - g.frame) / spin) * c.gunSlow;
+    } else if (g.shots < c.gunShots) {
+      g.rate = c.gunFireRate;
+      if (g.frame % c.gunFrames === 0) {
+        f.xI -= f.facing * c.gunPush;
+        ctx.fireHuge(f.x + f.facing * c.gunX, f.y + c.gunY, f.facing * c.bulletSpeed, -c.bulletSpread / 2 + ctx.rng() * c.bulletSpread);
+        g.shots++;
+      }
+    } else if (g.windDown < spin) {
+      g.rate = c.gunFast + (1 - (spin - g.windDown) / spin) * c.gunSlow;
+      g.windDown++;
+    } else {
+      Object.assign(g, { firing: false, delay: c.gunDelay, shots: 0, frame: 0, windDown: 0 });
+    }
+  }
+}
+
+/**
+ * Mookopter.UseSpecial while it crosses its arena: every 0.4 s a bomb (Shell Medium) from one of its four racks (-27,
+ * 25, -16, 14 along it, 3 under it) at dir*60, then a 0.2 s reload.
+ */
+function runBombs(f: Foe, k: KopterState, ctx: FoeContext, t: number): void {
+  k.bombCounter += t;
+  if (k.bombCounter <= FOE.kopter.bombEvery) return;
+  k.bombCounter -= FOE.kopter.bombEvery;
+  const n = ++k.bombs % 5;
+  if (n > 0) {
+    const ox = FOE.kopter.racks[n - 1];
+    ctx.fireShell(f.x + ox * f.facing, f.y + 3, f.facing * FOE.kopter.bombXI, 0);
+  }
+  if (n === 4) k.bombCounter -= FOE.kopter.reload;
+  k.missiles = n;
+}
+
+/**
+ * The Mookopter alive: spotting the bro (300 by 250) it hangs back sightDelay, then runs its pattern; its input moves
+ * the point it flies at (Mookopter.RunInput: 62 a second up or down, its speed along, 60% of it while bombing) and it
+ * springs after it (RunMovement: xI += dx * t * 20, damped by t * 5), 8 over the ground at least. Its rotor hurts
+ * what jumps into it (RotorHitUnits: 20).
+ */
+function stepKopter(f: Foe, s: FoeStats, ctx: FoeContext, t: number): void {
+  const k = f.kopter!;
+  const c = FOE.kopter;
+  const p = ctx.player && !ctx.player.dead ? ctx.player : null;
+  if (k.bombDelay > 0) k.bombDelay -= t;
+  if (!f.alerted) {
+    if ((k.look -= t) <= 0) {
+      k.look = c.look;
+      if (p && Math.abs(p.x - f.x) < s.sightX && Math.abs(p.y - f.y) < s.sightY && ctx.visible(f.x, f.y, 0, 0)) {
+        f.alerted = true;
+        k.greet = s.sightDelay ?? 0; // PolymorphicAI.FullyAlert: the greeting, then sightDelay
+        f.facing = p.x < f.x ? -1 : 1;
+      }
+    }
+  } else if (k.greet > 0) {
+    k.greet -= t;
+  } else {
+    if (k.queue.length === 0) kopterThink(f, k, p);
+    const a = k.queue[0];
+    let bombing = false;
+    let inX = 0;
+    let inY = 0;
+    if (a?.type === 'wait') {
+      if ((a.t -= t) <= 0) k.queue.shift();
+    } else if (a?.type === 'face') {
+      f.facing = a.x < f.x ? -1 : 1;
+      k.queue.shift();
+    } else if (a?.type === 'fire') {
+      if (k.gun.delay <= 0) k.gun.firing = true;
+      k.queue.shift();
+    } else if (a?.type === 'move') {
+      bombing = (k.pattern === 1 || k.pattern === 4) && k.bombDelay <= 0;
+      if (Math.abs(f.y - a.y) > 2) {
+        inY = Math.sign(a.y - f.y);
+        k.ty += inY * s.speedY! * 0.5 * t;
+      } else if (Math.abs(f.x - a.x) > 2) {
+        inX = Math.sign(a.x - f.x);
+        k.tx += inX * s.speed * (bombing ? c.bombingM : 1) * t;
+        if (inX !== f.facing && !k.gun.firing) f.facing = inX < 0 ? -1 : 1;
+      }
+      if (Math.abs(f.x - a.x) < 4 && Math.abs(f.y - a.y) < 4) k.queue.shift();
+    }
+    if (bombing) runBombs(f, k, ctx, t);
+    else if (k.bombs > 0) k.bombs = k.missiles = 0; // the rack reloads
+    // Mookopter.RunAI: an input let go stops the setpoint where the kopter is
+    if (k.held.y !== 0 && inY !== k.held.y) k.ty = f.y;
+    if (k.held.x !== 0 && inX !== k.held.x) k.tx = f.x;
+    k.held = { x: inX, y: inY };
+  }
+  runChaingun(f, k, ctx, t);
+  // Mookopter.RunMovement
+  f.xI += (k.tx - f.x) * t * c.spring;
+  f.xI *= 1 - t * c.damp;
+  f.yI += (k.ty - f.y) * t * c.spring;
+  f.yI *= 1 - t * c.damp;
+  const b = FOE_BOX.kopter;
+  const nx = f.x + f.xI * t;
+  if (ctx.map.boxHitsSolid(nx - b.halfWidth, f.y, nx + b.halfWidth, f.y + 24)) f.xI = 0;
+  else f.x = nx;
+  let ny = f.y + f.yI * t;
+  const ground = groundUnder(ctx.map, f);
+  if (ny < ground + c.floor) {
+    ny = ground + c.floor;
+    f.yI = 0;
+  }
+  f.y = ny;
+  f.onGround = false;
+  if (p && Math.abs(p.x - f.x) < c.rotorX && p.y <= f.y + c.rotorY + 2 && p.y + c.unitHeight >= f.y + c.rotorY - 2) ctx.hurtPlayer(c.rotorDamage);
+}
+
 /** One step of a foe: its own AI, then the Tank's movement and rolling frames. */
 export function stepFoe(f: Foe, s: FoeStats, ctx: FoeContext, t: number): void {
   if (f.hidden) return;
@@ -364,6 +632,11 @@ export function stepFoe(f: Foe, s: FoeStats, ctx: FoeContext, t: number): void {
   if (f.dead) {
     f.deadTime += t;
     move(f, ctx.map, t);
+    if (f.kopter && f.onGround) f.kopter.crashed = true; // Mookopter.Land
+    return;
+  }
+  if (f.kind === 'kopter') {
+    stepKopter(f, s, ctx, t);
     return;
   }
   if (isBike(f.kind)) stepBike(f, s, ctx, t);

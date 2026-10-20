@@ -352,6 +352,8 @@ export class Renderer {
     if (f.kind === 'truck') {
       // MookTruck.AnimateRolling, SetDeathFrame
       this.sprite('truck', f.dead ? 2 : f.frame % 2, 0, f.x - f.facing * FOE.truck.drawX, f.y + this.assets.sheets.truck.offsetY, flip);
+    } else if (f.kind === 'kopter') {
+      this.drawKopter(f, time);
     } else if (f.kind === 'artillery') {
       // MookArtilleryTruck: rolling or unfolding on row 0, its volley on row 2, the wreck (folded or not) on row 4
       const a = FOE.artillery;
@@ -377,6 +379,23 @@ export class Renderer {
       this.sprite('bike', f.dead ? 2 : f.frame % 2, 1, f.x, f.y + this.assets.sheets.bike.offsetY, flip);
     }
     if (f.hurt > 0) this.ctx.filter = 'none';
+  }
+
+  /** The Mookopter: the chassis (wrecked: frame 9), its chaingun, missile rack and the two spinning rotors. */
+  private drawKopter(f: Foe, time: number): void {
+    const flip = f.facing > 0;
+    const along = (lx: number): number => f.x - f.facing * lx; // its art faces left: local +x is behind it
+    const k = f.kopter!;
+    if (!f.dead) {
+      this.sprite('kopter_tail', loopFrame(time, 0.02, 4), 0, along(28.9), f.y + 28.1, flip);
+    }
+    this.sprite('kopter', f.dead ? 9 : 0, 0, f.x, f.y + this.assets.sheets.kopter.offsetY, flip);
+    if (f.dead) return;
+    const g = k.gun;
+    const gunCol = !g.firing ? 0 : g.frame < 20 || g.shots >= 6 ? g.frame % 4 : 4 + (g.frame % 4); // TankChaingun: spinning 0-3, firing 4-7
+    this.sprite('kopter_gun', gunCol, 0, f.x, f.y - 10.1 + 15, flip);
+    this.sprite('kopter_missiles', k.missiles, 0, along(2), f.y + 5, flip);
+    this.sprite('kopter_rotor', loopFrame(time, 0.02, 4), 0, along(2), f.y + 40, flip);
   }
 
   /** TankBroTank's hull with the turret on top (bobbing a pixel while it rolls), flashing in its death countdown. */
@@ -507,6 +526,9 @@ export class Renderer {
         break;
       case 'rocket':
         this.sprite('rocket', 0, 0, p.x, p.y, p.xI < 0);
+        break;
+      case 'hugeBullet':
+        this.sprite('bullet', loopFrame(time, 0.05, this.assets.sheets.bullet.cols), 0, p.x, p.y, p.xI < 0, 0); // Bullet Huge
         break;
       case 'drunk':
         this.sprite('rocket_evil', loopFrame(time, 0.05, this.assets.sheets.rocket_evil.cols), 0, p.x, p.y, false,

@@ -215,6 +215,14 @@ export const FOE = {
     num: 0.2, numX: 180, numY: 300, minNum: 0.5, blindM: 0.7, blindRand: 0.2, spread: 0.85, spreadRand: 0.3, rest: 3, retry: 0.5,
     deadUnfolded: 46,
   },
+  // Mookopter / MookopterPolyAI / TankChaingun
+  kopter: {
+    half: 160, wallHeights: [42, 56, 64, 80, 96, 112], wallMargin: 64, wallReach: 224, heightProbes: [0, 16, -16, -24, 24, 36, -36, 48],
+    look: 0.3, bombDelay: 0.5, bombEvery: 0.4, reload: 0.2, racks: [-27, 25, -16, 14], bombXI: 60, bombingM: 0.6, spring: 20, damp: 5,
+    floor: 8, rotorX: 16 + 4, rotorY: 32, unitHeight: 24, rotorDamage: 20,
+    gunX: 12, gunY: -10, gunFrames: 4, gunSpins: 5, gunShots: 6, gunFast: 0.015, gunSlow: 0.05, gunFireRate: 0.0175, gunStartRate: 0.065,
+    gunPush: 20, gunDelay: 1.1, bulletSpeed: 450, bulletSpread: 30,
+  },
   // MookMotorBike.ExplodeNuclearBomb
   nuke: { y: 6, ground: 100, groundRange: 128, damage: 12, range: 144, kill: 96, crush: 32, force: 360, extraY: 200, noise: 300, burn: 160 },
 };

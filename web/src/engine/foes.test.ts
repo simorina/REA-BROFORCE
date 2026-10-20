@@ -226,3 +226,61 @@ describe('the artillery truck (MookArtilleryTruck, MookArtilleryTruckPolyAI)', (
     expect(first(far1)).toBeGreaterThan(first(near1));
   });
 });
+
+describe('the Mookopter (Mookopter, MookopterPolyAI)', () => {
+  /** A wide arena: the kopter hangs four blocks over the ground at column 30. */
+  function sky(gap = 10): World {
+    const lvl = road('.', 30, 30 - gap);
+    const rows = lvl.tiles.slice();
+    rows[2] = rows[2].slice(0, 30) + 'H' + rows[2].slice(31);
+    const w = createWorld({ ...lvl, tiles: rows }, TEST_STATS, [BROLUSCONI], () => 0.5);
+    w.player.invulnerable = 999;
+    return w;
+  }
+
+  it("reads the Mookopter ('H'): 65 health, hanging in the air", () => {
+    const w = sky();
+    expect(w.foes[0]).toMatchObject({ kind: 'kopter', health: 65 });
+    play(w, steps(1));
+    expect(w.foes[0].y).toBeGreaterThan(48 + 16);
+  });
+
+  it('spotting the bro, it hangs back 2.5 s, then crosses its arena (160 either side) bombing as it goes', () => {
+    const w = sky();
+    const k = w.foes[0];
+    const x0 = k.x;
+    play(w, steps(2));
+    expect(Math.abs(k.x - x0)).toBeLessThan(8);
+    let bombs = 0;
+    let minX = x0;
+    for (let i = 0; i < steps(6); i++) {
+      play(w, 1);
+      minX = Math.min(minX, k.x);
+      bombs = Math.max(bombs, w.projectiles.filter((p) => p.kind === 'shell' && p.team === 'enemy').length);
+    }
+    expect(minX).toBeLessThan(x0 - 96);
+    expect(bombs).toBeGreaterThan(0);
+  });
+
+  it('it comes down to the bro and fires its chaingun: a wind-up, then six huge bullets (5 each) at 450', () => {
+    const w = sky();
+    const seen = new Set<number>();
+    for (let i = 0; i < steps(16); i++) {
+      play(w, 1);
+      for (const p of w.projectiles) if (p.kind === 'hugeBullet') seen.add(p.id);
+    }
+    expect(seen.size).toBeGreaterThanOrEqual(6);
+  });
+
+  it('shot down, it falls out of the sky and crashes as a wreck', () => {
+    const w = sky();
+    const k = w.foes[0];
+    k.health = 1;
+    w.projectiles.push({ id: 900, kind: 'bullet', team: 'player', x: k.x + 20, y: k.y + 8, xI: -400, yI: 0, life: 1, bounces: 0, dead: false });
+    play(w, 3);
+    expect(k.dead).toBe(true);
+    play(w, steps(3));
+    expect(k.onGround).toBe(true);
+    expect(k.y).toBeLessThan(48 + 2);
+  });
+});
