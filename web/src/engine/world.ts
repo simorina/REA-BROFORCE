@@ -18,6 +18,7 @@ import { alarmDoor, collapseDoor, doorLostSupport, makeDoor, stepDoor, type Door
 import { applyBlast, barrelBlast, suicideBlast, type Blast } from './explosions';
 import { parseLevel, type LevelData } from './level';
 import { makeBlock, type TileMap } from './map';
+import { makeDolphState, stepDolph } from './dolph';
 import { damageFoe, foeBlast, foeInBlast, makeFoe, nukeBlasts, stepFoe, type Foe } from './foes';
 import { mineBlast, plantMine, steppedOn, type Mine, type MineSign } from './mines';
 import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
@@ -184,6 +185,10 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
   const player = makeUnit(nextId++, 'bro', 'player', spawn.x, spawn.y, stats.bros[bro.base]);
   const enemies = parsed.enemies.map((e) => makeUnit(nextId++, e.kind, 'enemy', cellX(e.c), feetY(e.r), stats.units[e.kind]));
   for (const m of enemies) {
+    if (m.kind === 'mook_dolph') { // the universal soldier: his own mind, not a mook's
+      m.ai = null;
+      m.dolph = makeDolphState(m.x);
+    }
     if (m.kind === 'mook_ninja' && m.ai) { // MookNinja.Start / MookNinjaAI: crouched in hiding, looking either way
       m.ai.mental = 'hiding';
       m.facing = rng() < 0.5 ? -1 : 1;
@@ -454,6 +459,10 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
   const player = w.player.dead ? null : w.player;
   for (const m of w.enemies) {
     const ai = m.ai;
+    if (m.dolph) {
+      stepDolph(w, m, t, blasts);
+      continue;
+    }
     if (m.dead) {
       m.deadTime += t;
       if (m.kind === 'boss' && !m.gibbed) bossDown(w, m, blasts);
@@ -1165,6 +1174,6 @@ export function stepWorld(w: World, controls: Controls, prev: Controls, t: numbe
   reportUnits(w);
   ageEffects(w, t);
   followCamera(w.camera, w.player, w.map, t);
-  w.enemies = w.enemies.filter((e) => !(e.gibbed || (e.dead && e.deadTime > CORPSE_TIME)));
+  w.enemies = w.enemies.filter((e) => !(e.gibbed || (e.dead && e.deadTime > CORPSE_TIME && (!e.dolph || e.dolph.defeated))));
   w.projectiles = w.projectiles.filter((p) => !p.dead);
 }

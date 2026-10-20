@@ -226,6 +226,17 @@ export const FOE = {
   // MookMotorBike.ExplodeNuclearBomb
   nuke: { y: 6, ground: 100, groundRange: 128, damage: 12, range: 144, kill: 96, crush: 32, force: 360, extraY: 200, noise: 300, burn: 160 },
 };
+// DolphLundrenSoldier / DolfLundgrenAI. Down 2 s on the ground, he gets up (1.7 s) with healthReviveAmount (90 + 30 a
+// player) and half again as bonusHealth; DoAlertedThink: a super jump at a bro within 36 (55%), the grenade (50%), the
+// launcher (60%); the super jump charges 0.4 s and leaps at 440 a second while he is under the row he wants (6 up; 32 to
+// safety after a revival); Land faster than 330: MakeLandBlast (25 Crush within 32, kill 20, 150 / 90; DamageGround 15, 56)
+export const DOLPH = {
+  revive: 120, down: 2, getUp: 1.7, revives: 2, reviveStep: 92, safetyRows: 32, closeRows: 6, visible: 36, tooClose: 36, jumpChance: 0.55,
+  waitMin: 0.75, waitMax: 1.5, specialTime: 1, tossAt: 5 * 0.0667, pressure: 32, backStep: 96, siegeRate: 0.0667, beepTime: 0.5,
+  ox: 17, oy: 18, speed: 160, tossX: 100, tossY: 180, tossM: 0.007, charge: 0.4, superYI: 440, crouch: 0.33, landBelow: -330,
+  landY: 16, landGround: 15, landGroundRange: 56, landDamage: 25, landRange: 32, landKill: 20, landForce: 150, landExtraY: 90, landNoise: 48,
+  blastMax: 10, liftMax: 300, liftM: 5,
+};
 export const DOG = { bite: 3, range: 6 }; // MookDog.RunFiring: Map.HitLivingUnits(3, Melee, 6, X, Y + 4)
 export const JET_ROCKET = { ox: [32, 8], oy: -5, x: 450, y: -285, jitter: 12 }; // HarrierJet.Update: two shots from (X+32, Y-5), (X+8, Y-5) at (450, -285) + insideUnitCircle * 12
 export const JET_DESCENT = { slow: 40, slowZone: 48 }; // HarrierJet.Start: yI -40 over its last 48 px

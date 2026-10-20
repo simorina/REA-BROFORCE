@@ -1,5 +1,6 @@
 import { makeAiState } from './ai';
-import { BRUISER, FIRE_START_LIMIT, JETPACK, GIB_THRESHOLD, GUN_FRAME_RATE, SHIELD, UNIT_BOX_HEIGHT, UNIT_WIDTH } from './constants';
+import { BRUISER, DOLPH, FIRE_START_LIMIT, JETPACK, GIB_THRESHOLD, GUN_FRAME_RATE, SHIELD, UNIT_BOX_HEIGHT, UNIT_WIDTH } from './constants';
+import { soakDolph } from './dolph';
 import type { JetpackState, Team, Unit, UnitKind, UnitStats } from './types';
 
 export function makeUnit(id: number, kind: UnitKind, team: Team, x: number, y: number, stats: UnitStats): Unit {
@@ -42,8 +43,9 @@ export function damageUnit(u: Unit, amount: number, ignoreInvulnerable = false):
     u.health = Math.max(0, u.health - amount);
     return false;
   }
+  if (u.dolph) amount = soakDolph(u, amount); // his bonus health soaks it up first
   u.health -= amount;
-  if (u.health < GIB_THRESHOLD) u.gibbed = true;
+  if (u.health < GIB_THRESHOLD && !u.dolph) u.gibbed = true; // canGib: never the universal soldier
   // MookBigGuy.Damage: a hit when he is down to half, or a big one, makes the Bruiser stumble and hold his fire
   if (isBigGuy(u.kind) && u.health > 0 && !ignoreInvulnerable && (u.health <= u.stats.health / 2 || amount >= BRUISER.stumbleDamage)) {
     u.fireDelay = Math.max(u.fireDelay, BRUISER.stumble);
@@ -74,6 +76,14 @@ export function runGun(u: Unit, t: number): void {
 
 /** TestVanDammeAnim.Knock: half the push goes to xI and half to xIBlast; heroes fly up less. */
 export function knock(u: Unit, kx: number, ky: number): void {
+  if (u.dolph) { // DolphLundrenSoldier.Knock: barely; lifted only when he is down
+    u.xIBlast = Math.max(-DOLPH.blastMax, Math.min(DOLPH.blastMax, u.xIBlast + kx / 2));
+    if (u.health <= 0) {
+      u.yI = Math.min(DOLPH.liftMax, u.yI + ky / DOLPH.liftM);
+      if (u.yI > 0) u.onGround = false;
+    }
+    return;
+  }
   if (isBigGuy(u.kind)) { // MookBigGuy.Knock: he is heavy
     const b = BRUISER;
     u.xI = Math.max(-b.knockMax, Math.min(b.knockMax, u.xI + kx / b.knockX));

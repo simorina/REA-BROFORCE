@@ -67,6 +67,7 @@ SPRITES = (
     SpriteRef("mook_ninja", "MookNinja", "ZMookNinja", True),
     SpriteRef("mook_alarmist", "MookGeneral", "ZMook Alarmist", True),
     SpriteRef("mook_bruiser_elite", "MookBigGuyElite", "ZMookBigElite", True),
+    SpriteRef("mook_dolph", "DolphLundrenSoldier", "DolfLundgrenSoldier", True),  # the universal soldier: 48x48
     SpriteRef("truck", "MookTruck", "MookTruck", True),  # 74x64: rolling 0-1, wrecked 2
     SpriteRef("apc", "MookAPC", "MookAPC", True),  # 96x64: row 0 rolling (wreck at 8), row 1 the panel down
     SpriteRef("bike", "MookMotorBike", "MookMotorBike", True),  # 64x32: row 1 rolling 0-1, wrecked 2
@@ -107,7 +108,8 @@ TEXTURES = (
     TextureRef("flame_2", "flamethrower_bullet2", frame=(32, 32)),
     TextureRef("flame_3", "flamethrower_bullet3", frame=(32, 32)),
     TextureRef("bruiser_elite_gun", "mookbigElite_gun_anim", frame=(36, 32)),  # the elite Bruiser's rocket launcher, laid out like the minigun
-    TextureRef("rocket_evil", "rocket Evil", frame=(16, 16)),  # DrunkRocket "Rocket Drunk Evil"
+    TextureRef("rocket_evil", "rocket Evil", frame=(16, 16)),
+    TextureRef("dolph_gun", "universal_jerk_gun_rocket_anim", frame=(64, 64)),  # his rocket launcher: 0 at rest, 1-3 firing, 6-7 beeping  # DrunkRocket "Rocket Drunk Evil"
     TextureRef("nuke_bomb", "Nuclear Bomb", frame=(32, 32)),  # the nuclear motorbike's bomb
     TextureRef("kopter_gun", "mook_Kopter_Chaingun", frame=(48, 64)),  # TankChaingun: spinning 0-3, firing 4-7, turning 8+, dead 13
     TextureRef("kopter_rotor", "mook_Kopter_Rotor_Main", frame=(64, 16)),
@@ -183,6 +185,8 @@ VALUES = (
     ValuesRef("ai_mook_bruiser_elite", "BigGuyEliteAI", "ZMookBigElite", AI_FIELDS + ("jumpRange",)),
     ValuesRef("path_mook_bruiser_elite", "PathAgent", "ZMookBigElite", PATH_FIELDS),
     ValuesRef("rocket_drunk", "DrunkRocket", "Rocket Drunk Evil", ROCKET_FIELDS + ("drunkSpeed", "acceleration")),
+    ValuesRef("mook_dolph", "DolphLundrenSoldier", "DolfLundgrenSoldier", MOOK_FIELDS),
+    ValuesRef("ai_mook_dolph", "DolfLundgrenAI", "DolfLundgrenSoldier", AI_FIELDS),
     ValuesRef("foe_truck", "MookTruck", "MookTruck", ("health", "tankSpeed", "mooksToSpawn")),
     ValuesRef("ai_foe_truck", "MookTruckPolyAI", "MookTruck", ("sightRangeX", "sightRangeY")),
     ValuesRef("foe_apc", "MookAPC", "MookAPC", ("health", "tankSpeed", "mooksToSpawn")),

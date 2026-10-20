@@ -35,6 +35,11 @@ export function unitFrame(u: Unit): Frame {
     return { col: 21 + (Math.floor(u.animTime / PANIC_FRAME_RATE) % (scout ? 4 : 8)), row: 0 };
   }
   if (u.kind === 'mook_ninja' && u.ducking && u.ai?.mental === 'hiding') return { col: 5, row: 6 }; // MookNinja: crouched, hidden
+  if (u.dolph) {
+    const a = u.dolph.queue[0];
+    if (u.dolph.charge > 0) return { col: 19 + Math.min(4, Math.floor((0.4 - u.dolph.charge) / 0.0667)), row: 2 }; // AnimateSpecial2: the crouch
+    if (a?.type === 'grenade') return { col: 18 + Math.min(8, Math.floor((1 - a.t) / 0.0667)), row: 0 }; // AnimateSpecial: the throw
+  }
   if (u.kind === 'mook_bruiser_elite') {
     // MookBigGuyElite.ChangeFrame: getting up after a stomp, frames 21-24; AnimateJumping: frame 21 leaping at you
     if (u.getUp > 0) return { col: ELITE.getUpCol + Math.min(3, Math.floor((ELITE.getUp - u.getUp) / (ELITE.getUp / 4))), row: 0 };

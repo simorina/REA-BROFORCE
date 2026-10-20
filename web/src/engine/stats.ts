@@ -131,6 +131,7 @@ export function parseValues(raw: Raw): GameStats {
       mook_ninja: unit(raw, 'mook_ninja'),
       mook_mortar: unit(raw, 'mook_mortar'),
       mook_bruiser_elite: unit(raw, 'mook_bruiser_elite'),
+      mook_dolph: unit(raw, 'mook_dolph'),
       mook_alarmist: unit(raw, 'mook_alarmist'),
     },
     bros: {
@@ -145,6 +146,7 @@ export function parseValues(raw: Raw): GameStats {
       mook_ninja: ai(raw, 'ai_mook_ninja'), mook_alarmist: ai(raw, 'ai_mook_alarmist'),
       mook_mortar: enemyAi(raw, 'ai_mook_mortar'),
       mook_bruiser_elite: ai(raw, 'ai_mook_bruiser_elite'),
+      mook_dolph: ai(raw, 'ai_mook_dolph'),
     },
     paths: {
       mook: path(raw, 'path_mook'), mook_suicide: path(raw, 'path_mook_suicide'), mook_bazooka: path(raw, 'path_mook_bazooka'),
@@ -155,6 +157,7 @@ export function parseValues(raw: Raw): GameStats {
       mook_ninja: path(raw, 'path_mook_ninja'), mook_alarmist: path(raw, 'path_mook_alarmist'),
       mook_mortar: path(raw, 'path_mook_mortar'),
       mook_bruiser_elite: path(raw, 'path_mook_bruiser_elite'),
+      mook_dolph: { canJump: true, jumpHeight: 3, maxDropDistance: 4, canWallClimb: false, fudge: false, agentSize: 9 }, // he walks his own way
     },
     scoutRunSpeed: num(raw, 'mook_scout', 'runSpeed'),
     dogRunSpeed: num(raw, 'dog', 'awareRunSpeed'),

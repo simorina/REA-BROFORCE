@@ -108,6 +108,9 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert sheets["mook_bruiser_elite"]["frameW"] == 36 and values["mook_bruiser_elite"]["health"] == 125
     assert values["mook_bruiser_elite"]["runSpeedMultiplier"] == pytest.approx(2.6) and values["ai_mook_bruiser_elite"]["jumpRange"] == 96
     assert values["rocket_drunk"]["drunkSpeed"] == pytest.approx(10.0) and sheets["rocket_evil"]["cols"] == 8
+    # the universal soldier: 110 health, his launcher's attack 2.3 s
+    assert values["mook_dolph"]["health"] == 110 and values["ai_mook_dolph"]["attackTime"] == pytest.approx(2.3)
+    assert sheets["mook_dolph"]["frameW"] == 48 and sheets["dolph_gun"]["frameW"] == 64
     # the troop truck: 20 health, 80 a second, seven mooks in the back
     assert (sheets["truck"]["frameW"], sheets["truck"]["frameH"], sheets["truck"]["offsetY"]) == (74, 64, 32)
     assert values["foe_truck"]["mooksToSpawn"] == 7 and values["ai_foe_truck"]["sightRangeX"] == 120

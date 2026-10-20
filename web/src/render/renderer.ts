@@ -28,7 +28,7 @@ const ENEMY_SHEETS: Record<Exclude<UnitKind, 'bro'>, SheetKey> = {
   mook_shield: 'mook_shield', mook_grenadier: 'mook_grenadier', dog: 'dog', mook_bruiser: 'mook_bruiser',
   mook_jetpack: 'mook_jetpack', mook_jetpack_bazooka: 'mook_jetpack_bazooka', mook_ninja: 'mook_ninja', mook_alarmist: 'mook_alarmist',
   mook_mortar: 'mook', // ZMookMortar wears the trooper's mook2_anim
-  mook_bruiser_elite: 'mook_bruiser_elite',
+  mook_bruiser_elite: 'mook_bruiser_elite', mook_dolph: 'mook_dolph',
 };
 const BLOCK_SHEETS: Record<BlockKind, SheetKey> = {
   dirt: 'block_dirt', sand: 'block_sand', brick: 'block_brick', temple: 'block_temple', steel: 'block_steel', barrel: 'block_barrel',
@@ -336,6 +336,11 @@ export class Renderer {
       const running = f.row === 1;
       this.sprite(bigGun, running ? f.col : u.gunFrame, running ? 1 : 0, u.x + u.facing * gunOffsetX(bigGun),
         u.y + this.assets.sheets[key].offsetY, u.facing < 0);
+    }
+    // the universal soldier's rocket launcher (a 64x64 gun sprite): beeping in its siege mode, else its muzzle frames
+    if (u.dolph && !u.dead && u.dolph.reviveTime <= 0 && u.dolph.charge <= 0 && f.col < 18) {
+      const beeping = u.dolph.siegeFrame >= 3 && u.fireDelay > 0;
+      this.sprite('dolph_gun', beeping ? 6 + (Math.floor(u.dolph.beep / 0.067) % 2) : u.gunFrame, 0, u.x, u.y + this.assets.sheets[key].offsetY, u.facing < 0);
     }
     if (u.jet?.on && !u.dead) this.drawThrust(u, time);
     if (u.kind === 'bro' && this.django && !u.dead) this.drawDjangoHat(u);

@@ -3,7 +3,7 @@ export type BlastTeam = Team | 'neutral';
 export type BlockKind = 'dirt' | 'sand' | 'brick' | 'temple' | 'steel' | 'barrel';
 export type EnemyKind = 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout' | 'mook_shield' | 'mook_grenadier' | 'dog' | 'mook_bruiser'
   | 'mook_jetpack' | 'mook_jetpack_bazooka' | 'mook_ninja' | 'mook_alarmist' | 'mook_mortar'
-  | 'mook_bruiser_elite';
+  | 'mook_bruiser_elite' | 'mook_dolph';
 export type UnitKind = 'bro' | EnemyKind | 'boss';
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
 export const BRO_BASES = ['bro_base', 'bro_lee', 'bro_soldier', 'bro_in_black', 'bro_rambro', 'bro_ellen'] as const;
@@ -104,6 +104,8 @@ export interface FoeStats {
   sightDelay?: number;
   speedY?: number; // Mookopter.verticalSpeed
 }
+
+import type { DolphState } from './dolph';
 
 export interface RocketStats {
   damage: number;
@@ -325,6 +327,7 @@ export interface Unit {
   landYI: number; // TestVanDammeAnim.Land: how fast it was falling when it last landed (read and cleared each step)
   getUp: number; // MookBigGuyElite.getUpFrames, as time left getting up after a stomp
   hasJumped: boolean; // MookBigGuyElite.hasJumped
+  dolph?: DolphState; // the universal soldier's mind and his revivals
 }
 
 /** MookJetpack: its jetpack, the countdown of a wrecked one, its spiral down and the fuse that blows it up. */

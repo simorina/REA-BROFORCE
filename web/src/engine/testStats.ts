@@ -60,6 +60,8 @@ export const RAW_VALUES: Record<string, Record<string, unknown>> = {
   mook_door: { spawningRate: 1, maxMookCount: 3, chanceToSpawnSuicideMook: 0.33, maxAlarmedMooksCount: 5, closedAtStart: 0, limitedNumberOfMooks: -1, maxMooksOnCollapse: 8, maxMookCountAfterCollapse: 0, spawnEscapingUnitsOnFire: 1, explodeAtEnd: 1, mooksAlwaysWalkOut: 0, mooksStartSuspicious: 0 },
   bullet: { damage: 1, life: 0.45 },
   rocket_mook: { damage: 10, range: 28, blastForce: 20, blastForceExtraY: 300, life: 3 },
+  mook_dolph: { speed: 95, _jumpForce: 260, health: 110, fireRate: 0.33, maxFallSpeed: -660, canWallClimb: 0, canDash: 0, originalSpecialAmmo: 3, hearingRangeX: 0, hearingRangeY: 0, canHideInGrass: 0, canBeSetOnFire: 0, willPanicWhenOnFire: 1 },
+  ai_mook_dolph: { sightRangeX: 400, sightRangeY: 70, attackTime: 2.3, sightDelay: 0.8, delayBetweenFiring: 1.4, patrolBlocksRadius: 2, minIdleWaitDuration: 0.3, maxIdleWaitDuration: 1, hidingLookXRange: 64 },
   foe_truck: { health: 20, tankSpeed: 80, mooksToSpawn: 7 },
   ai_foe_truck: { sightRangeX: 120, sightRangeY: 20 },
   foe_apc: { health: 40, tankSpeed: 80, mooksToSpawn: 4 },
@@ -115,6 +117,7 @@ export const TEST_STATS: GameStats = {
     mook_ninja: { ...ENEMY, speed: 70, jumpForce: 260, health: 3, fireRate: 0.17, hearingX: 50, hearingY: 0, canHideInGrass: false },
     mook_mortar: { ...ENEMY, speed: 70, jumpForce: 260, health: 3, fireRate: 2, hearingX: 50, hearingY: 0, canHideInGrass: false },
     mook_bruiser_elite: { ...ENEMY, maxFallSpeed: -600, speed: 40, jumpForce: 320, health: 125, fireRate: 0.3, hearingX: 80, hearingY: 25, canHideInGrass: false },
+    mook_dolph: { ...ENEMY, maxFallSpeed: -660, speed: 95, jumpForce: 260, health: 110, fireRate: 0.33, hearingX: 0, hearingY: 0, canHideInGrass: false, canBeSetOnFire: false },
     mook_alarmist: { ...ENEMY, speed: 70, jumpForce: 200, health: 3, fireRate: 0.17, hearingX: 200, hearingY: 100 },
   },
   bros: {
@@ -139,6 +142,7 @@ export const TEST_STATS: GameStats = {
     mook_ninja: { ...AI, sightY: 20, attackTime: 0.06, sightDelay: 1.66, delayBetweenFiring: 1.78, hidingLookX: 64 },
     mook_mortar: { ...AI, sightX: 300, sightY: 20, attackTime: 2, sightDelay: 0.55, delayBetweenFiring: 0, patrolRadius: 0, minIdleWait: 0.9, maxIdleWait: 1, hidingLookX: 64 },
     mook_bruiser_elite: { ...AI, sightY: 20, attackTime: 1.1, sightDelay: 0.667, delayBetweenFiring: 1.8, maxIdleWait: 0.8, hidingLookX: 64 },
+    mook_dolph: { ...AI, sightX: 400, sightY: 70, attackTime: 2.3, sightDelay: 0.8, delayBetweenFiring: 1.4, hidingLookX: 64 },
     mook_alarmist: { ...AI, sightY: 20, attackTime: 0.06, sightDelay: 1.66, delayBetweenFiring: 1.78, hidingLookX: 50 },
   },
   paths: {
@@ -155,6 +159,7 @@ export const TEST_STATS: GameStats = {
     mook_ninja: { ...PATH, jumpHeight: 3, maxDropDistance: 4 },
     mook_mortar: { ...PATH, agentSize: 5, jumpHeight: 3, maxDropDistance: 4 },
     mook_bruiser_elite: { ...PATH, agentSize: 12, jumpHeight: 2, maxDropDistance: 2 },
+    mook_dolph: { ...PATH, jumpHeight: 3, maxDropDistance: 4 },
     mook_alarmist: { ...PATH, jumpHeight: 3, maxDropDistance: 4 },
   },
   scoutRunSpeed: 100,

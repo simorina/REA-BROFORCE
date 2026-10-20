@@ -1,5 +1,5 @@
 import { screenMaxY } from './camera';
-import { BOSS, SPEECH_DURATION } from './constants';
+import { BOSS, DOLPH, SPEECH_DURATION } from './constants';
 import { rocketBlast, type Blast } from './explosions';
 import { cellLeft } from './map';
 import { NO_INTENT, stepUnit } from './physics';
@@ -26,11 +26,15 @@ export function makeBoss(id: number, x: number, y: number, stats: GameStats, fle
 export const bossAlive = (w: World): boolean => w.boss !== null && !w.boss.dead && !w.boss.boss?.gone;
 
 /** The level's last boss still stands: the Goliath when there is one, else Epstein himself. The flag waits for it. */
-export const levelBossAlive = (w: World): boolean => (w.mech ? !w.mech.destroyed : bossAlive(w));
+/** The universal soldier still to beat (he gets up until he is down for good). */
+const dolphOf = (w: World): Unit | undefined => w.enemies.find((e) => e.dolph && !e.dolph.defeated);
+
+export const levelBossAlive = (w: World): boolean => (w.mech ? !w.mech.destroyed : bossAlive(w) || dolphOf(w) !== undefined);
 
 /** The HUD's name for the fighting boss. */
 export function bossName(w: World): string | null {
   if (w.mech && w.mech.awake && !w.mech.destroyed) return 'JEFFREY EPSTEIN · GOLIATH';
+  if (dolphOf(w)?.dolph?.alerted) return 'SOLDATO UNIVERSALE';
   return bossBar(w) === null ? null : 'JEFFREY EPSTEIN';
 }
 
@@ -38,6 +42,8 @@ export function bossName(w: World): string | null {
 export function bossBar(w: World): number | null {
   const mech = w.mech;
   if (mech && mech.awake && !mech.destroyed) return Math.round((mech.health / mech.maxHealth) * 40) / 40;
+  const d = dolphOf(w);
+  if (d?.dolph?.alerted) return d.dead ? 0 : Math.round((Math.max(0, d.health) / Math.max(d.stats.health, DOLPH.revive)) * 40) / 40;
   const b = w.boss;
   if (!b || b.dead || !b.boss?.awake || b.boss.fleeing >= 0 || b.boss.gone) return null;
   return Math.round((b.health / BOSS.health) * 40) / 40;
