@@ -4,12 +4,14 @@ export type BlockKind = 'dirt' | 'sand' | 'brick' | 'temple' | 'steel' | 'barrel
 export type EnemyKind = 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout' | 'mook_shield' | 'mook_grenadier' | 'dog' | 'mook_bruiser'
   | 'mook_jetpack' | 'mook_jetpack_bazooka' | 'mook_ninja' | 'mook_alarmist' | 'mook_mortar'
   | 'mook_bruiser_elite' | 'mook_dolph'
-  | 'alien_xeno' | 'alien_xeno_brain' | 'alien_hugger' | 'alien_snake' | 'alien_melter' | 'alien_brute' | 'alien_mosquito';
+  | 'alien_xeno' | 'alien_xeno_brain' | 'alien_hugger' | 'alien_snake' | 'alien_melter' | 'alien_brute' | 'alien_mosquito'
+  | 'hell_dog' | 'hell_lostsoul' | 'hell_boomer' | 'hell_soulcatcher' | 'hell_bigguy' | 'hell_armoured'
+  | 'undead' | 'undead_suicide' | 'skinless' | 'warlock' | 'satan';
 export type UnitKind = 'bro' | EnemyKind | 'boss';
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
 export const BRO_BASES = ['bro_base', 'bro_lee', 'bro_soldier', 'bro_in_black', 'bro_rambro', 'bro_ellen'] as const;
 export type BroBase = (typeof BRO_BASES)[number];
-export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket' | 'rifle' | 'jetBomb' | 'grenade' | 'cricket' | 'neuraliser' | 'revolver' | 'molotov' | 'molotovFire' | 'flame' | 'flameWall' | 'minigun' | 'launch' | 'drunk' | 'hugeBullet';
+export type ProjectileKind = 'bullet' | 'rocket' | 'bomb' | 'football' | 'marker' | 'body' | 'shell' | 'bigRocket' | 'rifle' | 'jetBomb' | 'grenade' | 'cricket' | 'neuraliser' | 'revolver' | 'molotov' | 'molotovFire' | 'flame' | 'flameWall' | 'minigun' | 'launch' | 'drunk' | 'hugeBullet' | 'vomit';
 
 export interface Block {
   kind: BlockKind;
@@ -110,6 +112,7 @@ export interface FoeStats {
 
 import type { AlienSpeeds, AlienState } from './aliens';
 import type { DolphState } from './dolph';
+import type { HellState } from './hell';
 
 export interface RocketStats {
   damage: number;
@@ -162,7 +165,8 @@ export interface GameStats {
   launch: RocketStats; // the mortar mook's RocketLaunch ("Rocket Launch Airstrike")
   drunk: RocketStats & { drunkSpeed: number; acceleration: number }; // DrunkRocket ("Rocket Drunk Evil")
   elite: { runSpeedMultiplier: number; jumpRange: number }; // MookBigGuyElite, BigGuyEliteAI
-  alienSpeeds: Record<'alien_xeno' | 'alien_xeno_brain' | 'alien_hugger' | 'alien_snake' | 'alien_melter' | 'alien_brute' | 'alien_mosquito', AlienSpeeds>;
+  alienSpeeds: Record<'alien_xeno' | 'alien_xeno_brain' | 'alien_hugger' | 'alien_snake' | 'alien_melter' | 'alien_brute' | 'alien_mosquito' | 'hell_lostsoul', AlienSpeeds>;
+  hell: HellStats;
   foes: { truck: FoeStats; apc: FoeStats; bike: FoeStats; nukebike: FoeStats; artillery: FoeStats; kopter: FoeStats };
   hugeBullet: BulletStats; // the Mookopter chaingun's "Bullet Huge"
   bomb: RocketStats;
@@ -334,6 +338,7 @@ export interface Unit {
   hasJumped: boolean; // MookBigGuyElite.hasJumped
   dolph?: DolphState; // the universal soldier's mind and his revivals
   alien?: AlienState; // an alien's mind (aliens.ts)
+  hell?: HellState; // what a hell mob keeps on top of its mook's mind (hell.ts)
 }
 
 /** MookJetpack: its jetpack, the countdown of a wrecked one, its spiral down and the fuse that blows it up. */
@@ -396,7 +401,22 @@ export interface FlamePoint {
 }
 
 /** FlameWallExplosion's state: its band of cells, the cells burning at its front and those already burnt. */
+/** Hell's mobs: the hell Bruisers' flame wall, the Boomer's vomit, the warlock's portal, the bursts and the lost soul's dive. */
+export interface HellStats {
+  flameWall: FlameWallStats; // "flameWallExplosion HellMook"
+  vomit: { damage: number; gravity: number; life: number; size: number }; // SlimeDrop "Slime Vomit Drop"
+  portal: { launchDelay: number; riseTime: number; riseSpeed: number }; // "WarlockPortal Suicide"
+  boomer: { range: number; warning: number }; // MookHellBoomer: explosionRange, warningTime
+  soulcatcher: { range: number; warning: number }; // MookHellSoulCatcher
+  undeadSuicide: { range: number; blastForce: number }; // MookSuicideUndead
+  lostSoul: {
+    diveSpeed: number; diveSpeedMax: number; explodeRange: number; broHarmM: number; seekTurn: number; wobbleSpeed: number; wobble: number;
+    diveDelay: number;
+  }; // HellLostSoul
+}
+
 export interface FlameWall {
+  stats?: FlameWallStats; // a wall that isn't Ellen's (the hell Bruisers')
   col: number;
   row: number;
   dir: 1 | -1; // forceDirection

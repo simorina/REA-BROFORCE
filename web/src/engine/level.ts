@@ -32,7 +32,7 @@ export interface LevelData {
 export interface ParsedLevel {
   map: TileMap;
   player: Cell;
-  enemies: Array<Cell & { kind: EnemyKind }>;
+  enemies: Array<Cell & { kind: EnemyKind; startDead?: boolean }>;
   cages: Cell[];
   checkpoints: Cell[];
   grass: Cell[]; // DoodadGrass: long grass mooks can hide in
@@ -50,6 +50,8 @@ const ENEMIES: Record<string, EnemyKind> = {
   m: 'mook', k: 'mook_suicide', z: 'mook_bazooka', o: 'mook_scout', h: 'mook_shield', n: 'mook_grenadier', q: 'dog',
   B: 'mook_bruiser', j: 'mook_jetpack', J: 'mook_jetpack_bazooka', N: 'mook_ninja', A: 'mook_alarmist', R: 'mook_mortar', G: 'mook_bruiser_elite', U: 'mook_dolph',
   X: 'alien_xeno', Y: 'alien_xeno_brain', f: 'alien_hugger', S: 'alien_snake', L: 'alien_melter', K: 'alien_brute', W: 'alien_mosquito',
+  e: 'hell_dog', l: 'hell_lostsoul', O: 'hell_boomer', p: 'hell_soulcatcher', 1: 'hell_bigguy', 2: 'hell_armoured',
+  u: 'undead', r: 'undead', i: 'undead_suicide', y: 'skinless', v: 'warlock', 6: 'satan', // 'r': ZMookUndeadStartDead, lying dead
 };
 
 export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
@@ -76,7 +78,7 @@ export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {
       const ch = line[c];
       if (ch === '.') continue;
       if (ch in BLOCKS) map.set(c, r, makeBlock(BLOCKS[ch], stats));
-      else if (ch in ENEMIES) enemies.push({ c, r, kind: ENEMIES[ch] });
+      else if (ch in ENEMIES) enemies.push(ch === 'r' ? { c, r, kind: ENEMIES[ch], startDead: true } : { c, r, kind: ENEMIES[ch] });
       else if (ch === 'c') cages.push({ c, r });
       else if (ch === 'C') checkpoints.push({ c, r });
       else if (ch === 'g') grass.push({ c, r });

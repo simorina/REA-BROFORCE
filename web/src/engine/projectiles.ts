@@ -1,12 +1,12 @@
 import {
   AIRSTRIKE_FUSE, AIRSTRIKE_ROCKETS, AIRSTRIKE_SPEED_MIN, AIRSTRIKE_SPEED_RAND, AIRSTRIKE_THROW,
   AIRSTRIKE_THROW_DUCK, AIRSTRIKE_X_OFFSET, BAZOOKA_ROCKET_SPEED, BRUISER, FLAME_WALL, FLAMETHROWER, FOOTBALL, CRICKET, GRAVITY, GRENADE_EXTRA_Y, GRENADE_FUSE, M60, MOLOTOV, MOLOTOV_FIRE, NEURALISER, REVOLVER, GRENADIER, GRENADIER_REACH, HEAVY_SHELL_DIP, JET_BOMB, JET_ROCKET, JUDO_THROW, SHIELD, MOOK_BULLET_SPEED, RIFLE, TANK_CANNON, TANK_ROCKET_CRUSH, TANK_SHELL,
-  TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT, MORTAR, ELITE,
+  TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT, MORTAR, ELITE, BOOMER,
 } from './constants';
 import { barrelBlast, cricketBlast, rocketBlast, shellBlast, suicideBlast, type Blast } from './explosions';
 import { TileMap, getColumn, getRow } from './map';
 import { damageUnit, inHitBox, knock } from './units';
-import type { BlockKind, EnemyKind, FlameWall, GameStats, Projectile, ProjectileKind, RocketStats, Team, Unit } from './types';
+import type { BlockKind, EnemyKind, FlameWall, FlameWallStats, GameStats, Projectile, ProjectileKind, RocketStats, Team, Unit } from './types';
 import { vehicleAt, type Vehicle } from './vehicle';
 import { foeAt, type Foe } from './foes';
 import { mechAt, type Mech } from './mech';
@@ -30,7 +30,7 @@ export type ProjectileEvent =
   | { type: 'hitMech'; damage: number }
   | { type: 'hitFoe'; foe: Foe; damage: number }
   | { type: 'shieldHit'; unit: Unit; x: number; y: number; broke: boolean }
-  | { type: 'scorch'; x: number; y: number; range: number; damage: number; xI: number } // Map.HitUnits(.., Fire, ..): mooks catch fire
+  | { type: 'scorch'; x: number; y: number; range: number; damage: number; xI: number; team: Team } // Map.HitUnits(.., Fire, ..): mooks catch fire, an enemy wall burns the bro
   | { type: 'quench'; x: number; y: number; range: number } // Map.HitProjectiles(.., Fire, ..): the shots around go out
   | { type: 'flameWallPuff'; x: number; y: number; variant: number; delay: number; dir: 1 | -1; xI: number }
   | { type: 'wallShake'; x: number; y: number }; // FlameWallExplosion.RunPoints: SortOfFollow.Shake(0.2)
@@ -195,14 +195,22 @@ export function fireFlames(nextId: () => number, u: Unit, stats: GameStats, rng:
   });
 }
 
-/** EllenRipbro.UseSpecial: a FlameWallExplosion from (X + dir*5, Y + 9), spreading the way she faces. */
-export function makeFlameWall(id: number, u: Unit): Projectile {
+/**
+ * EllenRipbro.UseSpecial: a FlameWallExplosion from (X + dir*5, Y + 9), spreading the way she faces; the hell Bruisers'
+ * (MookHellBigGuy.FireWeapon: X + dir*17 - dir*12) comes from the same spot with their own wall's values.
+ */
+export function makeFlameWall(id: number, u: Unit, stats?: FlameWallStats): Projectile {
   const p = make(id, 'flameWall', u.team, u.x + u.facing * FLAME_WALL.ox, u.y + FLAME_WALL.oy, 0, 0, Infinity);
   p.wall = {
-    col: getColumn(p.x), row: getRow(p.y), dir: u.facing, started: false, minC: 0, maxC: 0, minR: 0, maxR: 0,
+    stats, col: getColumn(p.x), row: getRow(p.y), dir: u.facing, started: false, minC: 0, maxC: 0, minR: 0, maxR: 0,
     points: [], used: new Set(), counter: 0, left: 0, time: 0, maxTime: 0,
   };
   return p;
+}
+
+/** MookHellBoomer.FireWeapon: a SlimeDrop "Slime Vomit Drop" from (X + dir*10, Y + 18). */
+export function makeVomit(id: number, u: Unit, xI: number, yI: number, life: number): Projectile {
+  return make(id, 'vomit', u.team, u.x + u.facing * BOOMER.ox, u.y + BOOMER.oy, xI, yI, life);
 }
 
 /** GrenadeMolotov.Death: four little fires from (X, Y + 2), up and around (Point3OnCircle), at 210-260. */
@@ -373,7 +381,7 @@ function stepFlame(p: Projectile, w: ProjectileWorld, t: number, events: Project
     events.push({ type: 'hitFoe', foe: foeHit(w, p)!, damage: w.stats.flame.damage });
     p.dead = true;
   } else if (w.units.some((u) => !u.dead && u.team !== p.team && u.invulnerable <= 0 && inHitBox(u, p.x, p.y, FLAMETHROWER.hitRange))) {
-    events.push({ type: 'scorch', x: p.x, y: p.y, range: FLAMETHROWER.hitRange, damage: w.stats.flame.damage, xI: p.xI });
+    events.push({ type: 'scorch', x: p.x, y: p.y, range: FLAMETHROWER.hitRange, damage: w.stats.flame.damage, xI: p.xI, team: p.team });
     p.dead = true;
   } else if (p.life <= 0) {
     p.dead = true;
@@ -384,7 +392,7 @@ const cellKey = (c: number, r: number) => c * 4096 + r;
 
 /** FlameWallExplosion.Setup with a forced direction, then Start: the band it may burn, and its first cell. */
 function startWall(f: FlameWall, w: ProjectileWorld): boolean {
-  const s = w.stats.flameWall;
+  const s = f.stats ?? w.stats.flameWall;
   if (f.dir > 0) {
     f.minC = f.col;
     f.maxC = Math.min(f.col + s.columns + 1, w.map.cols);
@@ -406,8 +414,8 @@ function startWall(f: FlameWall, w: ProjectileWorld): boolean {
  * down (CreateFlashBangPoint takes the diagonal step with the cell's own sideways direction, so the start's column
  * fills upward), never into a cell already burnt. A cell that won't take the fire is ground: if a barrel, it goes up.
  */
-function runPoints(f: FlameWall, w: ProjectileWorld, events: ProjectileEvent[]): void {
-  const s = w.stats.flameWall;
+function runPoints(f: FlameWall, w: ProjectileWorld, events: ProjectileEvent[], team: Team): void {
+  const s = f.stats ?? w.stats.flameWall;
   const rng = w.rng ?? (() => 0.5);
   const next: FlameWall['points'] = [];
   let spread = false;
@@ -421,7 +429,7 @@ function runPoints(f: FlameWall, w: ProjectileWorld, events: ProjectileEvent[]):
     const bottom = nr * TILE - TILE / 2;
     const variant = Math.min(2, Math.floor(rng() * 3));
     events.push({ type: 'flameWallPuff', x, y: bottom + FLAME_WALL.puffY, variant, delay: rng() * s.puffDelay, dir: dc < 0 ? -1 : 1, xI: dc * FLAME_WALL.drift });
-    events.push({ type: 'scorch', x, y: bottom + FLAME_WALL.hitY, range: FLAME_WALL.hitRange, damage: s.damage, xI: dc * FLAME_WALL.hitXI });
+    events.push({ type: 'scorch', x, y: bottom + FLAME_WALL.hitY, range: FLAME_WALL.hitRange, damage: s.damage, xI: dc * FLAME_WALL.hitXI, team });
     events.push({ type: 'quench', x: c * TILE, y: r * TILE, range: FLAME_WALL.quenchRange });
     f.left--;
   };
@@ -462,13 +470,14 @@ function stepFlameWall(p: Projectile, w: ProjectileWorld, t: number, events: Pro
       p.dead = true;
       return;
     }
-    runPoints(f, w, events);
+    runPoints(f, w, events, p.team);
   }
   f.time += t;
   f.counter += Math.min(t, FLAME_WALL.maxStep);
-  if (f.counter >= w.stats.flameWall.rate) {
-    f.counter -= w.stats.flameWall.rate;
-    runPoints(f, w, events);
+  const rate = (f.stats ?? w.stats.flameWall).rate;
+  if (f.counter >= rate) {
+    f.counter -= rate;
+    runPoints(f, w, events, p.team);
   }
   if (f.time > f.maxTime || f.left <= 0) p.dead = true;
 }
@@ -551,7 +560,7 @@ function stepRevolver(p: Projectile, w: ProjectileWorld, t: number, events: Proj
   if (target && shieldStops(target, p, power, events)) {
     p.dead = true;
   } else if (target) {
-    damageUnit(target, power);
+    damageUnit(target, power, false, { dir: Math.sign(p.xI) });
     events.push({ type: 'hit', unit: target, x: p.x, y: p.y, xI: p.xI, yI: p.yI });
     pierced.push(target.id);
     p.power = power - 1;
@@ -695,7 +704,7 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
       if (target && shieldStops(target, p, damage, events)) {
         p.dead = true;
       } else if (target) {
-        damageUnit(target, damage);
+        damageUnit(target, damage, false, { dir: Math.sign(p.xI) });
         events.push({ type: 'hit', unit: target, x: p.x, y: p.y, xI: p.xI, yI: p.yI });
         p.dead = true;
       } else if (p.life <= 0) {
@@ -765,6 +774,26 @@ export function stepProjectile(p: Projectile, w: ProjectileWorld, t: number): Pr
     case 'flameWall':
       stepFlameWall(p, w, t, events);
       break;
+    case 'vomit': {
+      // SlimeDrop: gravityM pulls it down; it pops on the ground or on whom it reaches (Map.HitUnits, projectileSize 5)
+      const v = w.stats.hell.vomit;
+      p.yI -= v.gravity * t;
+      p.x += p.xI * t;
+      p.y += p.yI * t;
+      if (w.map.blockAt(p.x, p.y)) {
+        p.dead = true;
+        break;
+      }
+      const target = unitAt(w.units, p.x, p.y, p.team);
+      if (target) {
+        damageUnit(target, v.damage, false, { dir: Math.sign(p.xI) });
+        events.push({ type: 'hit', unit: target, x: p.x, y: p.y, xI: p.xI, yI: p.yI });
+        p.dead = true;
+      } else if (p.life <= 0) {
+        p.dead = true;
+      }
+      break;
+    }
     case 'neuraliser':
       stepNeuraliser(p, w, t, events);
       break;

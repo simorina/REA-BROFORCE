@@ -1,6 +1,8 @@
 import {
-  CLIMB_FRAME_RATE, ELITE, FLEX_FRAMES, FLEX_ROW, JUDO_COL, JUDO_FRAMES, JUDO_ROW, JUMP_FRAME_RATE, RUN_FRAME_RATE, TANK_RUN_FRAME_RATE,
+  BOOMER, CLIMB_FRAME_RATE, ELITE, FLEX_FRAMES, FLEX_ROW, JUDO_COL, JUDO_FRAMES, JUDO_ROW, JUMP_FRAME_RATE, RUN_FRAME_RATE, SATAN,
+  TANK_RUN_FRAME_RATE, UNDEAD, UNDEAD_SUICIDE, WARLOCK,
 } from '../engine/constants';
+import { isBoomer } from '../engine/hell';
 import type { TileMap } from '../engine/map';
 import type { Tank, Turret } from '../engine/tank';
 
@@ -24,6 +26,8 @@ export interface Frame {
 
 /** Body frame after TestVanDammeAnim's Animate* methods (lowerLeftPixel y = (row + 1) * 32). */
 export function unitFrame(u: Unit): Frame {
+  const hell = hellFrame(u);
+  if (hell) return hell;
   if (u.dead) return { col: u.onGround ? 5 : 4, row: 0 }; // AnimateActualDeath / AnimateFallingDeath
   if (u.attack) return { col: JUDO_COL + Math.min(u.attack.frame, JUDO_FRAMES - 1), row: JUDO_ROW + u.attack.row }; // BroLee.AnimateAttackForwards
   if (u.special2 >= 0) return { col: special2Frame(u.special2), row: 7 }; // MookSuicide.AnimateSpecial2
@@ -72,6 +76,47 @@ export function unitFrame(u: Unit): Frame {
     return { col: Math.floor(u.animTime / RUN_FRAME_RATE) % 8, row: u.dashing ? 3 : 1 }; // AnimateActualNewRunningFrames
   }
   return { col: 0, row: 0 }; // AnimateActualIdleFrames
+}
+
+/** Satan.AnimateDeath: how long he lies there and dissolves (6 frames, then 25-46), after which nothing is left to draw. */
+export const SATAN_GONE = (SATAN.lieFrames + SATAN.dissolveFrames) * SATAN.fadeRate;
+
+/**
+ * The hell mobs' own frames: an undead's warning flicker and rise (row 9), a mook rising from a portal (row 10), the
+ * warlock summoning (row 11), Satan fading in, laughing, running and dissolving, the Boomer vomiting (row 4) and
+ * swelling (row 5), the lost soul diving (HellLostSoul.AnimateDiving: row 14, by its flight's angle).
+ */
+function hellFrame(u: Unit): Frame | null {
+  if (u.kind === 'hell_lostsoul' && u.alien?.flying && !u.dead) {
+    return { col: Math.max(0, Math.min(9, 9 - Math.floor((Math.atan2(u.yI, Math.abs(u.xI) || 1) / Math.PI + 0.5) * 9.99))), row: 13 };
+  }
+  const h = u.hell;
+  if (!h) return null;
+  if (u.kind === 'undead') {
+    if (u.dead && h.waking && h.rise < UNDEAD.flicker) return Math.floor(h.rise / UNDEAD.flickerRate) % 2 === 0 ? { col: 0, row: 9 } : { col: 5, row: 0 };
+    if (!u.dead && h.rising > 0) return { col: Math.max(0, Math.min(13, UNDEAD.riseFrames - Math.ceil(h.rising / UNDEAD.riseRate) - 10)), row: 9 };
+  }
+  if (h.summoned != null) {
+    const f = Math.floor(h.summonAge / UNDEAD_SUICIDE.summonRate);
+    return { col: f < 12 ? f : 12 + (Math.floor((h.summonAge - 12 * UNDEAD_SUICIDE.summonRate) / UNDEAD_SUICIDE.summonLoopRate) % 2), row: 10 };
+  }
+  if (u.kind === 'warlock' && h.summon >= 0) return { col: Math.min(16, Math.floor(h.summon / WARLOCK.summonRate)), row: 11 };
+  if (u.kind === 'satan') {
+    if (h.fade > 0) return { col: 35 - Math.max(1, Math.ceil(h.fade / SATAN.fadeRate)), row: 1 };
+    if (u.dead) {
+      const lie = SATAN.lieFrames * SATAN.fadeRate;
+      if (!u.onGround) return { col: 4, row: 0 };
+      if (u.deadTime < lie) return { col: 5, row: 0 };
+      return { col: 25 + Math.min(SATAN.dissolveFrames - 1, Math.floor((u.deadTime - lie) / SATAN.fadeRate)), row: 0 };
+    }
+    if (h.laugh > 0) return { col: 17 + (Math.floor(h.laugh / SATAN.laughRate) % 4), row: 0 };
+    if (u.onGround && Math.abs(u.xI) > 1) return { col: 1 + (Math.floor(u.animTime / SATAN.runRate) % 3), row: 0 };
+  }
+  if (isBoomer(u.kind)) {
+    if (u.dead && h.dying >= 0) return { col: Math.min(BOOMER.swellFrames - 1, Math.floor(h.dying / BOOMER.frameRate)), row: 5 };
+    if (!u.dead && h.frame >= 0) return { col: Math.max(0, 13 - h.frame), row: 4 };
+  }
+  return null;
 }
 
 export function stripFrame(age: number, duration: number, cols: number): number {

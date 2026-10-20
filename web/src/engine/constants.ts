@@ -245,6 +245,44 @@ export const DOLPH = {
 // charge's ram HitLivingUnits(20, BruteCharge, 7) at X + dir*16 after 0.3 s, 15 crush to what it runs into at waist and
 // head height, steel stuns it (smashedTerrainStunDelay * 3); its skid. AlienMosquito: flyingSpeed 60, diveSpeed 240 +
 // 120 a second, a 0.5 s warning, a dive within 3 s (maxDiveDelay).
+// UndeadTrooper.Update: a corpse lying still on the ground with a bro within 96 x 24 (Map.IsEnemyUnitNearby) counts down
+// its resurrectionDelay, 1 + Random.value * 0.5, flickering through the last 0.41 s; Resurrect: health 2, resurrectionFrame 23
+// counting down at 0.0333 (AnimateIdle: the rise on row 9, column 13 - frame); FinishResurrecting: suspicious, looking round
+export const UNDEAD = { nearX: 96, nearY: 24, still: 2, delay: 1, delayRand: 0.5, health: 2, riseFrames: 24, riseRate: 0.0333, flicker: 0.41, flickerRate: 0.05 };
+// MookSuicideUndead.PressSpecial: a leap at speed * 1.2 and jumpForce * 0.9 when a bro is within 54 x 24 ahead
+// (UndeadSuicideAI.GetInput); Land: it goes off. Summoned (row 10): 14 frames at 0.06, the last two looping at 0.1
+export const UNDEAD_SUICIDE = { leapX: 54, leapY: 24, leapSpeedM: 1.2, leapJumpM: 0.9, summonRate: 0.06, summonLoopRate: 0.1 };
+// SkinnedMook.AnimateRunning: 90, 140 alerted; RunJumpOnBack: a bro within 8 x 16 facing the other way; it rides at
+// (X - dir*5, Y + 2); TestVanDammeAnim.RunMovement: xIT * 0.95 with one on his back
+export const SKINLESS = { speed: 90, alertSpeed: 140, reachX: 8, reachY: 16, backX: 5, backY: 2, slow: 0.95 };
+// Satan.AnimateSpecial: frames 17-20 at 0.0333, 15 a laugh, ForgetPlayer after 8; FadeInMysteriously: 18 frames (row 1,
+// 17-34), invulnerable; AnimateRunning: frames 1-3 at 0.044455; AnimateDeath: 6 frames on the ground, then 25-46
+export const SATAN = { laughRate: 0.0333, laughFrames: 15, laughs: 8, fadeFrames: 18, fadeRate: 0.0333, runRate: 0.044455, lieFrames: 6, dissolveFrames: 22 };
+// MookHellBigGuy.StartFiringRPC: the FlameWallExplosion from (X + dir*17 - dir*12, Y + 9), then fireDelay 2; Damage: a hit
+// over 7 stuns him 3 s. MookHellArmouredBigGuy.Damage: his front stops hits until 35 fire or 60 other damage wears it through
+export const HELL_BIGGUY = { waveX: 5, waveY: 9, fireDelay: 2, stunDamage: 7, stun: 3, armourFire: 35, armourShield: 60 };
+// MookHellBoomer: firingFrame from 12 at 0.05 (row 4, column 13 - frame), firing on 6-3 and looping there while the trigger
+// is held: a SlimeDrop every fireRate from (X + dir*10, Y + 18) at (dir*(15n + 65), 30 + 3n). Death: 0.2 s invulnerable,
+// 7 swelling frames at 0.05 (row 5), flashing until warningTime, then the gib: DamageGround(15, range * 1.33),
+// ExplodeUnits(9, range * 1.25, range, 460, 200), and its mooks thrown out (SpawnMooksOnDeath: dx, dy, xI, yI)
+export const BOOMER = {
+  frameRate: 0.05, startFrame: 12, loopFrom: 6, fireTo: 3, ox: 10, oy: 18, speed0: 65, speedN: 15, up0: 30, upN: 3,
+  invulnerable: 0.2, swellFrames: 7, damage: 9, groundDamage: 15, unitRangeM: 1.25, groundRangeM: 1.33, force: 460, extraY: 200, y: 8,
+};
+export const BOOMER_SPAWNS: ReadonlyArray<readonly [number, number, number, number]> = [[-10, 3, -200, 250], [0, 12, 0, 300], [10, 3, 200, 250]];
+export const SOULCATCHER_SPAWNS: ReadonlyArray<readonly [number, number, number, number]> = [...BOOMER_SPAWNS, [10, 3, -100, 350], [10, 3, 100, 350]];
+// Warlock.RunFiring: 16 summoning frames at 0.06 (row 11), the portal's projectile leaving on frame 13; he waits while it is
+// open. WarlockPortalProjectileGuided flies at 760; FindSuitableSpawnPos: ground within 5 of the bro with 3 free over it and
+// a clear line from 4 up to him. WarlockPortal: grows 6 frames at 0.034, raises its mook (its summoning intro, 0.36 s, then
+// riseSpeed up for launchDelay), launches it at the bro at 300 (+50 up), then shrinks to frame 14; gone after 15 s anyway
+export const WARLOCK = {
+  summonFrames: 16, summonRate: 0.06, castFrame: 13, flight: 760, search: 5, clear: 3, growFrames: 6, frameRate: 0.034, intro: 0.36,
+  launch: 300, launchUp: 50, openFrom: 2, openTo: 9, shrinkTo: 14, timeout: 15,
+};
+// HellLostSoul: diveSpeedStart = diveSpeed * 0.8; CalculateSeek every 0.1 s, seekSpeedCurrent easing to seekTurningSpeedM at
+// 3/s, the wobble (sinM) easing in at 5/s; MakeEffects: DamageGround(15, explodeRange), ExplodeUnits(9, explodeRange * 2.3,
+// explodeRange * 1.5, 500, 300), the bro harmed within explodeRange * 1.33 * broHarmRangeM. The dive's acceleration is ours.
+export const LOST_SOUL = { startM: 0.8, seekEvery: 0.1, seekEase: 3, wobbleEase: 5, damage: 9, groundDamage: 15, unitRangeM: 2.3, broRangeM: 1.33, force: 500, extraY: 300, y: 3, accel: 120 };
 export const ALIEN = {
   lookEvery: 0.15, panicEvery: 0.2, panicRange: 36, panicTime: 1, jumpAtX: 48,
   xeno: { every: 0.4, clawX: 11, clawY: 6, clawW: 3, clawH: 8, damage: 6 },

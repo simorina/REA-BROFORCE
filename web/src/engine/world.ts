@@ -12,7 +12,8 @@ import {
   SPEECH_DURATION, TILE, UNIT_BOX_HEIGHT, UNIT_WIDTH, BAZOOKA_RECOIL, DOOR_EXIT_INVULNERABLE, DOOR_FIRE_DAMAGE, SCOUT_WAVE_TIME,
   BOMB_FIRE_RANGE_M, SUICIDE_BURN_EXTRA, ALLURE_RANGE, FLEX_EVENT_FRAMES, FLEX_FRAME_RATE, FLEX_FRAMES, FLEX_HOLD,
   FLEX_RESTART_FRAME, FLEX_SLOW_FRAMES, FLEX_SLOW_RATE, TANK_EXIT_YI, MECH, DOG, DOG_BITE_COOLDOWN, GRENADIER_THROW_DELAY, CRICKET,
-  NEURALISER, DJANGO, MOLOTOV, MORTAR, ELITE, FOE, ALIEN,
+  NEURALISER, DJANGO, MOLOTOV, MORTAR, ELITE, FOE, ALIEN, BOOMER, BOOMER_SPAWNS, HELL_BIGGUY, SATAN, SKINLESS, SOULCATCHER_SPAWNS,
+  UNDEAD_SUICIDE, WARLOCK,
 } from './constants';
 import { alarmDoor, collapseDoor, doorLostSupport, makeDoor, stepDoor, type DoorSpawn, type MookDoor } from './doors';
 import { applyBlast, barrelBlast, suicideBlast, type Blast } from './explosions';
@@ -20,12 +21,16 @@ import { parseLevel, type LevelData } from './level';
 import { makeBlock, type TileMap } from './map';
 import { hearAlien, isAlien, makeAlienState, stepAlien } from './aliens';
 import { makeDolphState, stepDolph } from './dolph';
+import {
+  boomerBlast, findPortalSpot, isBoomer, isDog, isHell, isHellBigGuy, isSuicide, makeHellState, stepBoomerDeath, stepUndeadCorpse,
+  type HellState, type Portal,
+} from './hell';
 import { damageFoe, foeBlast, foeInBlast, makeFoe, nukeBlasts, stepFoe, type Foe } from './foes';
 import { mineBlast, plantMine, steppedOn, type Mine, type MineSign } from './mines';
 import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
-  dropGrenade, fireBazookaRocket, fireDrunkRocket, fireLaunch, fireMinigunBullet, fireMookBullet, molotovFlames, skyRocket, spawnAirstrike, stepProjectile,
-  throwGrenade,
+  dropGrenade, fireBazookaRocket, fireDrunkRocket, fireLaunch, fireMinigunBullet, fireMookBullet, makeFlameWall, makeVomit, molotovFlames, skyRocket,
+  spawnAirstrike, stepProjectile, throwGrenade,
 } from './projectiles';
 import {
   allVehicles, boardVehicles, callJet, callTank, carryDriver, driveVehicle, exitVehicle, hitVehicle, stepJets, stepTanks,
@@ -150,6 +155,7 @@ export interface World {
   mortarSpread: { amount: number; side: 1 | -1 }; // RocketLaunch.offsetAmount / offsetSide (static in Broforce)
   mines: Mine[];
   foes: Foe[]; // enemy vehicles
+  portals: Portal[]; // the warlocks' WarlockPortals
   signs: MineSign[]; // the Mine Field Signs over them
   doorPoints: DoorPoint[]; // the doors as ScoutMookInterestPoints
   tanks: Tank[]; // TankBroTank vehicles on the map
@@ -174,6 +180,16 @@ export interface World {
 }
 
 const cellX = (c: number): number => c * TILE;
+
+/** The minds that aren't a plain mook's: an alien's (aliens.ts), a hell mob's extras (hell.ts). */
+function setupMind(m: Unit, rng: () => number): void {
+  if (isAlien(m.kind)) {
+    m.ai = null;
+    m.alien = makeAlienState(rng);
+    m.facing = rng() < 0.5 ? -1 : 1;
+  }
+  if (isHell(m.kind)) m.hell = makeHellState(rng);
+}
 const feetY = (r: number): number => r * TILE - HALF_TILE;
 
 export function createWorld(level: LevelData, stats: GameStats, roster: readonly BroDef[],
@@ -185,12 +201,16 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
   const spawn = { x: cellX(parsed.player.c), y: feetY(parsed.player.r) };
   const player = makeUnit(nextId++, 'bro', 'player', spawn.x, spawn.y, stats.bros[bro.base]);
   const enemies = parsed.enemies.map((e) => makeUnit(nextId++, e.kind, 'enemy', cellX(e.c), feetY(e.r), stats.units[e.kind]));
+  enemies.forEach((m, i) => {
+    if (!parsed.enemies[i].startDead) return;
+    // ZMookUndeadStartDead: UndeadTrooper.Start with no health lies there dead (either way round) until a bro comes near
+    m.health = 0;
+    m.dead = true;
+    m.facing = rng() < 0.5 ? -1 : 1;
+    m.reported = { death: true, gib: false };
+  });
   for (const m of enemies) {
-    if (isAlien(m.kind)) { // an alien: its own mind (aliens.ts)
-      m.ai = null;
-      m.alien = makeAlienState(rng);
-      m.facing = rng() < 0.5 ? -1 : 1;
-    }
+    setupMind(m, rng);
     if (m.kind === 'mook_dolph') { // the universal soldier: his own mind, not a mook's
       m.ai = null;
       m.dolph = makeDolphState(m.x);
@@ -229,7 +249,7 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
     prisoners: parsed.cages.map((c) => ({ x: cellX(c.c), y: feetY(c.r), freed: false })),
     checkpoints: parsed.checkpoints.map((c) => ({ x: cellX(c.c), y: feetY(c.r), activated: false, raisedAt: 0 })),
     grass: parsed.grass.map((c) => ({ x: cellX(c.c), y: c.r * TILE, health: stats.grass.health, destroyed: false })),
-    doors, alarms: [], mortarSpread: { amount: 0, side: 1 }, mines, foes, signs: parsed.signs.map((s) => ({ c: s.c, r: s.r, x: cellX(s.c), y: s.r * TILE, fallen: false })), doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, django: null, reboard: null, flexPower: level.flexPower ?? null,
+    doors, alarms: [], mortarSpread: { amount: 0, side: 1 }, mines, foes, portals: [], signs: parsed.signs.map((s) => ({ c: s.c, r: s.r, x: cellX(s.c), y: s.r * TILE, fallen: false })), doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, django: null, reboard: null, flexPower: level.flexPower ?? null,
     flag: { x: cellX(parsed.flag.c), y: feetY(parsed.flag.r) },
     lives: LIVES_START, specialAmmo: bro.specialAmmo ?? stats.bros[bro.base].specialAmmo, respawnTimer: 0,
     state: 'playing', extractionTime: 0, time: 0, nextId, camera, events: [], laughIndex: 0,
@@ -398,7 +418,9 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
     driveVehicle(w, controls, prev);
   } else {
     if (!p.attack) startOrStopFlex(p, controls, prev);
+    const fromX = p.x;
     stepUnit(p, p.attack ? NO_INTENT : intentFrom(controls, prev), w.map, t, w.time); // BroLee holds still to strike
+    if (w.enemies.some((e) => e.hell?.back)) p.x = fromX + (p.x - fromX) * SKINLESS.slow; // a skinless mook on his back
     animateFlex(w, p, controls, t);
     p.fireCooldown -= t;
     const weapon = w.django ? REVOLVER_KIT : WEAPON_KITS[w.bro.weapon];
@@ -465,6 +487,8 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
   const player = w.player.dead ? null : w.player;
   for (const m of w.enemies) {
     const ai = m.ai;
+    if (m.hell?.summoned != null) continue; // rising out of a warlock's portal, which moves it
+    if (m.hell && !m.dead) m.hell.hurt = false; // the portals have seen it
     if (m.dolph) {
       stepDolph(w, m, t, blasts);
       continue;
@@ -477,6 +501,7 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
         panicMooks: (x, y, range) => panicUnits(w, x, y, range, ALIEN.panicTime, false),
         alert: (x, y) => { w.events.push({ type: 'alert', x, y }); },
         hug: (x, y) => { w.events.push({ type: 'bite', x, y }); },
+        lostSoul: w.stats.hell.lostSoul,
       }, t);
       if (m.dead) m.deadTime += t;
       stepBurning(w, m, t);
@@ -490,8 +515,14 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
         m.ai.droppedGrenade = true;
         w.projectiles.push(dropGrenade(w.nextId++, m));
       }
-      // MookSuicide.Update: a killed suicide mook goes off 0.7 s later, whatever killed it
-      if (m.kind === 'mook_suicide' && ai && !ai.exploded && (ai.deathFuse -= t) <= 0) explodeSuicide(w, m, blasts);
+      // MookSuicide.Update: a killed suicide mook goes off 0.7 s later, whatever killed it (MookSuicideUndead the same)
+      if (isSuicide(m.kind) && ai && !ai.exploded && (ai.deathFuse -= t) <= 0) explodeSuicide(w, m, blasts);
+      if (m.kind === 'undead' && stepUndeadCorpse(m, player, w.rng, t)) {
+        reviveUndead(m);
+        continue;
+      }
+      if (isBoomer(m.kind) && stepBoomerDeath(m, boomerStats(w, m).warning, t)) burstBoomer(w, m, blasts);
+      if (m.hell) m.hell.back = false; // a skinless mook killed on the bro's back falls off
       if (!m.gibbed) stepUnit(m, NO_INTENT, w.map, t, w.time);
       if (m.jet) stepJetpack(w, m, t, blasts);
       if (m.kind === 'mook_alarmist') stepDeadManSwitch(w, m, t);
@@ -500,6 +531,10 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
     }
     if (m.kind === 'boss') {
       stepBoss(w, m, t);
+      stepBurning(w, m, t);
+      continue;
+    }
+    if (m.hell && stepHellBusy(w, m, m.hell, t)) {
       stepBurning(w, m, t);
       continue;
     }
@@ -530,21 +565,311 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
       if (m.getUp > 0) out.intent = { ...NO_INTENT }; // getting up after a stomp
       if (out.intent.jumpPressed && m.onGround) m.hasJumped = true; // MookBigGuyElite.Jump
     }
+    if (m.hell) hellIntent(w, m, m.hell, out, t);
     m.landYI = 0;
     stepUnit(m, out.intent, w.map, t, w.time);
     if (m.kind === 'mook_bruiser_elite') stepEliteLanding(m, t, blasts);
+    if (m.hell?.flung && m.onGround && m.yI <= 0) {
+      m.hell.flung = false;
+      if (m.hell.leap) explodeSuicide(w, m, blasts); // MookSuicideUndead.Land: having leapt, it goes off where it lands
+    }
+    if (m.kind === 'skinless' && m.hell) tryRide(w, m, m.hell);
     if (m.waveTime > 0) m.waveTime -= t; // ScoutMook.Update
-    if (m.kind === 'mook_suicide') {
+    if (isSuicide(m.kind)) {
       if (out.explode) explodeSuicide(w, m, blasts);
-    } else if (m.kind === 'dog') {
+    } else if (isDog(m.kind)) {
       dogBite(w, m, t);
+    } else if (isHellBigGuy(m.kind)) {
+      hellWave(w, m, out.fire, t);
+    } else if (isBoomer(m.kind)) {
+      vomit(w, m, out.fire, t);
+    } else if (m.kind === 'skinless' || m.kind === 'satan' || m.kind === 'warlock') {
+      // SkinnedMook and Satan.UseFire do nothing; the warlock's fire is his summoning (hellIntent)
     } else if (runFiring(m, out.fire && !(jet && (jet.spiral || jet.crash >= 0)), t)) {
       useFire(w, m); // MookJetpack.UseFire: not while it sputters or spirals
     }
     if (jet) stepJetpack(w, m, t, blasts);
     stepBurning(w, m, t);
-    if (m.kind === 'mook_bruiser' || m.kind === 'mook_bruiser_elite') runGun(m, t); // MookBigGuy.RunGun: his gun's muzzle frames
+    if (m.kind === 'mook_bruiser' || m.kind === 'mook_bruiser_elite' || isHellBigGuy(m.kind)) runGun(m, t); // MookBigGuy.RunGun: his gun's muzzle frames
     if (m.y < -64) damageUnit(m, m.health);
+  }
+}
+
+/**
+ * The stretches a hell mob spends out of its mook's mind: an undead getting up (UndeadTrooper's resurrection frames, then
+ * FinishResurrecting: suspicious), a stunned hell Bruiser, Satan fading in the first time he is on screen
+ * (FadeInMysteriously, invulnerable; then ForceFullyAlert), a Soul Catcher that has seen the bro (SoulCatcherAI: it kills
+ * itself), a skinless mook riding the bro's back (flexing shakes it off, dead). True when the mind is skipped this step.
+ */
+function stepHellBusy(w: World, m: Unit, h: HellState, t: number): boolean {
+  const ai = m.ai;
+  if (h.back) {
+    const p = w.player;
+    if (p.dead || p.flex) {
+      h.back = false;
+      m.xI = p.xI;
+      m.yI = p.yI + 50;
+      if (p.flex) damageUnit(m, m.health + 1, true);
+      return true;
+    }
+    m.x = p.x - p.facing * SKINLESS.backX; // RunJumpOnBack
+    m.y = p.y + SKINLESS.backY;
+    m.facing = p.facing;
+    m.xI = m.yI = 0;
+    m.animTime += t;
+    return true;
+  }
+  if (m.kind === 'hell_soulcatcher' && ai?.mental === 'alerted') {
+    damageUnit(m, m.health + 1, true);
+    return true;
+  }
+  if (m.kind === 'satan' && !h.seen && isVisible(w.camera, m.x, m.y, 16, 16)) {
+    h.seen = true;
+    h.fade = SATAN.fadeFrames * SATAN.fadeRate;
+    m.invulnerable = h.fade;
+  }
+  let busy = false;
+  if (h.rising > 0) {
+    busy = true;
+    if ((h.rising -= t) <= 0 && ai) {
+      ai.queue = [];
+      ai.mental = 'suspicious';
+      ai.walkDir = m.facing;
+    }
+  } else if (h.stun > 0) {
+    busy = true;
+    h.stun -= t;
+  } else if (h.fade > 0) {
+    busy = true;
+    if ((h.fade -= t) <= 0) fullyAlert(m, w.stats.ai.satan, w.player.x, w.player.y, w.rng, alertScene(w));
+  }
+  if (!busy) return false;
+  m.landYI = 0;
+  stepUnit(m, NO_INTENT, w.map, t, w.time);
+  return true;
+}
+
+/** UndeadTrooper.Resurrect: up again with its mind wiped, waiting while it rises. */
+function reviveUndead(m: Unit): void {
+  const ai = m.ai;
+  if (!ai) return;
+  ai.queue = [];
+  ai.mental = 'idle';
+  ai.seenPlayer = false;
+  ai.setup = false; // Reassess
+}
+
+/**
+ * What a hell mob makes of its mind's output: the skinless mook's speeds and no shooting; Satan laughing at the bro
+ * instead of shooting (eight laughs, then ForgetPlayer); the warlock's fire starting his summoning, the portal sent on
+ * its 13th frame; the undead suicide mook's leap, and no steering while it flies.
+ */
+function hellIntent(w: World, m: Unit, h: HellState, out: { intent: MoveIntent; fire: boolean; leap?: boolean }, t: number): void {
+  const ai = m.ai;
+  if (m.kind === 'skinless') {
+    out.fire = false;
+    out.intent.speed = ai?.mental === 'alerted' ? SKINLESS.alertSpeed : SKINLESS.speed;
+  } else if (m.kind === 'satan') {
+    if (out.fire && h.laugh <= 0) {
+      h.laugh = SATAN.laughs * SATAN.laughFrames * SATAN.laughRate;
+      w.events.push({ type: 'alert', x: m.x, y: m.y });
+    }
+    out.fire = false;
+    if (h.laugh > 0) {
+      out.intent = { ...NO_INTENT };
+      if ((h.laugh -= t) <= 0 && ai) {
+        ai.seenPlayer = false;
+        ai.mental = 'idle';
+        ai.queue = [];
+      }
+    }
+  } else if (m.kind === 'warlock') {
+    if (out.fire && h.summon < 0 && h.portal === null) {
+      h.summon = 0;
+      h.cast = false;
+    }
+    out.fire = false;
+    if (h.summon >= 0) {
+      out.intent = { ...NO_INTENT };
+      h.summon += t;
+      if (!h.cast && h.summon >= WARLOCK.castFrame * WARLOCK.summonRate) {
+        h.cast = true;
+        castPortal(w, m, h);
+      }
+      if (h.summon >= WARLOCK.summonFrames * WARLOCK.summonRate) h.summon = -1;
+    }
+  } else if (m.kind === 'undead_suicide' && out.leap && m.onGround && !h.flung) {
+    m.xI = m.facing * m.stats.speed * UNDEAD_SUICIDE.leapSpeedM; // MookSuicideUndead.PressSpecial
+    m.yI = m.stats.jumpForce * UNDEAD_SUICIDE.leapJumpM;
+    m.onGround = false;
+    h.leap = h.flung = true;
+  }
+  if (h.flung) out.intent = { ...NO_INTENT };
+}
+
+/** SkinnedMook.RunJumpOnBack: running or standing, it jumps on a bro within 8 x 16 who faces the other way. */
+function tryRide(w: World, m: Unit, h: HellState): void {
+  const p = w.player;
+  if (m.dead || p.dead || !m.onGround || p.facing === m.facing) return;
+  if (Math.abs(p.x - m.x) > SKINLESS.reachX || Math.abs(p.y - m.y) > SKINLESS.reachY) return;
+  if (w.enemies.some((e) => e !== m && e.hell?.back)) return; // skinnedMookOnMyBack: one at a time
+  h.back = true;
+  m.x = p.x - p.facing * SKINLESS.backX;
+  m.y = p.y + SKINLESS.backY;
+  m.facing = p.facing;
+  m.xI = m.yI = 0;
+  w.events.push({ type: 'bite', x: m.x, y: m.y });
+}
+
+/** MookHellBigGuy.StartFiring: a flame wave along the ground his way (his own FlameWallExplosion), then 2 s to the next. */
+function hellWave(w: World, m: Unit, fire: boolean, t: number): void {
+  m.fireDelay -= t;
+  if (!fire || m.fireDelay > 0 || m.blindTime > 0) return;
+  w.projectiles.push(makeFlameWall(w.nextId++, m, w.stats.hell.flameWall));
+  m.fireDelay = HELL_BIGGUY.fireDelay;
+  m.gunFrame = 6;
+  m.gunCounter = 0;
+  w.events.push({ type: 'shot', weapon: 'flamethrower', x: m.x, y: m.y, facing: m.facing });
+}
+
+/**
+ * MookHellBoomer.RunFiring with its firing frames: from frame 12 down at 0.05, looping 6-3 while the trigger is held; on
+ * 6-3 a drop every fireRate, each reaching further (bulletCount), and only while it is on screen.
+ */
+function vomit(w: World, m: Unit, fire: boolean, t: number): void {
+  const h = m.hell;
+  if (!h) return;
+  if (fire && !m.wasFire) {
+    h.frame = BOOMER.startFrame;
+    h.frameTime = 0;
+    h.fireCounter = 0;
+  } else if (!fire && m.wasFire && h.frame >= 0) {
+    h.count = 0;
+    h.frame = Math.min(h.frame, 2);
+  }
+  m.wasFire = fire;
+  if (h.frame < 0 || m.blindTime > 0) return;
+  if ((h.frameTime += t) >= BOOMER.frameRate) {
+    h.frameTime -= BOOMER.frameRate;
+    h.frame--;
+    if (h.frame < BOOMER.fireTo && fire) h.frame = BOOMER.loopFrom;
+  }
+  if (!fire || h.frame < BOOMER.fireTo || h.frame > BOOMER.loopFrom) return;
+  if ((h.fireCounter += t) < m.stats.fireRate) return;
+  h.fireCounter -= m.stats.fireRate;
+  if (!isVisible(w.camera, m.x, m.y + 12, 36, 16)) return;
+  h.count++;
+  const xI = m.facing * (h.count * BOOMER.speedN + BOOMER.speed0);
+  w.projectiles.push(makeVomit(w.nextId++, m, xI, BOOMER.up0 + BOOMER.upN * h.count, w.stats.hell.vomit.life));
+}
+
+const boomerStats = (w: World, m: Unit) => (m.kind === 'hell_soulcatcher' ? w.stats.hell.soulcatcher : w.stats.hell.boomer);
+
+/** MookHellBoomer.CreateGibEffects and SpawnMooksOnDeath: its blast, then three undead suicide mooks (the Soul Catcher: five lost souls). */
+function burstBoomer(w: World, m: Unit, blasts: Blast[]): void {
+  blasts.push(boomerBlast(m.x, m.y, boomerStats(w, m).range));
+  const catcher = m.kind === 'hell_soulcatcher';
+  for (const [dx, dy, xI, yI] of catcher ? SOULCATCHER_SPAWNS : BOOMER_SPAWNS) {
+    spawnThrown(w, catcher ? 'hell_lostsoul' : 'undead_suicide', m.x + dx, m.y + dy, xI, yI);
+  }
+}
+
+/** MapController.SpawnMook_Networked with a throw: alerted, flying off the way it was thrown. */
+function spawnThrown(w: World, kind: EnemyKind, x: number, y: number, xI: number, yI: number): Unit {
+  const m = makeUnit(w.nextId++, kind, 'enemy', x, y, w.stats.units[kind]);
+  setupMind(m, w.rng);
+  m.xI = xI;
+  m.yI = yI;
+  if (xI !== 0) m.facing = xI < 0 ? -1 : 1;
+  if (m.alien) {
+    m.alien.alerted = true;
+    m.alien.flying = true;
+  } else {
+    if (m.hell) m.hell.flung = true;
+    fullyAlert(m, w.stats.ai[kind], w.player.x, w.player.y, w.rng, alertScene(w));
+  }
+  w.enemies.push(m);
+  return m;
+}
+
+/** Warlock.SpawnPortalProjector: his guided projectile flies to a spot by the bro (FindSuitableSpawnPos), where the portal opens. */
+function castPortal(w: World, m: Unit, h: HellState): void {
+  const p = w.player;
+  if (p.dead) return;
+  const spot = findPortalSpot(w.map, p.x, p.y, w.rng);
+  if (!spot) return;
+  const s = w.stats.hell.portal;
+  const portal: Portal = {
+    id: w.nextId++, owner: m.id, x: spot.x, y: spot.y, delay: Math.hypot(spot.x - m.x, spot.y - m.y - 8) / WARLOCK.flight, frame: 0,
+    frameTime: 0, phase: 'grow', unit: null, intro: WARLOCK.intro, launch: s.launchDelay, rise: s.riseTime, age: 0,
+  };
+  w.portals.push(portal);
+  h.portal = portal.id;
+  w.events.push({ type: 'shot', weapon: 'neuraliser', x: m.x, y: m.y, facing: m.facing });
+}
+
+/**
+ * WarlockPortal.Update: it grows (6 frames), raises an undead suicide mook (its summoning intro, then up at riseSpeed
+ * until launchDelay is spent) and launches it at the bro at 300 (+50 up), then shrinks away. A hurt mook, or a hurt or
+ * dead warlock, drops it (DropUnit). Gone after 15 s whatever happens.
+ */
+function stepPortals(w: World, t: number): void {
+  const s = w.stats.hell.portal;
+  for (const o of w.portals) {
+    o.age += t;
+    if (o.delay > 0) {
+      o.delay -= t;
+      continue;
+    }
+    const owner = w.enemies.find((e) => e.id === o.owner);
+    let unit = o.unit === null ? null : w.enemies.find((e) => e.id === o.unit) ?? null;
+    if (unit && (!owner || owner.dead || owner.hell?.hurt || unit.dead || unit.hell?.hurt || o.age > WARLOCK.timeout)) {
+      if (unit.hell) unit.hell.summoned = null; // DropUnit: it falls
+      unit = null;
+      o.unit = null;
+      o.phase = 'shrink';
+    }
+    o.frameTime += t;
+    while (o.frameTime >= WARLOCK.frameRate) {
+      o.frameTime -= WARLOCK.frameRate;
+      o.frame++;
+      if (o.phase === 'grow' && o.frame >= WARLOCK.growFrames) {
+        o.phase = 'open';
+        const u = makeUnit(w.nextId++, 'undead_suicide', 'enemy', o.x, o.y, w.stats.units.undead_suicide); // SpawnUnit
+        setupMind(u, w.rng);
+        u.hell!.summoned = o.id;
+        u.facing = w.player.x < o.x ? -1 : 1;
+        w.enemies.push(u);
+        o.unit = u.id;
+        unit = u;
+      } else if (o.phase === 'open' && o.frame > WARLOCK.openTo) {
+        o.frame = WARLOCK.openFrom;
+      }
+    }
+    if (o.phase === 'open' && unit?.hell) {
+      unit.hell.summonAge += t;
+      if (o.intro > 0) {
+        o.intro -= t;
+      } else if ((o.launch -= t) > 0) {
+        if ((o.rise -= t) > 0) unit.y += s.riseSpeed * t;
+      } else {
+        const dx = w.player.x - o.x; // LaunchUnit
+        const dy = w.player.y - o.y;
+        const d = Math.max(1, Math.hypot(dx, dy));
+        unit.hell.summoned = null;
+        unit.hell.flung = true;
+        unit.xI = (dx / d) * WARLOCK.launch;
+        unit.yI = (dy / d) * WARLOCK.launch + WARLOCK.launchUp;
+        unit.onGround = false;
+        fullyAlert(unit, w.stats.ai.undead_suicide, w.player.x, w.player.y, w.rng, alertScene(w));
+        o.unit = null;
+        o.phase = 'shrink';
+      }
+    }
+  }
+  w.portals = w.portals.filter((o) => !(o.phase === 'shrink' && o.frame > WARLOCK.shrinkTo) && o.age <= WARLOCK.timeout + 1);
+  for (const m of w.enemies) {
+    if (m.kind === 'warlock' && m.hell?.portal != null && !w.portals.some((o) => o.id === m.hell!.portal && o.phase !== 'shrink')) m.hell.portal = null;
   }
 }
 
@@ -560,7 +885,7 @@ export function setOnFire(w: World, m: Unit, damage: number, xI: number): void {
       dealt = m.burnDamage + damage;
     }
   }
-  if (dealt > 0) damageUnit(m, dealt, true);
+  if (dealt > 0) damageUnit(m, dealt, true, { fire: true });
   if (m.dead) return;
   const kind = m.kind as EnemyKind;
   hearSound(m, w.stats.ai[kind], w.rng, m.x - xI, m.y);
@@ -580,7 +905,7 @@ function stepBurning(w: World, m: Unit, t: number): void {
   if (m.burnTime > 0) return;
   stopPanicking(m, w.map, w.stats.ai[m.kind as EnemyKind]);
   m.xI = 0;
-  damageUnit(m, m.burnDamage, true); // Map.KnockAndDamageUnit(this, this, burnDamage, Fizzle): no invulnerability check
+  damageUnit(m, m.burnDamage, true, { fire: true }); // Map.KnockAndDamageUnit(this, this, burnDamage, Fizzle): no invulnerability check
 }
 
 /** Mook.Start / RegisterOriginDoor: a ray 32 down from 6 above the feet puts the mook on the ground. */
@@ -676,6 +1001,15 @@ function scorchUnits(w: World, x: number, y: number, range: number, damage: numb
       w.events.push({ type: 'hit', x: m.x, y: m.y, hitY: y, xI, yI: 0 });
     }
   }
+}
+
+/** Map.HitUnits with fire from an enemy's flame wall: the bro in range burns. */
+function burnPlayer(w: World, x: number, y: number, range: number, damage: number, xI: number): void {
+  const p = w.player;
+  if (p.dead || p.invulnerable > 0 || !inArea(p, x, y, range, range)) return;
+  damageUnit(p, damage, false, { fire: true });
+  w.events.push({ type: 'hit', x: p.x, y: p.y, hitY: y, xI, yI: 0 });
+  w.events.push({ type: 'flame', x: p.x, y: p.y + UNIT_BOX_HEIGHT });
 }
 
 /** Map.HitProjectiles with fire (FlameWallExplosion.damageProjectiles): the mooks' bullets in range go out. */
@@ -882,7 +1216,7 @@ function dropSigns(w: World): void {
 function explodeSuicide(w: World, m: Unit, blasts: Blast[]): void {
   if (!m.ai || m.ai.exploded) return;
   m.ai.exploded = true;
-  blasts.push({ ...suicideBlast(m.x, m.y, w.stats.suicide), owner: m });
+  blasts.push({ ...suicideBlast(m.x, m.y, m.kind === 'undead_suicide' ? w.stats.hell.undeadSuicide : w.stats.suicide), owner: m });
   if (!m.dead) {
     m.dead = true;
     m.deadTime = 0;
@@ -929,7 +1263,8 @@ function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
       } else if (ev.type === 'flameFx') {
         w.events.push({ type: 'flame', x: ev.x, y: ev.y });
       } else if (ev.type === 'scorch') {
-        scorchUnits(w, ev.x, ev.y, ev.range, ev.damage, ev.xI);
+        if (ev.team === 'enemy') burnPlayer(w, ev.x, ev.y, ev.range, ev.damage, ev.xI);
+        else scorchUnits(w, ev.x, ev.y, ev.range, ev.damage, ev.xI);
       } else if (ev.type === 'quench') {
         quenchShots(w, ev.x, ev.y, ev.range);
       } else if (ev.type === 'flameWallPuff') {
@@ -1120,7 +1455,8 @@ function resolveBlasts(w: World, blasts: Blast[]): void {
     if (b.team === 'player' && w.mech && mechInBlast(w.mech, b)) damageMech(w, w.mech, b.unitDamage); // the bro's blasts on the Goliath
     // MookSuicide.Gib: a suicide mook blown apart before it went off goes off right away
     for (const f of w.foes) if (!f.dead && foeInBlast(f, b)) hitFoe(w, f, b.unitDamage, blasts); // Map.ExplodeUnits on the enemy vehicles
-    for (const m of w.enemies) if (m.kind === 'mook_suicide' && m.gibbed) explodeSuicide(w, m, blasts);
+    for (const m of w.enemies) if (isSuicide(m.kind) && m.gibbed) explodeSuicide(w, m, blasts);
+    for (const m of w.enemies) if (isBoomer(m.kind) && m.gibbed && m.hell && !m.hell.burst && stepBoomerDeath(m, 0, 0)) burstBoomer(w, m, blasts);
     for (const d of res.destroyed) {
       w.events.push({ type: 'block', x: cellX(d.c), y: d.r * TILE, kind: d.kind, damage: b.groundDamage });
       if (d.kind === 'barrel') blasts.push(barrelBlast(cellX(d.c), d.r * TILE, w.stats.barrelRange));
@@ -1184,6 +1520,7 @@ export function stepWorld(w: World, controls: Controls, prev: Controls, t: numbe
   stepTanks(w, t, blasts);
   stepJets(w, t, blasts);
   carryDriver(w);
+  stepPortals(w, t);
   stepEnemies(w, t, blasts);
   stepFoes(w, t, blasts);
   stepMech(w, t, blasts);
@@ -1195,6 +1532,7 @@ export function stepWorld(w: World, controls: Controls, prev: Controls, t: numbe
   reportUnits(w);
   ageEffects(w, t);
   followCamera(w.camera, w.player, w.map, t);
-  w.enemies = w.enemies.filter((e) => !(e.gibbed || (e.dead && e.deadTime > CORPSE_TIME && (!e.dolph || e.dolph.defeated))));
+  // corpses go after a while; the universal soldier's waits for his last fall, an undead trooper's for good (it gets up)
+  w.enemies = w.enemies.filter((e) => !(e.gibbed || (e.dead && e.deadTime > CORPSE_TIME && (!e.dolph || e.dolph.defeated) && e.kind !== 'undead')));
   w.projectiles = w.projectiles.filter((p) => !p.dead);
 }

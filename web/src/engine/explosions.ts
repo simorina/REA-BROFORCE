@@ -100,7 +100,7 @@ export function applyBlast(map: TileMap, units: readonly Unit[], b: Blast): Blas
           extraY *= 1.5;
         }
         knock(u, (dx / d) * b.force, (dy / d) * b.force + extraY);
-        if (damageUnit(u, b.unitDamage)) killed.push(u.id);
+        if (damageUnit(u, b.unitDamage, false, { dir: Math.sign(dx) })) killed.push(u.id);
       } else {
         const d = Math.max(Math.sqrt(d2), MIN_KNOCK_DIST);
         knock(u, (dx / d) * b.force, (dy / d) * b.force + b.extraY);

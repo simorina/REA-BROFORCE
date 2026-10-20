@@ -1,8 +1,9 @@
 import {
   AI_FACE_LINGER, AI_GREET_WAIT, ELITE, AI_SAME_SPOT_TIME, AI_STUCK_TIME, BUBBLE_TIME, NINJA, SIGHT_EYE, SIGHT_PROBE_BACK,
   SIGHT_PROBE_UP, SUICIDE_BLOCKED_M, SUICIDE_DEATH_FUSE, SUICIDE_DELAY, SUICIDE_SPEED_ALERTED, SUICIDE_TIMER,
-  SUICIDE_TRIGGER, TILE, UNIT_HALF_WIDTH,
+  SUICIDE_TRIGGER, TILE, UNDEAD_SUICIDE, UNIT_HALF_WIDTH,
 } from './constants';
+import { isBoomer, isDog, isHellBigGuy, isSuicide } from './hell';
 import { getColumn, getRow, type TileMap } from './map';
 import { getMove, getPath, makeAgent, setPath, unitColumn, unitRow } from './pathagent';
 import { NO_INTENT, type MoveIntent } from './physics';
@@ -50,6 +51,7 @@ export interface AiOutput {
   intent: MoveIntent;
   fire: boolean;
   explode: boolean;
+  leap?: boolean; // MookSuicideUndead.PressSpecial: the leap at the bro
   alertNearby?: boolean; // ScoutAI: Map.AlertNearbyMooks(x, y, 64, 40) while it runs for the door
   alarm?: { door: number; c: number; r: number }; // ScoutAI: MookDoor.AlarmMooks(startPoint)
 }
@@ -191,7 +193,7 @@ export function fullyAlert(m: Unit, stats: AiStats, x: number, y: number, rng: (
   ai.queue.push(act('face', 0, getColumn(x), getRow(y)));
   setMental(ai, 'alerted');
   if (m.kind === 'mook_bruiser_elite') ai.target = { x, y }; // BigGuyEliteAI.FullyAlert
-  if (m.kind === 'mook_bruiser' || m.kind === 'mook_bruiser_elite') { // BigGuyAI.FullyAlert: he keeps shooting the way the alert came from
+  if (m.kind === 'mook_bruiser' || m.kind === 'mook_bruiser_elite' || isHellBigGuy(m.kind) || isBoomer(m.kind)) { // BigGuyAI.FullyAlert: he keeps shooting the way the alert came from
     if (x < m.x - 8) ai.attackingDir = -1;
     else if (x > m.x + 8) ai.attackingDir = 1;
     ai.thoughtsSinceSeen = 0;
@@ -255,7 +257,7 @@ function scoutAlert(m: Unit, ai: AiState, stats: AiStats, x: number, scene?: Ale
 export function hearSound(m: Unit, stats: AiStats, rng: () => number, x: number, y: number): void {
   const ai = m.ai;
   if (!ai || m.dead) return;
-  if ((m.kind === 'mook_suicide' || m.kind === 'mook_scout') && ai.mental === 'alerted') return; // SuicideAI/ScoutAI.HearSound
+  if ((isSuicide(m.kind) || m.kind === 'mook_scout') && ai.mental === 'alerted') return; // SuicideAI/ScoutAI.HearSound
   ai.thoughtsSinceSeen = 0;
   ai.suspiciousThinks = 0;
   const point = act('face', 0, getColumn(x), getRow(y));
@@ -286,7 +288,7 @@ export function playerDied(m: Unit, rng: () => number, laughIndex = m.id + 1): v
     ai.runDir = 0;
   }
   if (!ai.seenPlayer) return;
-  if (m.kind === 'mook_suicide' && ai.mental === 'alerted') return; // SuicideAI keeps charging
+  if ((isSuicide(m.kind) || m.kind === 'skinless') && ai.mental === 'alerted') return; // SuicideAI and SkinlessMookAI keep charging
   if (ai.mental !== 'alerted') {
     ai.queue.push(act('becomeIdle'));
     return;
@@ -540,6 +542,39 @@ function bruiserThink(m: Unit, ai: AiState, ctx: AiContext): void {
 }
 
 /**
+ * BoomerAI.DoAlertedThink: it vomits for attackTime while it has the bro in sight, takes a slow step his way now and
+ * then (three tries, 25% each) and rests delayBetweenFiring; losing him, it turns about and in the end gives up.
+ */
+function boomerThink(m: Unit, ai: AiState, ctx: AiContext): void {
+  const { rng, stats, map } = ctx;
+  if (!canSeePlayer(m.x, m.y, ai.walkDir, stats.sightX, stats.sightY, alive(ctx.player), map)) {
+    ai.thoughtsSinceSeen++;
+    if (ai.thoughtsSinceSeen > 2) ai.walkDir = rng() <= 0.5 ? -1 : 1;
+    if (ai.thoughtsSinceSeen > 6) ai.queue.push(act('becomeIdle', ACTION_TIME), act('question', 0.4));
+  } else {
+    ai.thoughtsSinceSeen = 0;
+  }
+  if (ai.thoughtsSinceSeen < 2) ai.queue.push(act('fire', stats.attackTime));
+  const c = getColumn(m.x);
+  const r = getRow(m.y);
+  for (let i = 0; i < 3; i++) {
+    if (rng() > 0.75 && (isAvailable(ai, c + ai.walkDir, r) || m.blindTime > 0)) ai.queue.push(act('move', 0, c + ai.walkDir, r));
+    ai.queue.push(act('wait', 0.4));
+  }
+  ai.queue.push(act('wait', stats.delayBetweenFiring));
+}
+
+/** MookWarlockAI.DoAlertedThink: with a portal open he waits; else he turns to the bro, summons (Fire 0.1) and waits 2 s. */
+function warlockThink(m: Unit, ai: AiState, ctx: AiContext): void {
+  const p = alive(ctx.player);
+  if (m.hell?.portal != null || !p) {
+    ai.queue.push(act('wait', 1));
+    return;
+  }
+  ai.queue.push(act('face', 0, getColumn(p.x), getRow(p.y)), act('fire', 0.1), act('wait', 2));
+}
+
+/**
  * MortarAI.DoAlertedThink (an EnemyAI, thinkCount % 4): turn to the bro, fire for attackTime, a long pause (2 s, then
  * 2.8-3.35 s once 6 s have passed since the alert), another shot if he is near the way he faces (300 or 400 by 50,
  * 70% or 75%) or a pause, and 0.26 s. StartMoving does nothing, so he never walks.
@@ -629,10 +664,12 @@ function think(m: Unit, ai: AiState, ctx: AiContext): void {
   else if (ai.mental === 'panicking') {
     ai.queue.push(act('move', 0, getColumn(m.x) + ai.walkDir * randInt(ctx.rng, 2, 4), getRow(m.y))); // DoPanicThink
   }
-  else if (m.kind === 'mook_suicide' || m.kind === 'dog') suicideThink(m, ai, ctx); // DogAI: it runs at the bro too
+  else if (isSuicide(m.kind) || isDog(m.kind) || m.kind === 'skinless') suicideThink(m, ai, ctx); // DogAI and SkinlessMookAI: they run at the bro too
   else if (m.kind === 'mook_bazooka' || m.kind === 'mook_grenadier' || m.kind === 'mook_jetpack_bazooka') bazookaThink(m, ai, ctx); // the grenadier's and the jetpack bazooka's AI is MookBazookaAi
   else if (m.kind === 'mook_scout') baseAlertedThink(m, ai, ctx);
-  else if (m.kind === 'mook_bruiser') bruiserThink(m, ai, ctx);
+  else if (m.kind === 'mook_bruiser' || isHellBigGuy(m.kind) || m.kind === 'hell_soulcatcher') bruiserThink(m, ai, ctx);
+  else if (m.kind === 'hell_boomer') boomerThink(m, ai, ctx);
+  else if (m.kind === 'warlock') warlockThink(m, ai, ctx);
   else if (m.kind === 'mook_mortar') mortarThink(m, ai, ctx);
   else if (m.kind === 'mook_bruiser_elite') eliteThink(m, ai, ctx);
   else trooperThink(m, ai, ctx);
@@ -642,7 +679,7 @@ const targetX = (ai: AiState, a: AiAction): number => a.c * TILE + ai.blockOffse
 
 function atGridPoint(m: Unit, ai: AiState, a: AiAction): boolean {
   const near = Math.abs(m.x - targetX(ai, a)) < UNIT_HALF_WIDTH;
-  return m.kind === 'mook_suicide' || m.kind === 'dog' ? near : near && getRow(m.y) === a.r; // SuicideAI ignores the row
+  return isSuicide(m.kind) || isDog(m.kind) || m.kind === 'skinless' ? near : near && getRow(m.y) === a.r; // SuicideAI ignores the row
 }
 
 function remove(ai: AiState, a: AiAction): void {
@@ -811,6 +848,11 @@ export function thinkMook(m: Unit, ctx: AiContext, t: number): AiOutput {
       ai.charging = false;
     }
   }
+  if (m.kind === 'warlock' && ai.mental !== 'alerted') {
+    // MookWarlockAI.LookForEnemy: HeroController.GetNearestPlayer within his sight, walls or no walls
+    const p = alive(ctx.player);
+    if (p && Math.abs(p.x - m.x) < ctx.stats.sightX && Math.abs(p.y - m.y) < ctx.stats.sightY) fullyAlert(m, ctx.stats, p.x, p.y, ctx.rng, sceneOf(m, ctx));
+  }
   runQueue(m, ai, ctx, t);
   if (thinking && ai.queue.length === 0) think(m, ai, ctx);
   const front = ai.queue[0];
@@ -830,9 +872,9 @@ export function thinkMook(m: Unit, ctx: AiContext, t: number): AiOutput {
   if (m.kind === 'mook_suicide' && front?.type === 'special2' && m.special2 < 0 && m.onGround) m.special2 = 0;
   const intent: MoveIntent = { dir, jumpPressed: !!jump && !ai.wasJump, jumpHeld: !!jump, dash: false, down: !!down };
   if (ai.speed !== null) intent.speed = ai.speed;
-  if (m.kind === 'dog' && ai.mental === 'alerted' && ctx.dogRunSpeed) intent.speed = ctx.dogRunSpeed; // MookDog.awareRunSpeed
+  if (isDog(m.kind) && ai.mental === 'alerted' && ctx.dogRunSpeed) intent.speed = ctx.dogRunSpeed; // MookDog.awareRunSpeed
   ai.wasJump = !!jump;
-  if (m.kind !== 'mook_suicide') return { ...out, intent, fire };
+  if (!isSuicide(m.kind)) return { ...out, intent, fire };
 
   // SuicideAI.Update / GetInput and MookSuicide.AnimateRunning
   if (ai.litFuse) {
@@ -841,16 +883,21 @@ export function thinkMook(m: Unit, ctx: AiContext, t: number): AiOutput {
   }
   if (ai.suicideTimer <= 0) return { ...IDLE, explode: true };
   let explode = false;
+  let leap = false;
   if (ai.mental === 'alerted') {
-    intent.speed = SUICIDE_SPEED_ALERTED;
+    if (m.kind === 'mook_suicide') intent.speed = SUICIDE_SPEED_ALERTED; // MookSuicide.AnimateRunning (the undead one runs at its speed)
     if (!ai.litFuse && dir !== 0 && m.onGround && ai.queue[0]) ai.litFuse = true;
     if (ai.suicideDelay <= 0 && dir !== 0) {
       if (blockedForward(m, ai.walkDir, ctx.map)) ai.suicideTimer -= t * SUICIDE_BLOCKED_M;
       const p = alive(ctx.player);
-      if (p && sign(p.x - m.x) === ai.walkDir && Math.abs(p.x - m.x) < SUICIDE_TRIGGER && Math.abs(p.y - m.y) < SUICIDE_TRIGGER) {
+      if (m.kind === 'undead_suicide') {
+        // UndeadSuicideAI.GetInput: special1, its leap, with a bro within 54 x 24 the way it walks
+        const ahead = p && sign(p.x - m.x) === ai.walkDir;
+        if (ahead && Math.abs(p.x - m.x) < UNDEAD_SUICIDE.leapX && Math.abs(p.y - m.y) < UNDEAD_SUICIDE.leapY) leap = true;
+      } else if (p && sign(p.x - m.x) === ai.walkDir && Math.abs(p.x - m.x) < SUICIDE_TRIGGER && Math.abs(p.y - m.y) < SUICIDE_TRIGGER) {
         explode = true;
       }
     }
   }
-  return { intent, fire: false, explode };
+  return { intent, fire: false, explode, leap };
 }

@@ -195,5 +195,5 @@ export const SPECIAL_KITS: Record<SpecialId, (id: number, p: Unit, ducking: bool
   nuke: throwNukeMarker,
   django: () => null,
   molotov: throwMolotov,
-  flamewall: makeFlameWall,
+  flamewall: (id, p) => makeFlameWall(id, p),
 };

@@ -8,9 +8,12 @@ import { getColumn, getRow } from '../engine/map';
 import type { Jet } from '../engine/jet';
 import type { Mech } from '../engine/mech';
 import type { Tank } from '../engine/tank';
+import { isBoomer, isHellBigGuy, isSuicide } from '../engine/hell';
 import type { BlockKind, Projectile, Unit, UnitKind } from '../engine/types';
 import { speaker, type Effect, type GameEvent, type World } from '../engine/world';
-import { blockFrame, flameLook, helicopterFrame, jetFrameCentreY, loopFrame, mechFrame, prisonerFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
+import {
+  blockFrame, flameLook, helicopterFrame, jetFrameCentreY, loopFrame, mechFrame, prisonerFrame, SATAN_GONE, tankHullFrame, turretFrame, unitFrame,
+} from './animation';
 import { gunOffsetX, type Assets, type SheetKey } from './assets';
 import { Effects } from './fx/controller';
 import { particleFrame } from './fx/particles';
@@ -31,6 +34,9 @@ const ENEMY_SHEETS: Record<Exclude<UnitKind, 'bro'>, SheetKey> = {
   mook_bruiser_elite: 'mook_bruiser_elite', mook_dolph: 'mook_dolph',
   alien_xeno: 'alien_xeno', alien_xeno_brain: 'alien_xeno_brain', alien_hugger: 'alien_hugger', alien_snake: 'alien_snake',
   alien_melter: 'alien_melter', alien_brute: 'alien_brute', alien_mosquito: 'alien_mosquito',
+  hell_dog: 'hell_dog', hell_lostsoul: 'hell_lostsoul', hell_boomer: 'hell_boomer', hell_soulcatcher: 'hell_soulcatcher',
+  hell_bigguy: 'hell_bigguy', hell_armoured: 'hell_armoured', undead: 'undead', undead_suicide: 'undead_suicide', skinless: 'skinless',
+  warlock: 'warlock', satan: 'satan',
 };
 const BLOCK_SHEETS: Record<BlockKind, SheetKey> = {
   dirt: 'block_dirt', sand: 'block_sand', brick: 'block_brick', temple: 'block_temple', steel: 'block_steel', barrel: 'block_barrel',
@@ -107,6 +113,8 @@ export class Renderer {
     for (const k of w.tanks) this.drawTank(k);
     for (const j of w.jets) this.drawJet(j);
     if (w.mech && !w.mech.destroyed) this.drawMech(w.mech, w.time);
+    // WarlockPortal: once its projectile is there, growing, open, shrinking
+    for (const o of w.portals) if (o.delay <= 0) this.sprite('warlock_portal', Math.min(14, o.frame), 0, o.x, o.y);
     for (const e of w.enemies) if (!e.exitDoor) this.drawUnit(e, w.time);
     const boarded = w.state === 'extracting' && w.extractionTime >= EXTRACTION_TIME / 2;
     if (!boarded && !w.driving) this.drawUnit(w.player, w.time);
@@ -307,7 +315,9 @@ export class Renderer {
   private brightness(u: Unit, time: number): number {
     if (u.invulnerable > 0) return (0.5 + Math.sin(time * INVULNERABLE_FLASH) * 0.23) / 0.5;
     const ai = u.ai;
-    if (u.kind === 'mook_suicide' && ai && !ai.exploded && (ai.litFuse || u.dead)) {
+    // MookHellBoomer: the warning material flashing once it has swollen, until it bursts
+    if (isBoomer(u.kind) && u.dead && u.hell && !u.hell.burst && u.hell.dying >= 0.35) return Math.floor(u.hell.dying / 0.05) % 2 === 0 ? 2.2 : 1;
+    if (isSuicide(u.kind) && ai && !ai.exploded && (ai.litFuse || u.dead)) {
       const left = u.dead ? ai.deathFuse : ai.suicideTimer;
       const period = Math.max(0.04, Math.min(0.25, left / 6));
       return Math.floor(time / period) % 2 === 0 ? 2.2 : 1;
@@ -316,7 +326,7 @@ export class Renderer {
   }
 
   private drawUnit(u: Unit, time: number): void {
-    if (u.gibbed) return;
+    if (u.gibbed || (u.kind === 'satan' && u.dead && u.deadTime > SATAN_GONE)) return;
     const key = u.kind === 'bro' ? this.playerSheet() : ENEMY_SHEETS[u.kind];
     const f = unitFrame(u);
     const b = this.brightness(u, time);
@@ -333,7 +343,7 @@ export class Renderer {
       this.sprite(gun, u.gunFrame, 0, u.x + u.facing * gunOffsetX(gun), u.y + this.assets.sheets[key].offsetY, u.facing < 0);
     }
     // the Bruiser's minigun, in his arms: its running row while he runs, else its muzzle frames (MookBigGuy.RunGun)
-    const bigGun = u.kind === 'mook_bruiser' ? 'bruiser_gun' : u.kind === 'mook_bruiser_elite' ? 'bruiser_elite_gun' : null;
+    const bigGun = u.kind === 'mook_bruiser' ? 'bruiser_gun' : u.kind === 'mook_bruiser_elite' ? 'bruiser_elite_gun' : isHellBigGuy(u.kind) ? 'hell_bigguy_gun' : null;
     const gunHidden = u.kind === 'mook_bruiser_elite' && f.row === 0 && f.col >= ELITE.jumpCol; // DeactivateGun: leaping, getting up
     if (bigGun && !gunHidden && !u.dead && u.burnTime <= 0 && u.blindTime <= 0) {
       const running = f.row === 1;
@@ -551,6 +561,9 @@ export class Renderer {
         break;
       case 'launch':
         this.sprite('rocket', 0, 0, p.x, p.y, false, -Math.PI / 2); // the mortar's RocketLaunch, nose up
+        break;
+      case 'vomit':
+        this.sprite('slime_vomit', loopFrame(time, 0.0333, 4), 0, p.x, p.y, false, Math.atan2(-p.yI, p.xI)); // SlimeDrop.SetRotation
         break;
       case 'bomb':
       case 'jetBomb':

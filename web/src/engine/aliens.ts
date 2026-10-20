@@ -1,14 +1,16 @@
 import { canSeePlayer } from './ai';
-import { ALIEN, GRAVITY, TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT } from './constants';
+import { ALIEN, GRAVITY, LOST_SOUL, TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT } from './constants';
 import type { Blast } from './explosions';
 import { getColumn, type TileMap } from './map';
 import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
-import type { AiStats, Unit } from './types';
+import { lostSoulBlast } from './hell';
+import type { AiStats, HellStats, Unit } from './types';
 import { damageUnit } from './units';
 
-/** Broforce's aliens: Alien / AlienClimber kinds with their DogAI-derived minds. */
-export type AlienKind = 'alien_xeno' | 'alien_xeno_brain' | 'alien_hugger' | 'alien_snake' | 'alien_melter' | 'alien_brute' | 'alien_mosquito';
-export const ALIEN_KINDS: readonly AlienKind[] = ['alien_xeno', 'alien_xeno_brain', 'alien_hugger', 'alien_snake', 'alien_melter', 'alien_brute', 'alien_mosquito'];
+/** Broforce's aliens: Alien / AlienClimber kinds with their DogAI-derived minds; hell's lost soul is a mosquito (HellLostSoul). */
+export type AlienKind = 'alien_xeno' | 'alien_xeno_brain' | 'alien_hugger' | 'alien_snake' | 'alien_melter' | 'alien_brute' | 'alien_mosquito' | 'hell_lostsoul';
+export const ALIEN_KINDS: readonly AlienKind[] = ['alien_xeno', 'alien_xeno_brain', 'alien_hugger', 'alien_snake', 'alien_melter', 'alien_brute', 'alien_mosquito', 'hell_lostsoul'];
+const isMosquito = (kind: string): boolean => kind === 'alien_mosquito' || kind === 'hell_lostsoul';
 export const isAlien = (kind: string): kind is AlienKind => (ALIEN_KINDS as readonly string[]).includes(kind);
 
 /** The run speeds an alien's prefab gives it (Alien: unawareRunSpeed, awareRunSpeed, awareMegaRunSpeed). */
@@ -44,7 +46,8 @@ export interface AlienState {
   flying: boolean;
   takeOff: number;
   prepare: number; // divePositionCounter
-  dive: { x: number; y: number; delay: number; speed: number } | null;
+  // the lost soul's homing dive: its heading, the seek clock, the turning and the wobble easing in
+  dive: { x: number; y: number; delay: number; speed: number; angle?: number; seek?: number; turn?: number; wobble?: number; sinM?: number } | null;
 }
 
 export function makeAlienState(rng: () => number): AlienState {
@@ -68,6 +71,7 @@ export interface AlienContext {
   panicMooks: (x: number, y: number, range: number) => void; // Map.PanicUnits
   alert: (x: number, y: number) => void; // the '!' and its sound
   hug: (x: number, y: number) => void; // a facehugger on his face
+  lostSoul?: HellStats['lostSoul']; // a lost soul's dive and burst
 }
 
 const sign = (v: number): -1 | 1 => (v < 0 ? -1 : 1);
@@ -89,7 +93,7 @@ export function acidBlast(x: number, y: number): Blast {
 function burst(m: Unit, a: AlienState, ctx: AlienContext): void {
   if (a.burst) return;
   a.burst = true;
-  ctx.blasts.push(acidBlast(m.x, m.y));
+  ctx.blasts.push(m.kind === 'hell_lostsoul' && ctx.lostSoul ? lostSoulBlast(m.x, m.y, ctx.lostSoul) : acidBlast(m.x, m.y));
   if (!m.dead) {
     m.dead = true;
     m.deadTime = 0;
@@ -333,6 +337,10 @@ function mosquito(m: Unit, a: AlienState, ctx: AlienContext, p: Unit, t: number)
       d.delay -= t;
       m.xI *= 1 - Math.min(1, t * 8);
       m.yI *= 1 - Math.min(1, t * 8);
+    } else if (d.angle !== undefined && ctx.lostSoul) {
+      homeIn(m, d, p, ctx.lostSoul, t);
+      m.facing = sign(m.xI);
+      if (Math.hypot(p.x - m.x, p.y + UNIT_HEIGHT / 2 - m.y) < q.hit + UNIT_HALF_WIDTH) burst(m, a, ctx);
     } else {
       const dx = d.x - m.x;
       const dy = d.y + 5 - m.y;
@@ -350,9 +358,9 @@ function mosquito(m: Unit, a: AlienState, ctx: AlienContext, p: Unit, t: number)
     const ceilingFree = !ctx.map.solidAt(m.x, m.y + 2 * TILE);
     let ax = 0;
     let ay = 0;
-    if (a.prepare >= q.maxDelay) a.dive = { x: p.x, y: p.y, delay: q.diveDelay, speed: q.diveSpeed };
+    if (a.prepare >= q.maxDelay) a.dive = startDive(m, p, ctx);
     else if (vy > -2 * TILE && ceilingFree) ay = 1;
-    else if (Math.abs(vx) < Math.abs(vy) + 2 * TILE) a.dive = { x: p.x, y: p.y, delay: q.diveDelay, speed: q.diveSpeed };
+    else if (Math.abs(vx) < Math.abs(vy) + 2 * TILE) a.dive = startDive(m, p, ctx);
     else {
       ax = sign(vx);
       if (vy > -4 * TILE && ceilingFree) ay = 1;
@@ -379,12 +387,56 @@ function mosquito(m: Unit, a: AlienState, ctx: AlienContext, p: Unit, t: number)
   m.animTime += t;
 }
 
+/**
+ * AlienMosquito.StartDiving at the bro; HellLostSoul's: diveSpeed * 0.8 after diveDelayDuration, heading off to his side
+ * (and a little down) and halfway round to him (InitialDivingCalculation).
+ */
+function startDive(m: Unit, p: Unit, ctx: AlienContext): NonNullable<AlienState['dive']> {
+  const q = ALIEN.mosquito;
+  const s = m.kind === 'hell_lostsoul' ? ctx.lostSoul : undefined;
+  if (!s) return { x: p.x, y: p.y, delay: q.diveDelay, speed: q.diveSpeed };
+  const target = Math.atan2(p.y + 5 - m.y, p.x - m.x);
+  let angle = p.x > m.x ? -0.32 : Math.PI + 0.32;
+  angle = unwrap(angle, target);
+  return { x: p.x, y: p.y, delay: s.diveDelay, speed: s.diveSpeed * LOST_SOUL.startM, angle: (angle + target) / 2, seek: 0, turn: 0, wobble: 0, sinM: 0 };
+}
+
+/** The heading nearest `a` that points the same way as `target`'s side of the circle. */
+const unwrap = (a: number, target: number): number => {
+  let v = a;
+  while (target > v + Math.PI) v += 2 * Math.PI;
+  while (target < v - Math.PI) v -= 2 * Math.PI;
+  return v;
+};
+
+/**
+ * HellLostSoul.CalculateDiveMovement: it looks for the bro again every 0.1 s and turns toward him (seekSpeedCurrent easing
+ * up to seekTurningSpeedM), wobbling sinWobbleRadian either side at sinWobbleSpeed, faster and faster up to diveSpeedMax.
+ */
+function homeIn(m: Unit, d: NonNullable<AlienState['dive']>, p: Unit, s: HellStats['lostSoul'], t: number): void {
+  if ((d.seek = (d.seek ?? 0) + t) > LOST_SOUL.seekEvery) {
+    d.seek -= LOST_SOUL.seekEvery;
+    d.x = p.x;
+    d.y = p.y;
+  }
+  const target = Math.atan2(d.y + 5 - m.y, d.x - m.x);
+  const angle = unwrap(d.angle ?? target, target);
+  d.speed = Math.min(s.diveSpeedMax, d.speed + LOST_SOUL.accel * t);
+  d.wobble = (d.wobble ?? 0) + s.wobbleSpeed * t;
+  d.sinM = (d.sinM ?? 0) + (1 - (d.sinM ?? 0)) * Math.min(1, t * LOST_SOUL.wobbleEase);
+  d.turn = (d.turn ?? 0) + (s.seekTurn - (d.turn ?? 0)) * Math.min(1, LOST_SOUL.seekEase * t);
+  d.angle = angle + (target - angle) * Math.min(1, t * d.turn);
+  const heading = d.angle + Math.sin(d.wobble) * s.wobble * d.sinM;
+  m.xI = Math.cos(heading) * d.speed;
+  m.yI = Math.sin(heading) * d.speed;
+}
+
 /** One step of an alien: dead (the melter's and mosquito's acid fuse), latched on a face, or its kind's mind. */
 export function stepAlien(m: Unit, ctx: AlienContext, t: number): void {
   const a = m.alien!;
   const p = ctx.player && !ctx.player.dead ? ctx.player : null;
   if (m.dead) {
-    if ((m.kind === 'alien_melter' || m.kind === 'alien_mosquito') && !a.burst) {
+    if ((m.kind === 'alien_melter' || isMosquito(m.kind)) && !a.burst) {
       if (a.fuse < 0) a.fuse = ALIEN.acid.fuse; // AlienMelter.Death: deathCounter 0.4
       a.fuse -= t;
       if (a.fuse <= 0 && m.onGround) burst(m, a, ctx);
@@ -405,7 +457,7 @@ export function stepAlien(m: Unit, ctx: AlienContext, t: number): void {
     a.panic = ALIEN.panicEvery;
     ctx.panicMooks(m.x, m.y, ALIEN.panicRange);
   }
-  if (m.kind === 'alien_mosquito') {
+  if (isMosquito(m.kind)) {
     if (a.alerted && p) mosquito(m, a, ctx, p, t);
     else stepUnit(m, wander(m, a, ctx, t), ctx.map, t, ctx.time);
     return;

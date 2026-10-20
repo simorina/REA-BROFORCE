@@ -1,5 +1,6 @@
 import { makeAiState } from './ai';
-import { BRUISER, DOLPH, FIRE_START_LIMIT, JETPACK, GIB_THRESHOLD, GUN_FRAME_RATE, SHIELD, UNIT_BOX_HEIGHT, UNIT_WIDTH } from './constants';
+import { BRUISER, DOLPH, FIRE_START_LIMIT, HELL_BIGGUY, JETPACK, GIB_THRESHOLD, GUN_FRAME_RATE, SHIELD, UNIT_BOX_HEIGHT, UNIT_WIDTH } from './constants';
+import { armourStops, isHellBigGuy } from './hell';
 import { soakDolph } from './dolph';
 import type { JetpackState, Team, Unit, UnitKind, UnitStats } from './types';
 
@@ -35,10 +36,18 @@ export function makeJetpack(groundY: number, crashDelay = 0.5): JetpackState {
 }
 
 /** MookBigGuy and what derives from it: heavy, and stumbling under big hits. */
-export const isBigGuy = (kind: string): boolean => kind === 'mook_bruiser' || kind === 'mook_bruiser_elite';
+export const isBigGuy = (kind: string): boolean =>
+  kind === 'mook_bruiser' || kind === 'mook_bruiser_elite' || kind === 'hell_bigguy' || kind === 'hell_armoured';
 
-export function damageUnit(u: Unit, amount: number, ignoreInvulnerable = false): boolean {
+/** Which way the hit was travelling (for the armoured hell Bruiser's front) and whether it was fire. */
+export interface HitInfo {
+  dir?: number;
+  fire?: boolean;
+}
+
+export function damageUnit(u: Unit, amount: number, ignoreInvulnerable = false, hit: HitInfo = {}): boolean {
   if (amount <= 0 || (u.invulnerable > 0 && !ignoreInvulnerable) || u.gibbed) return false;
+  if (armourStops(u, amount, hit.dir ?? 0, !!hit.fire)) return false;
   if (u.boss?.flees) { // the island's boss, with his Goliath still to come, can't die here: he runs (boss.ts)
     u.health = Math.max(0, u.health - amount);
     return false;
@@ -46,6 +55,11 @@ export function damageUnit(u: Unit, amount: number, ignoreInvulnerable = false):
   if (u.dolph) amount = soakDolph(u, amount); // his bonus health soaks it up first
   u.health -= amount;
   if (u.health < GIB_THRESHOLD && !u.dolph) u.gibbed = true; // canGib: never the universal soldier
+  if (u.hell) {
+    u.hell.hurt = true;
+    // MookHellBigGuy.Damage: a hit over 7 stuns him
+    if (isHellBigGuy(u.kind) && amount > HELL_BIGGUY.stunDamage && u.health > 0) u.hell.stun = HELL_BIGGUY.stun;
+  }
   // MookBigGuy.Damage: a hit when he is down to half, or a big one, makes the Bruiser stumble and hold his fire
   if (isBigGuy(u.kind) && u.health > 0 && !ignoreInvulnerable && (u.health <= u.stats.health / 2 || amount >= BRUISER.stumbleDamage)) {
     u.fireDelay = Math.max(u.fireDelay, BRUISER.stumble);

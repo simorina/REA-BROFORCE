@@ -113,6 +113,14 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert values["alien_brute"]["health"] == 100 and values["alien_brute"]["unawareMegaRunSpeed"] == pytest.approx(160.0)
     assert values["alien_hugger"]["health"] == 1 and values["ai_alien_hugger"]["attackRangeX"] == pytest.approx(26.0)
     assert sheets["alien_brute"]["frameW"] == 64 and values["ai_alien_mosquito"]["sightRangeX"] == 240
+    # hell: the Boomer bursts at 46 into three undead suicide mooks, the hell Bruiser's flame wall runs 14 columns, the
+    # warlock's portal raises its mook at 56 for 1.1 s, the lost soul dives up to 270
+    assert values["hell_boomer"]["health"] == 25 and values["hell_boomer"]["explosionRange"] == pytest.approx(46.0)
+    assert values["flame_wall_hell"]["maxCollumns"] == 14 and values["flame_wall_hell"]["explosionRate"] == pytest.approx(0.14)
+    assert values["warlock_portal"]["riseSpeed"] == pytest.approx(56.0) and values["ai_warlock"]["sightRangeY"] == 300
+    assert values["hell_lostsoul"]["diveSpeedMax"] == pytest.approx(270.0) and values["hell_armoured"]["health"] == 30
+    assert values["undead"]["health"] == 3 and values["undead_suicide"]["range"] == pytest.approx(40.0)
+    assert sheets["hell_boomer"]["frameW"] == 36 and sheets["satan"]["frameW"] == 32 and sheets["warlock_portal"]["frameW"] == 32
     # the universal soldier: 110 health, his launcher's attack 2.3 s
     assert values["mook_dolph"]["health"] == 110 and values["ai_mook_dolph"]["attackTime"] == pytest.approx(2.3)
     assert sheets["mook_dolph"]["frameW"] == 48 and sheets["dolph_gun"]["frameW"] == 64

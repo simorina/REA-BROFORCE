@@ -75,6 +75,17 @@ SPRITES = (
     SpriteRef("alien_melter", "AlienMelter", "ZAlienMelter", True),
     SpriteRef("alien_brute", "AlienBrute", "ZAlienBrute", True),  # 64x64
     SpriteRef("alien_mosquito", "AlienMosquito", "ZAlienMosquito", True),
+    SpriteRef("hell_dog", "HellDog", "ZHellDog", True),
+    SpriteRef("hell_lostsoul", "HellLostSoul", "ZHellLostSoul", True),
+    SpriteRef("hell_boomer", "MookHellBoomer", "ZMookHellBoomer", True),  # 36x36
+    SpriteRef("hell_soulcatcher", "MookHellSoulCatcher", "ZMookHellSoulCatcher", True),  # 36x36
+    SpriteRef("hell_bigguy", "MookHellBigGuy", "ZHellBigGuy", True),  # 36x32
+    SpriteRef("hell_armoured", "MookHellArmouredBigGuy", "ZMookHellArmouredBigGuy", True),  # 36x36
+    SpriteRef("undead", "UndeadTrooper", "ZMookUndead", True),
+    SpriteRef("undead_suicide", "MookSuicideUndead", "ZMookUndeadSuicide", True),
+    SpriteRef("skinless", "SkinnedMook", "ZMookSkinless", True),
+    SpriteRef("warlock", "Warlock", "ZMookWarlock", True),
+    SpriteRef("satan", "Satan", "ZSatan", True),  # Brovil
     SpriteRef("truck", "MookTruck", "MookTruck", True),  # 74x64: rolling 0-1, wrecked 2
     SpriteRef("apc", "MookAPC", "MookAPC", True),  # 96x64: row 0 rolling (wreck at 8), row 1 the panel down
     SpriteRef("bike", "MookMotorBike", "MookMotorBike", True),  # 64x32: row 1 rolling 0-1, wrecked 2
@@ -124,6 +135,10 @@ TEXTURES = (
     TextureRef("kopter_missiles", "mook_Kopter_Missiles", frame=(80, 32)),  # the rack, emptying as it bombs
     TextureRef("mine", "LandMine", frame=(16, 16)),  # the Mine prefab's SpriteSM: 0 armed, 1 (lowerLeftPixel x 16) going off
     TextureRef("mine_sign", "MineSign"),  # the Mine Field Sign doodad
+    TextureRef("hell_bigguy_gun", "mookhellbig_gun_anim", frame=(36, 32)),  # the hell Bruisers' flame thrower, laid out like the minigun
+    TextureRef("skinless_gun", "SkinnlessMook_gun_anim", frame=(32, 32)),  # the skinless mook's arms
+    TextureRef("warlock_portal", "mookUndead_Portal_anim", frame=(32, 32)),  # WarlockPortal: growing 0-5, open 2-9, shrinking to 14
+    TextureRef("slime_vomit", "Slime Vomit"),  # the Boomer's SlimeDrop
 )
 
 VALUES = (
@@ -213,6 +228,39 @@ VALUES = (
     ValuesRef("alien_mosquito", "AlienMosquito", "ZAlienMosquito", MOOK_FIELDS),
     ValuesRef("ai_alien_mosquito", "AlienMosquitoAI", "ZAlienMosquito", AI_FIELDS),
     ValuesRef("path_alien_mosquito", "PathAgent", "ZAlienMosquito", PATH_FIELDS),
+    ValuesRef("hell_dog", "HellDog", "ZHellDog", MOOK_FIELDS),
+    ValuesRef("ai_hell_dog", "HellDogAI", "ZHellDog", AI_FIELDS + ("attackRangeX", "attackRangeY")),
+    ValuesRef("path_hell_dog", "PathAgent", "ZHellDog", PATH_FIELDS),
+    ValuesRef("hell_lostsoul", "HellLostSoul", "ZHellLostSoul", MOOK_FIELDS + ("diveSpeed", "diveSpeedMax", "explodeRange", "broHarmRangeM",
+              "seekTurningSpeedM", "sinWobbleSpeed", "sinWobbleRadian", "diveDelayDuration")),
+    ValuesRef("ai_hell_lostsoul", "LostSoulAI", "ZHellLostSoul", AI_FIELDS),
+    ValuesRef("path_hell_lostsoul", "PathAgent", "ZHellLostSoul", PATH_FIELDS),
+    ValuesRef("hell_boomer", "MookHellBoomer", "ZMookHellBoomer", MOOK_FIELDS + ("explosionRange", "warningTime")),
+    ValuesRef("ai_hell_boomer", "BoomerAI", "ZMookHellBoomer", AI_FIELDS),
+    ValuesRef("hell_soulcatcher", "MookHellSoulCatcher", "ZMookHellSoulCatcher", MOOK_FIELDS + ("explosionRange", "warningTime")),
+    ValuesRef("ai_hell_soulcatcher", "SoulCatcherAI", "ZMookHellSoulCatcher", AI_FIELDS),
+    ValuesRef("hell_bigguy", "MookHellBigGuy", "ZHellBigGuy", MOOK_FIELDS),
+    ValuesRef("ai_hell_bigguy", "BigGuyAI", "ZHellBigGuy", AI_FIELDS),
+    ValuesRef("hell_armoured", "MookHellArmouredBigGuy", "ZMookHellArmouredBigGuy", MOOK_FIELDS),
+    ValuesRef("ai_hell_armoured", "BigGuyAI", "ZMookHellArmouredBigGuy", AI_FIELDS),
+    ValuesRef("flame_wall_hell", "FlameWallExplosion", "flameWallExplosion HellMook",
+              ("maxCollumns", "maxRows", "totalExplosions", "explosionRate", "damageAmount", "maxPuffDelay", "yExplosionOffset")),
+    ValuesRef("slime_vomit", "SlimeDrop", "Slime Vomit Drop", ("damageInternal", "gravityM", "life", "projectileSize")),
+    ValuesRef("undead", "UndeadTrooper", "ZMookUndead", MOOK_FIELDS),
+    ValuesRef("ai_undead", "UndeadTrooperAI", "ZMookUndead", AI_FIELDS),
+    ValuesRef("path_undead", "PathAgent", "ZMookUndead", PATH_FIELDS),
+    ValuesRef("undead_suicide", "MookSuicideUndead", "ZMookUndeadSuicide", MOOK_FIELDS + ("range", "blastForce")),
+    ValuesRef("ai_undead_suicide", "UndeadSuicideAI", "ZMookUndeadSuicide", AI_FIELDS),
+    ValuesRef("path_undead_suicide", "PathAgent", "ZMookUndeadSuicide", PATH_FIELDS),
+    ValuesRef("skinless", "SkinnedMook", "ZMookSkinless", MOOK_FIELDS),
+    ValuesRef("ai_skinless", "SkinlessMookAI", "ZMookSkinless", AI_FIELDS),
+    ValuesRef("path_skinless", "PathAgent", "ZMookSkinless", PATH_FIELDS),
+    ValuesRef("warlock", "Warlock", "ZMookWarlock", MOOK_FIELDS),
+    ValuesRef("ai_warlock", "MookWarlockAI", "ZMookWarlock", AI_FIELDS),
+    ValuesRef("path_warlock", "PathAgent", "ZMookWarlock", PATH_FIELDS),
+    ValuesRef("warlock_portal", "WarlockPortal", "WarlockPortal Suicide", ("launchDelay", "riseTime", "riseSpeed")),
+    ValuesRef("satan", "Satan", "ZSatan", MOOK_FIELDS),
+    ValuesRef("ai_satan", "SatanAI", "ZSatan", AI_FIELDS),
     ValuesRef("mook_dolph", "DolphLundrenSoldier", "DolfLundgrenSoldier", MOOK_FIELDS),
     ValuesRef("ai_mook_dolph", "DolfLundgrenAI", "DolfLundgrenSoldier", AI_FIELDS),
     ValuesRef("foe_truck", "MookTruck", "MookTruck", ("health", "tankSpeed", "mooksToSpawn")),
