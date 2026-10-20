@@ -68,6 +68,8 @@ SPRITES = (
     SpriteRef("mook_alarmist", "MookGeneral", "ZMook Alarmist", True),
     SpriteRef("mook_bruiser_elite", "MookBigGuyElite", "ZMookBigElite", True),
     SpriteRef("truck", "MookTruck", "MookTruck", True),  # 74x64: rolling 0-1, wrecked 2
+    SpriteRef("apc", "MookAPC", "MookAPC", True),  # 96x64: row 0 rolling (wreck at 8), row 1 the panel down
+    SpriteRef("bike", "MookMotorBike", "MookMotorBike", True),  # 64x32: row 1 rolling 0-1, wrecked 2
     SpriteRef("grenade", "Grenade", "GrenadeEvilSmall Long fuse", False),  # the grenadier's long-fuse grenade
     SpriteRef("prisoner", "RescueBro", "Hobro", True),
     SpriteRef("cage", "Cage", "CageBig", True),
@@ -104,6 +106,7 @@ TEXTURES = (
     TextureRef("flame_3", "flamethrower_bullet3", frame=(32, 32)),
     TextureRef("bruiser_elite_gun", "mookbigElite_gun_anim", frame=(36, 32)),  # the elite Bruiser's rocket launcher, laid out like the minigun
     TextureRef("rocket_evil", "rocket Evil", frame=(16, 16)),  # DrunkRocket "Rocket Drunk Evil"
+    TextureRef("nuke_bomb", "Nuclear Bomb", frame=(32, 32)),  # the nuclear motorbike's bomb
     TextureRef("mine", "LandMine", frame=(16, 16)),  # the Mine prefab's SpriteSM: 0 armed, 1 (lowerLeftPixel x 16) going off
     TextureRef("mine_sign", "MineSign"),  # the Mine Field Sign doodad
 )
@@ -176,6 +179,12 @@ VALUES = (
     ValuesRef("rocket_drunk", "DrunkRocket", "Rocket Drunk Evil", ROCKET_FIELDS + ("drunkSpeed", "acceleration")),
     ValuesRef("foe_truck", "MookTruck", "MookTruck", ("health", "tankSpeed", "mooksToSpawn")),
     ValuesRef("ai_foe_truck", "MookTruckPolyAI", "MookTruck", ("sightRangeX", "sightRangeY")),
+    ValuesRef("foe_apc", "MookAPC", "MookAPC", ("health", "tankSpeed", "mooksToSpawn")),
+    ValuesRef("ai_foe_apc", "MookTruckPolyAI", "MookAPC", ("sightRangeX", "sightRangeY")),
+    ValuesRef("foe_bike", "MookMotorBike", "MookMotorBike", ("health", "tankSpeed", "mookJumpForce")),
+    ValuesRef("ai_foe_bike", "MookMotorBikePolyAI", "MookMotorBike", ("sightRangeX", "sightRangeY", "attackXRange")),
+    ValuesRef("foe_nukebike", "MookMotorBike", "MookMotorBike Nuclear", ("health", "tankSpeed", "mookJumpForce")),
+    ValuesRef("ai_foe_nukebike", "MookMotorBikePolyAI", "MookMotorBike Nuclear", ("sightRangeX", "sightRangeY", "attackXRange")),
     ValuesRef("grenade_mook", "Grenade", "GrenadeEvilSmall Long fuse",
               ("bounceM", "frictionM", "gravityM", "damage", "range", "blastForce")),
     ValuesRef("path_mook", "PathAgent", "ZMook", PATH_FIELDS),

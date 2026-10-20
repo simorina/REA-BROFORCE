@@ -103,3 +103,91 @@ describe('the troop truck (MookTruck, MookTruckPolyAI)', () => {
     expect(w.player.dead).toBe(true);
   });
 });
+
+describe('the motorbike (MookMotorBike, MookMotorBikePolyAI)', () => {
+  it("reads the motorbike ('I') and the nuclear one ('Z')", () => {
+    expect(parseLevel(road('I'), TEST_STATS).foes[0].kind).toBe('bike');
+    expect(parseLevel(road('Z'), TEST_STATS).foes[0].kind).toBe('nukebike');
+    expect(createWorld(road('I'), TEST_STATS, [BROLUSCONI], () => 0.5).foes[0]).toMatchObject({ health: 6, passenger: true });
+  });
+
+  it('on screen it comes at the bro at 150, and close to him its suicide mook leaps off at him', () => {
+    const w = near('I', 30, 12);
+    const bike = w.foes[0];
+    play(w, steps(0.8));
+    expect(bike.xI).toBe(-150);
+    let leapt = false;
+    for (let i = 0; i < steps(3) && !leapt; i++) {
+      play(w, 1);
+      leapt = w.enemies.some((e) => e.kind === 'mook_suicide');
+    }
+    expect(leapt).toBe(true);
+    expect(bike.passenger).toBe(false);
+    expect(w.enemies.find((e) => e.kind === 'mook_suicide')?.ai?.mental).toBe('alerted');
+  });
+
+  it('riding faster than 80 it runs the bro over (20 crush)', () => {
+    const w = near('I', 30, 12);
+    w.player.invulnerable = 0;
+    w.foes[0].passenger = false; // no one to leap off
+    for (let i = 0; i < steps(4) && !w.player.dead; i++) play(w, 1);
+    expect(w.player.dead).toBe(true);
+  });
+
+  it('shot down, its driver jumps clear and its passenger bails out on fire', () => {
+    const w = near('I', 30, 25);
+    const bike = w.foes[0];
+    bike.health = 1;
+    w.projectiles.push({ id: 900, kind: 'bullet', team: 'player', x: bike.x + 12, y: bike.y + 10, xI: -400, yI: 0, life: 1, bounces: 0, dead: false });
+    play(w, 3);
+    expect(bike.dead).toBe(true);
+    expect(w.enemies.map((e) => e.kind).sort()).toEqual(['mook', 'mook_suicide']);
+  });
+
+  it('the nuclear bike, close to the bro (8), goes up in a nuclear blast that flattens the ground around it', () => {
+    const w = near('Z', 30, 4);
+    const bike = w.foes[0];
+    w.player.x = bike.x - 20;
+    let nuked = false;
+    for (let i = 0; i < steps(1.5) && !nuked; i++) {
+      play(w, 1);
+      nuked = w.events.some((e) => e.type === 'explosion' && e.source === 'nuke');
+    }
+    expect(nuked).toBe(true);
+    expect(w.map.get(30, 2)).toBeNull();
+  });
+});
+
+describe('the APC (MookAPC)', () => {
+  it("reads the APC ('V'): 40 health, a motorbike inside", () => {
+    const w = createWorld(road('V'), TEST_STATS, [BROLUSCONI], () => 0.5);
+    expect(w.foes.map((f) => f.kind)).toEqual(['apc', 'bike']);
+    expect(w.foes[0].health).toBe(40);
+    expect(w.foes[1].hidden).toBe(true);
+  });
+
+  it('with the bro in front of it, it lets its motorbike out, then four suicide mooks, one every 0.5 s', () => {
+    const w = near('V', 30, 6);
+    play(w, steps(1.5));
+    expect(w.foes[1].hidden).toBe(false);
+    const seen = new Set<number>();
+    for (let i = 0; i < steps(5); i++) {
+      play(w, 1);
+      for (const e of w.enemies) if (e.kind === 'mook_suicide') seen.add(e.id);
+    }
+    expect(seen.size).toBeGreaterThanOrEqual(4); // its four, and the bike's passenger
+    expect(w.foes[0].spawned).toBe(4);
+    expect(w.foes[0].open).toBe(true);
+  });
+
+  it('blown up early, it throws out three suicide mooks and its motorbike', () => {
+    const w = near('V', 30, 25);
+    const apc = w.foes[0];
+    apc.health = 1;
+    w.projectiles.push({ id: 900, kind: 'bullet', team: 'player', x: apc.x + 36, y: apc.y + 20, xI: -400, yI: 0, life: 1, bounces: 0, dead: false });
+    play(w, 3);
+    expect(apc.dead).toBe(true);
+    expect(w.enemies.filter((e) => e.kind === 'mook_suicide')).toHaveLength(3);
+    expect(w.foes[1].hidden).toBe(false);
+  });
+});

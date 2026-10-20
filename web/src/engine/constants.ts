@@ -194,6 +194,23 @@ export const FOE = {
   hurt: 0.0334, hitWindow: 0.096, bounce: 250, frameRate: 0.0334, roadMax: 240,
   death: { damage: 12, range: 48, kill: 32, force: 200, extraY: 120, noise: 120, burn: 64 },
   truck: { lookEvery: 0.8, lookX: 128, lookY: 12, fireDelay: 0.6, spawnX: 28, spawnY: 32, spawnXI: 55, spawnXIStep: 15, spawnYI: 150, drawX: 4 },
+  // MookAPC: collumnLookAhead -3; FireWeapon: its motorbike out (0.8 s), then a suicide mook every 0.5 s from (X + 10, Y + 26)
+  // at -10; Death: the bikes left, and (if mooks are left) three suicide mooks jumping out from X - 12, X and X + 8
+  apc: {
+    lookAhead: -3, bikeDelay: 0.8, mookDelay: 0.5, spawnX: 10, spawnY: 26, spawnXI: -10, drawX: -7, bikeX: -12,
+    deathMooks: [[-12, -60, 230], [0, -10, 280], [8, 60, 230]] as ReadonlyArray<readonly [number, number, number]>,
+  },
+  // MookMotorBikePolyAI: alert 0.3 s after IsItSortOfVisible(+16 up, 48, 12); fires with a bro within attackXRange of X - 16,
+  // 32 up or down. MookMotorBike: the suicide mook leaps from X - dir*8, Y + 6 at (dir*40, mookJumpForce); HitUnits(20,
+  // Crush, 18, ..) riding faster than 80; Land bounces off faster than 120; Death: the passenger bails on fire at
+  // (-110, mookJumpForce * 1.2), the driver at (dir*66, mookJumpForce * 0.8)
+  bike: {
+    lookX: 48, lookY: 12, alertDelay: 0.3, attackOffset: 16, attackY: 32, riderBack: 8, riderY: 6, leapXI: 40, crushSpeed: 80,
+    crushX: 18, crushY: 12, crush: 20, bounceBelow: -120, bailXI: -110, bailM: 1.2, driverXI: 66, driverM: 0.8, bailInvulnerable: 0.1,
+    driverX: 2, passengerX: 12, riderDrawY: 5, bombX: 14, bombY: 14,
+  },
+  // MookMotorBike.ExplodeNuclearBomb
+  nuke: { y: 6, ground: 100, groundRange: 128, damage: 12, range: 144, kill: 96, crush: 32, force: 360, extraY: 200, noise: 300, burn: 160 },
 };
 export const DOG = { bite: 3, range: 6 }; // MookDog.RunFiring: Map.HitLivingUnits(3, Melee, 6, X, Y + 4)
 export const JET_ROCKET = { ox: [32, 8], oy: -5, x: 450, y: -285, jitter: 12 }; // HarrierJet.Update: two shots from (X+32, Y-5), (X+8, Y-5) at (450, -285) + insideUnitCircle * 12

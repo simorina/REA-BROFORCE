@@ -3,8 +3,8 @@ import type { Blast } from './explosions';
 import { getColumn, getRow, type TileMap } from './map';
 import type { FoeStats, Unit } from './types';
 
-/** Broforce's enemy vehicles (Tank subclasses driven by a PolymorphicAI): the troop truck first. */
-export type FoeKind = 'truck';
+/** Broforce's enemy vehicles (Tank subclasses driven by a PolymorphicAI). */
+export type FoeKind = 'truck' | 'apc' | 'bike' | 'nukebike';
 
 export interface Foe {
   kind: FoeKind;
@@ -21,11 +21,16 @@ export interface Foe {
   hurt: number; // Tank.hurtCounter: the hurt material's flash
   lastHit: number; // Tank.lastDamageTime
   mental: 'idle' | 'driving' | 'firing';
-  alerted: boolean; // MentalState.Alerted: the bro was in front of it
+  alerted: boolean; // MentalState.Alerted
   xMin: number; // MookTruckPolyAI.xMin: where its road ends
-  think: number; // time to its next idle look
+  think: number; // time to its next idle look (or a bike's BecomeAlert delay)
   fireDelay: number; // MookTruck.fireDelay
   spawned: number; // MookTruck.mookSpawnCount
+  open: boolean; // MookAPC: the back panel down, its suicide mooks coming out
+  passenger: boolean; // MookMotorBike: its suicide mook (or nuclear bomb) still aboard
+  hidden: boolean; // MookMotorBike inside an APC, disabled until released
+  carrier: number; // the APC it rides in (its id), -1 if none
+  immune: number; // a bike let out of a blown-up APC is clear of its blast (ours)
   frame: number;
   frameCounter: number;
 }
@@ -35,17 +40,25 @@ export interface FoeContext {
   map: TileMap;
   player: Unit | null;
   visible: (x: number, y: number, bufferX: number, bufferY: number) => boolean; // SortOfFollow.IsItSortOfVisible
-  spawnMook: (x: number, y: number, xI: number, yI: number, alerted: boolean) => void;
+  spawnMook: (kind: 'mook' | 'mook_suicide', x: number, y: number, xI: number, yI: number, alerted: boolean) => void;
+  releaseBike: (apc: Foe) => boolean; // MookAPC.ReleaseMotorBike: false when none is left
+  hurtPlayer: (damage: number) => void;
+  nuke: (f: Foe) => void; // MookMotorBike.ExplodeNuclearBomb
 }
 
 /** The boxes the bro's shots and blasts find them by (their colliders, from the sprites). */
 export const FOE_BOX: Record<FoeKind, { halfWidth: number; height: number }> = {
   truck: { halfWidth: 30, height: 40 },
+  apc: { halfWidth: 40, height: 44 },
+  bike: { halfWidth: 14, height: 20 },
+  nukebike: { halfWidth: 14, height: 20 },
 };
+
+const isBike = (k: FoeKind): boolean => k === 'bike' || k === 'nukebike';
 
 /**
  * MookTruckPolyAI.CheckNearbyBlocks: facing left, its road ends two blocks short of the first column 3 to 16 ahead
- * with no ground at its level, a block in the way, or one over the cab; 240 at most.
+ * (counted from collumnLookAhead) with no ground at its level, a block in the way, or one over the cab; 240 at most.
  */
 export function roadEnd(map: TileMap, x: number, y: number, lookAhead = 0): number {
   const c = getColumn(x) + lookAhead;
@@ -59,8 +72,9 @@ export function roadEnd(map: TileMap, x: number, y: number, lookAhead = 0): numb
 export function makeFoe(id: number, kind: FoeKind, x: number, y: number, s: FoeStats, map: TileMap): Foe {
   return {
     kind, id, x, y, xI: 0, yI: 0, facing: -1, health: s.health, onGround: true, dead: false, deadTime: 0, hurt: 0,
-    lastHit: -1, mental: 'idle', alerted: false, xMin: roadEnd(map, x, y), think: 0, fireDelay: FOE.truck.fireDelay,
-    spawned: 0, frame: 0, frameCounter: 0,
+    lastHit: -1, mental: 'idle', alerted: false, xMin: roadEnd(map, x, y, kind === 'apc' ? FOE.apc.lookAhead : 0), think: 0,
+    fireDelay: FOE.truck.fireDelay, spawned: 0, open: false, passenger: isBike(kind), hidden: false, carrier: -1, immune: 0, frame: 0,
+    frameCounter: 0,
   };
 }
 
@@ -69,7 +83,7 @@ const HIT_MARGIN = 2;
 /** The first standing foe whose box holds (x, y). */
 export function foeAt(foes: readonly Foe[], x: number, y: number): Foe | null {
   for (const f of foes) {
-    if (f.dead) continue;
+    if (f.dead || f.hidden) continue;
     const b = FOE_BOX[f.kind];
     if (Math.abs(x - f.x) <= b.halfWidth + HIT_MARGIN && y >= f.y - HIT_MARGIN && y <= f.y + b.height + HIT_MARGIN) return f;
   }
@@ -78,16 +92,17 @@ export function foeAt(foes: readonly Foe[], x: number, y: number): Foe | null {
 
 /** Map.ExplodeUnits reaching a foe: its box within the blast's unit range. */
 export function foeInBlast(f: Foe, b: Blast): boolean {
+  if (f.hidden) return false;
   const box = FOE_BOX[f.kind];
   return Math.abs(f.x - b.x) < b.unitRange + box.halfWidth && Math.abs(f.y + box.height / 2 - b.y) < b.unitRange + box.height / 2;
 }
 
 /**
  * Tank.Damage: it flashes; a second hit within 0.096 s of the last does at most 1. At 0 it dies (Death: MookTruck's
- * BounceOnDeath throws it up 250). True when this hit killed it.
+ * and MookMotorBike's BounceOnDeath throw it up 250). True when this hit killed it.
  */
 export function damageFoe(f: Foe, amount: number, now: number): boolean {
-  if (f.dead || amount <= 0) return false;
+  if (f.dead || f.hidden || f.immune > 0 || amount <= 0) return false;
   f.hurt = FOE.hurt;
   if (now - f.lastHit < FOE.hitWindow && amount > 1) amount = 1;
   if (now - f.lastHit > FOE.hitWindow) f.lastHit = now;
@@ -100,6 +115,7 @@ export function damageFoe(f: Foe, amount: number, now: number): boolean {
   f.y += 4;
   f.xI = 0;
   f.onGround = false;
+  f.open = false;
   return true;
 }
 
@@ -112,9 +128,24 @@ export function foeBlast(f: Foe): Blast {
   };
 }
 
+/**
+ * MookMotorBike.ExplodeNuclearBomb (at the bomb, 10 under it): DamageGround(100, 128); ExplodeUnits(12, Explosion, 144, 96,
+ * .., 360, 200) and ExplodeUnits(32, Crush, 96, 96, .., 360, 200), fired as playerNum -25: everyone.
+ */
+export function nukeBlasts(f: Foe): Blast[] {
+  const n = FOE.nuke;
+  const base = { x: f.x, y: f.y + n.y, team: 'neutral' as const, big: true, noise: n.noise, source: 'nuke' as const, doodadDamage: n.ground, doodadRange: n.groundRange };
+  return [
+    { ...base, groundDamage: n.ground, groundRange: n.groundRange, unitDamage: n.damage, unitRange: n.range, killRange: n.kill, force: n.force, extraY: n.extraY },
+    { ...base, groundDamage: 0, groundRange: 0, unitDamage: n.crush, unitRange: n.kill, killRange: n.kill, force: n.force, extraY: n.extraY, noise: 0 },
+  ];
+}
+
 /** HeroController.IsPlayerNearby(x, y, direction, rangeX, rangeY): a living bro that way, within range. */
 const playerAhead = (p: Unit | null, x: number, y: number, dir: number, rx: number, ry: number): boolean =>
   p !== null && !p.dead && Math.sign(p.x - x) === dir && Math.abs(p.x - x) < rx && Math.abs(p.y - y) < ry;
+const playerNear = (p: Unit | null, x: number, y: number, rx: number, ry: number): boolean =>
+  p !== null && !p.dead && Math.abs(p.x - x) < rx && Math.abs(p.y - y) < ry;
 
 /** The highest ground under its wheels, at most 6 over its bottom (Tank.GetGroundHeight's rays). */
 function groundUnder(map: TileMap, f: Foe): number {
@@ -147,30 +178,42 @@ function move(f: Foe, map: TileMap, t: number): void {
     f.yI -= GRAVITY * t;
     f.y += f.yI * t;
     if (f.yI <= 0 && f.y <= ground) {
-      f.y = ground;
-      f.yI = 0;
-      f.onGround = true;
+      // MookMotorBike.Land: a bike bounces off a hard landing
+      if (isBike(f.kind) && f.yI < FOE.bike.bounceBelow && !f.dead) {
+        f.yI *= -0.5;
+        f.y = ground + 4;
+      } else {
+        f.y = ground;
+        f.yI = 0;
+        f.onGround = true;
+      }
     }
   }
 }
 
-/**
- * MookTruck with MookTruckPolyAI: idle, it looks every 0.8 s; once on screen it drives left to the end of its road and
- * unloads its mooks out of the back, one every 0.6 s (automaticallyFire). A bro in front of it within its sight stops
- * it at once (StopForNearbyPlayer) and the mooks come out alerted.
- */
-export function stepFoe(f: Foe, s: FoeStats, ctx: FoeContext, t: number): void {
-  if (f.hurt > 0) f.hurt -= t;
-  if (f.dead) {
-    f.deadTime += t;
-    move(f, ctx.map, t);
-    return;
+function animate(f: Foe, t: number): void {
+  if (f.xI !== 0 && (f.frameCounter += t) > FOE.frameRate) { // MookTruck / MookMotorBike.AnimateRolling
+    f.frameCounter -= FOE.frameRate;
+    f.frame++;
   }
-  if (f.mental === 'idle') {
-    f.think -= t;
-    if (f.think <= 0) {
-      f.think += FOE.truck.lookEvery;
-      if (ctx.visible(f.x, f.y + 16, FOE.truck.lookX, FOE.truck.lookY)) f.mental = getColumn(f.x) !== getColumn(f.xMin) ? 'driving' : 'firing';
+}
+
+/**
+ * MookTruck (and MookAPC) with MookTruckPolyAI: idle, it looks every 0.8 s; once on screen it drives left to the end of
+ * its road. A bro in front of it within its sight stops it at once (StopForNearbyPlayer) and alerts it. The truck
+ * unloads its mooks (automaticallyFire) at the end of its road; the APC waits for the bro, then lets its motorbike out
+ * (0.8 s) and its suicide mooks out of the front (0.5 s each), its panel down.
+ */
+function stepCarrier(f: Foe, s: FoeStats, ctx: FoeContext, t: number): void {
+  const apc = f.kind === 'apc';
+  if (f.mental === 'idle' && (f.think -= t) <= 0) {
+    f.think += FOE.truck.lookEvery;
+    if (ctx.visible(f.x, f.y + 16, FOE.truck.lookX, FOE.truck.lookY)) {
+      f.mental = getColumn(f.x) !== getColumn(f.xMin) ? 'driving' : apc ? 'idle' : 'firing';
+      if (apc && f.mental === 'idle' && playerAhead(ctx.player, f.x, f.y, f.facing, s.sightX, s.sightY)) {
+        f.alerted = true;
+        f.mental = 'firing';
+      }
     }
   }
   if (f.mental === 'driving') {
@@ -178,18 +221,71 @@ export function stepFoe(f: Foe, s: FoeStats, ctx: FoeContext, t: number): void {
       f.alerted = true;
       f.mental = 'firing';
     } else if (getColumn(f.x) === getColumn(f.xMin)) {
-      f.mental = 'firing';
+      f.mental = apc ? 'idle' : 'firing';
+      f.think = 0;
     }
   }
   f.xI = f.mental === 'driving' && f.onGround ? f.facing * s.speed : 0;
   if (f.mental === 'firing' && f.spawned < s.mooks && (f.fireDelay -= t) < 0) {
-    f.fireDelay = FOE.truck.fireDelay;
-    f.spawned++;
-    ctx.spawnMook(f.x + FOE.truck.spawnX, f.y + FOE.truck.spawnY, FOE.truck.spawnXI + (f.spawned % 4) * FOE.truck.spawnXIStep, FOE.truck.spawnYI, f.alerted);
+    if (!apc) {
+      f.fireDelay = FOE.truck.fireDelay; // MookTruck.FireWeapon
+      f.spawned++;
+      const tr = FOE.truck;
+      ctx.spawnMook('mook', f.x + tr.spawnX, f.y + tr.spawnY, tr.spawnXI + (f.spawned % 4) * tr.spawnXIStep, tr.spawnYI, f.alerted);
+    } else if (ctx.releaseBike(f)) {
+      f.fireDelay = FOE.apc.bikeDelay; // MookAPC.FireWeapon
+    } else {
+      f.fireDelay = FOE.apc.mookDelay;
+      f.open = true;
+      f.spawned++;
+      ctx.spawnMook('mook_suicide', f.x + FOE.apc.spawnX, f.y + FOE.apc.spawnY, FOE.apc.spawnXI, 0, true);
+    }
   }
-  if (f.xI !== 0 && (f.frameCounter += t) > FOE.frameRate) { // MookTruck.AnimateRolling
-    f.frameCounter -= FOE.frameRate;
-    f.frame++;
+}
+
+/**
+ * MookMotorBike with MookMotorBikePolyAI: once on screen (48, 12) it becomes alert after 0.3 s and rides left at its
+ * speed for good; close to the bro (attackXRange of X - 16, 32 up or down) its suicide mook leaps off at him (or the
+ * nuclear bomb goes up). Riding faster than 80 it runs over what it meets (HitUnits: 20 crush).
+ */
+function stepBike(f: Foe, s: FoeStats, ctx: FoeContext, t: number): void {
+  if (f.mental === 'idle') {
+    if (f.alerted) {
+      if ((f.think -= t) <= 0) f.mental = 'driving';
+    } else if ((f.think -= t) <= 0) {
+      f.think += FOE.truck.lookEvery;
+      if (ctx.visible(f.x, f.y + 16, FOE.bike.lookX, FOE.bike.lookY)) {
+        f.alerted = true;
+        f.think = FOE.bike.alertDelay;
+      }
+    }
   }
+  if (f.mental === 'driving') {
+    f.facing = -1;
+    if (f.onGround) f.xI = -s.speed;
+    if (f.passenger && playerNear(ctx.player, f.x - FOE.bike.attackOffset, f.y, s.attackX ?? 0, FOE.bike.attackY)) {
+      f.passenger = false; // MookMotorBike.FireWeapon
+      if (f.kind === 'nukebike') ctx.nuke(f);
+      else ctx.spawnMook('mook_suicide', f.x - f.facing * FOE.bike.riderBack, f.y + FOE.bike.riderY, f.facing * FOE.bike.leapXI, s.jumpForce ?? 0, true);
+    }
+  }
+  if (!f.dead && Math.abs(f.xI) > FOE.bike.crushSpeed && playerNear(ctx.player, f.x, f.y, FOE.bike.crushX, FOE.bike.crushY)) {
+    ctx.hurtPlayer(FOE.bike.crush); // MookMotorBike.Update: HitUnits
+  }
+}
+
+/** One step of a foe: its own AI, then the Tank's movement and rolling frames. */
+export function stepFoe(f: Foe, s: FoeStats, ctx: FoeContext, t: number): void {
+  if (f.hidden) return;
+  if (f.hurt > 0) f.hurt -= t;
+  if (f.immune > 0) f.immune -= t;
+  if (f.dead) {
+    f.deadTime += t;
+    move(f, ctx.map, t);
+    return;
+  }
+  if (isBike(f.kind)) stepBike(f, s, ctx, t);
+  else stepCarrier(f, s, ctx, t);
+  animate(f, t);
   move(f, ctx.map, t);
 }

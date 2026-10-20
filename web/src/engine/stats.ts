@@ -90,14 +90,19 @@ function enemyAi(raw: Raw, key: string): AiStats {
 }
 
 /** A Tank's health, speed and mooks, and its AI's sight. */
-function foe(raw: Raw, key: string): FoeStats {
-  return {
+function foe(raw: Raw, key: string, bike = false): FoeStats {
+  const s: FoeStats = {
     health: num(raw, `foe_${key}`, 'health'),
     speed: num(raw, `foe_${key}`, 'tankSpeed'),
-    mooks: num(raw, `foe_${key}`, 'mooksToSpawn'),
+    mooks: bike ? 0 : num(raw, `foe_${key}`, 'mooksToSpawn'),
     sightX: num(raw, `ai_foe_${key}`, 'sightRangeX'),
     sightY: num(raw, `ai_foe_${key}`, 'sightRangeY'),
   };
+  if (bike) {
+    s.attackX = num(raw, `ai_foe_${key}`, 'attackXRange');
+    s.jumpForce = num(raw, `foe_${key}`, 'mookJumpForce');
+  }
+  return s;
 }
 
 function rocket(raw: Raw, key: string): RocketStats {
@@ -172,7 +177,7 @@ export function parseValues(raw: Raw): GameStats {
     rocketMook: rocket(raw, 'rocket_mook'),
     launch: rocket(raw, 'rocket_launch'),
     drunk: { ...rocket(raw, 'rocket_drunk'), drunkSpeed: num(raw, 'rocket_drunk', 'drunkSpeed'), acceleration: num(raw, 'rocket_drunk', 'acceleration') },
-    foes: { truck: foe(raw, 'truck') },
+    foes: { truck: foe(raw, 'truck'), apc: foe(raw, 'apc'), bike: foe(raw, 'bike', true), nukebike: foe(raw, 'nukebike', true) },
     elite: { runSpeedMultiplier: num(raw, 'mook_bruiser_elite', 'runSpeedMultiplier'), jumpRange: num(raw, 'ai_mook_bruiser_elite', 'jumpRange') },
     bomb: rocket(raw, 'bomb'),
     marker: { bounceM: num(raw, 'marker', 'bounceM'), frictionM: num(raw, 'marker', 'frictionM') },

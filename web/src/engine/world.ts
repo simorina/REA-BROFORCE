@@ -18,7 +18,7 @@ import { alarmDoor, collapseDoor, doorLostSupport, makeDoor, stepDoor, type Door
 import { applyBlast, barrelBlast, suicideBlast, type Blast } from './explosions';
 import { parseLevel, type LevelData } from './level';
 import { makeBlock, type TileMap } from './map';
-import { damageFoe, foeBlast, foeInBlast, makeFoe, stepFoe, type Foe } from './foes';
+import { damageFoe, foeBlast, foeInBlast, makeFoe, nukeBlasts, stepFoe, type Foe } from './foes';
 import { mineBlast, plantMine, steppedOn, type Mine, type MineSign } from './mines';
 import { NO_INTENT, stepUnit, type MoveIntent } from './physics';
 import {
@@ -193,7 +193,16 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
   if (boss) enemies.push(boss);
   const mech = parsed.mech ? makeMech(nextId++, cellX(parsed.mech.c), feetY(parsed.mech.r), stats, parsed.map) : null;
   const doors = parsed.doors.map((d) => makeDoor(d.c, d.r, parsed.map, stats.door));
-  const foes = parsed.foes.map((f) => makeFoe(nextId++, f.kind, cellX(f.c), feetY(f.r), stats.foes[f.kind], parsed.map));
+  const foes: Foe[] = [];
+  for (const p of parsed.foes) {
+    const f = makeFoe(nextId++, p.kind, cellX(p.c), feetY(p.r), stats.foes[p.kind], parsed.map);
+    foes.push(f);
+    if (f.kind === 'apc') { // MookAPC.Start: its motorbike waits inside, disabled
+      const bike = makeFoe(nextId++, 'bike', f.x + FOE.apc.bikeX, f.y, stats.foes.bike, parsed.map);
+      Object.assign(bike, { hidden: true, carrier: f.id, facing: 1 });
+      foes.push(bike);
+    }
+  }
   const camera = { x: spawn.x, y: spawn.y };
   followCamera(camera, spawn, parsed.map, 1);
   // CheckPoint.Update: the three blocks under a flagpole turn to steel when destroyed
@@ -952,25 +961,77 @@ function stepEliteLanding(m: Unit, t: number, blasts: Blast[]): void {
 }
 
 /** The enemy vehicles: each its own AI (foes.ts); the mooks they let out join the enemies. */
-function stepFoes(w: World, t: number): void {
+function stepFoes(w: World, t: number, blasts: Blast[]): void {
   const player = w.player.dead ? null : w.player;
-  for (const f of w.foes) {
+  for (const f of [...w.foes]) {
+    if (f.hidden) { // riding in its APC
+      const apc = w.foes.find((c) => c.id === f.carrier);
+      if (apc) Object.assign(f, { x: apc.x + FOE.apc.bikeX, y: apc.y });
+      continue;
+    }
     stepFoe(f, w.stats.foes[f.kind], {
       map: w.map, player, visible: (x, y, bx, by) => isVisible(w.camera, x, y, bx, by),
-      spawnMook: (x, y, xI, yI, alerted) => {
-        const m = makeUnit(w.nextId++, 'mook', 'enemy', x, y, w.stats.units.mook);
-        Object.assign(m, { xI, yI, onGround: false });
-        w.enemies.push(m);
-        if (alerted && player) fullyAlert(m, w.stats.ai.mook, player.x, player.y, w.rng);
-      },
+      spawnMook: (kind, x, y, xI, yI, alerted) => { spawnFoeMook(w, kind, x, y, xI, yI, alerted); },
+      releaseBike: (apc) => releaseBike(w, apc),
+      hurtPlayer: (damage) => { if (player) damageUnit(player, damage); },
+      nuke: (bike) => nuke(w, bike, blasts),
     }, t);
     if (f.y < -64 && !f.dead) damageFoe(f, f.health, w.time);
   }
 }
 
-/** Tank.Damage and, at 0, Death: MakeEffectsDeath's blast and BurnUnitsAround (64). */
+/** MapController.SpawnMook(Jumping)_Networked: a mook out of a vehicle, alerted to the bro if it was. */
+function spawnFoeMook(w: World, kind: 'mook' | 'mook_suicide', x: number, y: number, xI: number, yI: number, alerted: boolean): Unit {
+  const m = makeUnit(w.nextId++, kind, 'enemy', x, y, w.stats.units[kind]);
+  Object.assign(m, { xI, yI, onGround: false });
+  w.enemies.push(m);
+  if (alerted && !w.player.dead) fullyAlert(m, w.stats.ai[kind], w.player.x, w.player.y, w.rng);
+  return m;
+}
+
+/** MookAPC.ReleaseMotorBike: its next motorbike rolls out, its AI switched on. */
+function releaseBike(w: World, apc: Foe): boolean {
+  const bike = w.foes.find((f) => f.hidden && f.carrier === apc.id);
+  if (!bike) return false;
+  Object.assign(bike, { hidden: false, x: apc.x + FOE.apc.bikeX, y: apc.y, carrier: -1 });
+  return true;
+}
+
+/** MookMotorBike.ExplodeNuclearBomb: the two blasts and BurnUnitsAround (160). */
+function nuke(w: World, bike: Foe, blasts: Blast[]): void {
+  blasts.push(...nukeBlasts(bike));
+  burnAround(w, null, bike.x, bike.y, FOE.nuke.burn);
+}
+
+/** Tank.Damage and, at 0, Death: who bails out, MakeEffectsDeath's blast and BurnUnitsAround (64). */
 function hitFoe(w: World, f: Foe, damage: number, blasts: Blast[]): void {
   if (!damageFoe(f, damage, w.time)) return;
+  const b = FOE.bike;
+  if (f.kind === 'apc') { // MookAPC.Death: after its blast, its bikes roll out
+    for (let i = 0; i < 2; i++) {
+      const bike = w.foes.find((c) => c.hidden && c.carrier === f.id);
+      if (bike && releaseBike(w, f)) bike.immune = b.bailInvulnerable;
+    }
+    if (f.spawned < w.stats.foes.apc.mooks) {
+      for (const [dx, xI, yI] of FOE.apc.deathMooks) {
+        spawnFoeMook(w, 'mook_suicide', f.x + dx, f.y + FOE.apc.spawnY, xI, yI, true).invulnerable = b.bailInvulnerable;
+      }
+    }
+  } else if (f.kind === 'bike' || f.kind === 'nukebike') { // MookMotorBike.Death
+    const jump = w.stats.foes[f.kind].jumpForce ?? 0;
+    if (f.kind === 'nukebike') {
+      if (f.passenger) nuke(w, f, blasts);
+    } else {
+      if (f.passenger) {
+        const m = spawnFoeMook(w, 'mook_suicide', f.x - f.facing * b.riderBack, f.y + b.riderY, b.bailXI, jump * b.bailM, true);
+        m.invulnerable = b.bailInvulnerable;
+        setOnFire(w, m, 1, b.bailXI);
+      }
+      const driver = spawnFoeMook(w, 'mook', f.x, f.y + b.riderY, f.facing * b.driverXI, jump * b.driverM, false);
+      driver.invulnerable = b.bailInvulnerable;
+    }
+    f.passenger = false;
+  }
   blasts.push(foeBlast(f));
   burnAround(w, null, f.x, f.y, FOE.death.burn);
 }
@@ -1084,7 +1145,7 @@ export function stepWorld(w: World, controls: Controls, prev: Controls, t: numbe
   stepJets(w, t, blasts);
   carryDriver(w);
   stepEnemies(w, t, blasts);
-  stepFoes(w, t);
+  stepFoes(w, t, blasts);
   stepMech(w, t, blasts);
   stepDoors(w, t);
   stepProjectiles(w, t, blasts);

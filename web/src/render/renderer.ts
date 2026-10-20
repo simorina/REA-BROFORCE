@@ -346,12 +346,29 @@ export class Renderer {
 
   /** An enemy vehicle (Tank): its rolling frames, the death frame once wrecked, white for a moment when hit. */
   private drawFoe(f: Foe, time: number): void {
+    if (f.hidden) return;
     const flip = f.facing > 0; // the art faces left (localScale.x 1)
-    const col = f.dead ? 2 : f.frame % 2; // MookTruck.AnimateRolling, SetDeathFrame
     if (f.hurt > 0) this.ctx.filter = 'brightness(3)';
-    this.sprite('truck', col, 0, f.x - f.facing * FOE.truck.drawX, f.y + this.assets.sheets.truck.offsetY, flip);
+    if (f.kind === 'truck') {
+      // MookTruck.AnimateRolling, SetDeathFrame
+      this.sprite('truck', f.dead ? 2 : f.frame % 2, 0, f.x - f.facing * FOE.truck.drawX, f.y + this.assets.sheets.truck.offsetY, flip);
+    } else if (f.kind === 'apc') {
+      // MookAPC: rolling, its panel down once its mooks come out, the wreck
+      const [col, row] = f.dead ? [8, 0] : f.open ? [0, 1] : [f.frame % 2, 0];
+      this.sprite('apc', col, row, f.x - f.facing * FOE.apc.drawX, f.y + this.assets.sheets.apc.offsetY, flip);
+    } else {
+      // MookMotorBike: the bike, its driver and passenger (or bomb) bobbing a pixel as it rolls (AnimateRolling)
+      const b = FOE.bike;
+      const bob = f.dead ? 0 : 1 - (f.frame % 2);
+      const back = -f.facing;
+      if (!f.dead) {
+        if (f.passenger && f.kind === 'bike') this.sprite('mook_suicide', 0, 0, f.x + back * b.passengerX, f.y + b.riderDrawY + bob + this.assets.sheets.mook_suicide.offsetY, flip);
+        if (f.passenger && f.kind === 'nukebike') this.sprite('nuke_bomb', loopFrame(time, 0.05, this.assets.sheets.nuke_bomb.cols), 0, f.x + back * b.bombX, f.y + b.bombY, flip);
+        this.sprite('mook', 0, 0, f.x + back * b.driverX, f.y + b.riderDrawY + bob + this.assets.sheets.mook.offsetY, flip);
+      }
+      this.sprite('bike', f.dead ? 2 : f.frame % 2, 1, f.x, f.y + this.assets.sheets.bike.offsetY, flip);
+    }
     if (f.hurt > 0) this.ctx.filter = 'none';
-    void time;
   }
 
   /** TankBroTank's hull with the turret on top (bobbing a pixel while it rolls), flashing in its death countdown. */
