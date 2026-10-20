@@ -338,3 +338,72 @@ every jetpack mook room to take off, and that each mission still holds more enem
 
 Left out: the Bruiser's headshots, decapitation and fall damage, `BigGuyAI`'s laugh; a jetpack wrecked only from behind
 or by fire (any hit does here); the alarm's flashbang; mortars, trucks, the APC and the Mookopter (next).
+
+## The rest of Broforce's mobs, and three more missions (ninth pass)
+
+**The mortar mook** (`MookMortar`, `MortarAI`: an old `EnemyAI`) never walks: alerted he turns to the bro, fires for
+`attackTime` and rests (2 s, then 2.8-3.35 s once 6 s have passed since the alert). His `RocketLaunch` climbs off the
+top of the screen and calls in a shell 500 above it that falls on the bro at -300, spreading wider each time
+(`mortarSpread`). Ours runs the `thinkCount % 4` cycle as one queue of actions. **The elite Bruiser**
+(`MookBigGuyElite`, `BigGuyEliteAI`: 125 health) runs at the bro at `runSpeedMultiplier` 2.6, fires drunk rockets
+(`DrunkRocket`: wobbling, accelerating) and leaps on a bro within `jumpRange` 96, stomping where he lands (a blast he is
+spared from) and getting up over four frames.
+
+**The vehicles** are `Tank`s, here "foes" with their own boxes, hit like the Goliath. The **troop truck**
+(`MookTruck`, 20 health) drives to the end of its road (`CheckNearbyBlocks`) and unloads its `mooksToSpawn` 7 mooks; the
+**APC** (`MookAPC`, 40) lets the motorbike on its roof out, then its four suicide mooks one every 0.5 s with its panel
+down, three of them if it is blown up early. A **motorbike** (`MookMotorBike`) rides left at 150 for good once on
+screen, runs a bro over above 80 (20), and its passenger leaps at a bro within 56; the **nuclear motorbike** goes up in
+`ExplodeNuclearBomb`'s two blasts. The **artillery truck** (`MookArtilleryTruck`, 25) unfolds its cannon once and
+fires three `HeavyShell`s a volley at `(dir*150, 150) * (0.2 + |dx|/180 + dy/300)`, resting 3 s. The **Mookopter**
+(`Mookopter`, `MookopterPolyAI`, 65) sizes its arena from where it hangs (`CheckKopterExtents`), hangs back `sightDelay`
+2.5 s, then flies its pattern: across bombing (a shell every 0.4 s), down to face the bro with its chaingun (five
+spins of wind-up, six huge bullets of 5 at 450 each pushing it back 20), up and across again. Its position springs
+after a setpoint its input moves; let go, the setpoint stops where the kopter is (`RunAI`), which is what keeps it from
+bobbing.
+
+**The universal soldier** (`DolphLundrenSoldier`, `DolfLundgrenAI`: 110 health, shown as SOLDATO UNIVERSALE) is a
+level boss: a super jump on a bro right by him (`MakeLandBlast`), a grenade, his rocket launcher in siege mode (a
+drunk rocket every 0.33 s), or a walk. Knocked down he lies 2 s, gets up with 120 health and 60 of bonus that soaks up
+hits and drains, and jumps clear. Ours: the third time he stays down (Broforce: he always gets up), and a fall off the
+map beats him.
+
+**The aliens** (`Alien`, `AlienClimber`, their `DogAI` minds): the xenomorph and its brain-box kind (5 health, 70
+unaware, 120 aware) claw a bro in reach (26 x 16); the facehugger and the snake crouch and leap at a bro within 90 (140
+along, 160 up, on two thirds of gravity) and ride his face: 2 s later he dies unless he is flexing; the melter bursts
+in acid (and 0.4 s after it is killed); the brute (100) charges a bro within 190 at 160, smashing blocks, rams him for
+20 and is stunned by steel; the mosquito takes off, dives along its line and bursts in acid. An alerted alien sends the
+mooks within 36 into a panic every 0.2 s (`Map.PanicUnits`).
+
+**Hell.** The **undead trooper** (`UndeadTrooper`) killed but not blown apart, lying still with a bro within 96 x 24,
+gets up 1-1.5 s later with 2 health (flickering, then a 0.8 s rise); `ZMookUndeadStartDead` lies dead from the start.
+The **undead suicide mook** (`MookSuicideUndead`) leaps at a bro within 54 x 24 ahead (`speed * 1.2`, `jumpForce *
+0.9`) and goes off where it lands. The **skinless mook** (`SkinnedMook`, `SkinlessMookAI`) never shoots: it runs at the
+bro at 140 and rides his back (he moves at 95%). **Satan** (`ZSatan`, Brovil) fades in, laughs at the bro eight times
+instead of shooting, then forgets him. The **hell Bruiser** (`MookHellBigGuy`, 40) sends a `FlameWallExplosion` along
+the ground every 2 s (14 columns, 2 rows, 20 steps of 0.14 s, 3 fire each) and is stunned 3 s by any hit over 7; the
+**armoured** one (`MookHellArmouredBigGuy`, 30) takes nothing from the front until 35 fire or 60 other damage wears
+his armour through, and everything from behind. The **Boomer** (`MookHellBoomer`, `BoomerAI`, 25) vomits a stream of
+`SlimeDrop`s, each `dir*(15n + 65)` along (1 acid); killed, it swells for `warningTime` 1.2 s, bursts
+(`ExplodeUnits(9, 57.5, 46)`) and throws out three undead suicide mooks. The **Soul Catcher** (`SoulCatcherAI`) kills
+itself the moment it is alerted and bursts after 0.4 s into five lost souls. The **lost soul** (`HellLostSoul`) is a
+mosquito whose dive homes in on the bro (re-aiming every 0.1 s, `seekTurningSpeedM` 5, wobbling 0.4 rad at 9/s, up to
+`diveSpeedMax` 270) and blows up in fire. The **warlock** (`Warlock`, `MookWarlockAI`) sees a bro within 300 x 300
+through walls and summons for 16 frames; his guided projectile (760 a second) opens a `WarlockPortal` on ground within 5
+of the bro with three free cells over it and a clear line to him (`FindSuitableSpawnPos`); the portal raises an undead
+suicide mook at 56 for 1 s and launches it at the bro at 300 (+50 up). Hurting the warlock or the mook drops it. The
+**hell dog** is a `MookDog`.
+
+**The missions.** Three before the island, which grew to stay the finale: **Il convoglio** (Ukraine, Themeholder
+City, 420 columns, 67 enemies), the whole convoy with the universal soldier at its head; **Il laboratorio** (Congo,
+Themeholder Forest, 440, 78), the island's alien lab with its cages open; **L'inferno** (hell, Themeholder Hell, 470,
+91), hell pouring out through the lab's breach, on Hell Dirt Block, the hell Bruisers' walls puffing `Flame Wall Puff
+Hell` 1-3. The island gained Epstein's last garrison before the Goliath's pad (a bunker with an elite Bruiser and two
+mortar mooks on its roof, a troop truck, two motorbikes, aliens out of the lab): 580 columns, 99 enemies, eight
+checkpoints. The extractor writes the City, Forest and Hell backgrounds graded by their `ColorShiftController` maps.
+
+Left out: the hell dog's corpse eating and the eggs it spits (`HellDogEgg`, which hatch hell dogs); the undead suicide
+mook's leaps over gaps; Satan's evil sparks; the Boomer's maggots; skinless mooks hanging from ropes; the warlock's
+large portal; the universal soldier's bombardment (after four revivals) and slow motion; the APC's and Mookopter's
+turning frames; the MammothKopter, the Mammoth tank, the boss tank, Satan's miniboss forms and the sandworms. A
+skinless mook is shaken off by flexing (F), as a facehugger is: we have no melee to grab it with.
