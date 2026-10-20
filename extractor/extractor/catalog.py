@@ -68,6 +68,13 @@ SPRITES = (
     SpriteRef("mook_alarmist", "MookGeneral", "ZMook Alarmist", True),
     SpriteRef("mook_bruiser_elite", "MookBigGuyElite", "ZMookBigElite", True),
     SpriteRef("mook_dolph", "DolphLundrenSoldier", "DolfLundgrenSoldier", True),  # the universal soldier: 48x48
+    SpriteRef("alien_xeno", "AlienXenomorph", "ZAlienXenomorph", True),  # 48x48
+    SpriteRef("alien_xeno_brain", "AlienXenomorph", "ZAlienXenomorphBrainBox", True),
+    SpriteRef("alien_hugger", "AlienFaceHugger", "ZAlienFaceHugger", True),
+    SpriteRef("alien_snake", "AlienFaceHugger", "ZSnake", True),
+    SpriteRef("alien_melter", "AlienMelter", "ZAlienMelter", True),
+    SpriteRef("alien_brute", "AlienBrute", "ZAlienBrute", True),  # 64x64
+    SpriteRef("alien_mosquito", "AlienMosquito", "ZAlienMosquito", True),
     SpriteRef("truck", "MookTruck", "MookTruck", True),  # 74x64: rolling 0-1, wrecked 2
     SpriteRef("apc", "MookAPC", "MookAPC", True),  # 96x64: row 0 rolling (wreck at 8), row 1 the panel down
     SpriteRef("bike", "MookMotorBike", "MookMotorBike", True),  # 64x32: row 1 rolling 0-1, wrecked 2
@@ -185,6 +192,27 @@ VALUES = (
     ValuesRef("ai_mook_bruiser_elite", "BigGuyEliteAI", "ZMookBigElite", AI_FIELDS + ("jumpRange",)),
     ValuesRef("path_mook_bruiser_elite", "PathAgent", "ZMookBigElite", PATH_FIELDS),
     ValuesRef("rocket_drunk", "DrunkRocket", "Rocket Drunk Evil", ROCKET_FIELDS + ("drunkSpeed", "acceleration")),
+    ValuesRef("alien_xeno", "AlienXenomorph", "ZAlienXenomorph", MOOK_FIELDS + ("unawareRunSpeed", "awareRunSpeed", "awareMegaRunSpeed", "unawareMegaRunSpeed")),
+    ValuesRef("ai_alien_xeno", "XenomorphAI", "ZAlienXenomorph", AI_FIELDS + ("attackRangeX", "attackRangeY")),
+    ValuesRef("path_alien_xeno", "PathAgent", "ZAlienXenomorph", PATH_FIELDS),
+    ValuesRef("alien_xeno_brain", "AlienXenomorph", "ZAlienXenomorphBrainBox", MOOK_FIELDS + ("unawareRunSpeed", "awareRunSpeed", "awareMegaRunSpeed", "unawareMegaRunSpeed")),
+    ValuesRef("ai_alien_xeno_brain", "XenomorphAI", "ZAlienXenomorphBrainBox", AI_FIELDS + ("attackRangeX", "attackRangeY")),
+    ValuesRef("path_alien_xeno_brain", "PathAgent", "ZAlienXenomorphBrainBox", PATH_FIELDS),
+    ValuesRef("alien_hugger", "AlienFaceHugger", "ZAlienFaceHugger", MOOK_FIELDS + ("unawareRunSpeed", "awareRunSpeed", "awareMegaRunSpeed", "unawareMegaRunSpeed")),
+    ValuesRef("ai_alien_hugger", "FacehuggerAI", "ZAlienFaceHugger", AI_FIELDS + ("attackRangeX", "attackRangeY")),
+    ValuesRef("path_alien_hugger", "PathAgent", "ZAlienFaceHugger", PATH_FIELDS),
+    ValuesRef("alien_snake", "AlienFaceHugger", "ZSnake", MOOK_FIELDS + ("unawareRunSpeed", "awareRunSpeed", "awareMegaRunSpeed", "unawareMegaRunSpeed")),
+    ValuesRef("ai_alien_snake", "FacehuggerAI", "ZSnake", AI_FIELDS + ("attackRangeX", "attackRangeY")),
+    ValuesRef("path_alien_snake", "PathAgent", "ZSnake", PATH_FIELDS),
+    ValuesRef("alien_melter", "AlienMelter", "ZAlienMelter", MOOK_FIELDS + ("unawareRunSpeed", "awareRunSpeed", "awareMegaRunSpeed", "unawareMegaRunSpeed")),
+    ValuesRef("ai_alien_melter", "AlienMelterAI", "ZAlienMelter", AI_FIELDS + ("attackRangeX", "attackRangeY")),
+    ValuesRef("path_alien_melter", "PathAgent", "ZAlienMelter", PATH_FIELDS),
+    ValuesRef("alien_brute", "AlienBrute", "ZAlienBrute", MOOK_FIELDS + ("unawareRunSpeed", "awareRunSpeed", "awareMegaRunSpeed", "unawareMegaRunSpeed")),
+    ValuesRef("ai_alien_brute", "AlienBruteAI", "ZAlienBrute", AI_FIELDS + ("attackRangeX", "attackRangeY")),
+    ValuesRef("path_alien_brute", "PathAgent", "ZAlienBrute", PATH_FIELDS),
+    ValuesRef("alien_mosquito", "AlienMosquito", "ZAlienMosquito", MOOK_FIELDS),
+    ValuesRef("ai_alien_mosquito", "AlienMosquitoAI", "ZAlienMosquito", AI_FIELDS),
+    ValuesRef("path_alien_mosquito", "PathAgent", "ZAlienMosquito", PATH_FIELDS),
     ValuesRef("mook_dolph", "DolphLundrenSoldier", "DolfLundgrenSoldier", MOOK_FIELDS),
     ValuesRef("ai_mook_dolph", "DolfLundgrenAI", "DolfLundgrenSoldier", AI_FIELDS),
     ValuesRef("foe_truck", "MookTruck", "MookTruck", ("health", "tankSpeed", "mooksToSpawn")),

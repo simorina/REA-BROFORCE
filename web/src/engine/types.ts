@@ -3,7 +3,8 @@ export type BlastTeam = Team | 'neutral';
 export type BlockKind = 'dirt' | 'sand' | 'brick' | 'temple' | 'steel' | 'barrel';
 export type EnemyKind = 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout' | 'mook_shield' | 'mook_grenadier' | 'dog' | 'mook_bruiser'
   | 'mook_jetpack' | 'mook_jetpack_bazooka' | 'mook_ninja' | 'mook_alarmist' | 'mook_mortar'
-  | 'mook_bruiser_elite' | 'mook_dolph';
+  | 'mook_bruiser_elite' | 'mook_dolph'
+  | 'alien_xeno' | 'alien_xeno_brain' | 'alien_hugger' | 'alien_snake' | 'alien_melter' | 'alien_brute' | 'alien_mosquito';
 export type UnitKind = 'bro' | EnemyKind | 'boss';
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
 export const BRO_BASES = ['bro_base', 'bro_lee', 'bro_soldier', 'bro_in_black', 'bro_rambro', 'bro_ellen'] as const;
@@ -58,6 +59,8 @@ export interface AiStats {
   minIdleWait: number;
   maxIdleWait: number;
   hidingLookX: number; // hidingLookXRange: how close a hidden mook lets the player get
+  attackRangeX?: number; // DogAI.attackRangeX (the aliens)
+  attackRangeY?: number;
 }
 
 /** PathAgent.capabilities and agentSize (ladders and roof climbing are left out: no such blocks here). */
@@ -105,6 +108,7 @@ export interface FoeStats {
   speedY?: number; // Mookopter.verticalSpeed
 }
 
+import type { AlienSpeeds, AlienState } from './aliens';
 import type { DolphState } from './dolph';
 
 export interface RocketStats {
@@ -158,6 +162,7 @@ export interface GameStats {
   launch: RocketStats; // the mortar mook's RocketLaunch ("Rocket Launch Airstrike")
   drunk: RocketStats & { drunkSpeed: number; acceleration: number }; // DrunkRocket ("Rocket Drunk Evil")
   elite: { runSpeedMultiplier: number; jumpRange: number }; // MookBigGuyElite, BigGuyEliteAI
+  alienSpeeds: Record<'alien_xeno' | 'alien_xeno_brain' | 'alien_hugger' | 'alien_snake' | 'alien_melter' | 'alien_brute' | 'alien_mosquito', AlienSpeeds>;
   foes: { truck: FoeStats; apc: FoeStats; bike: FoeStats; nukebike: FoeStats; artillery: FoeStats; kopter: FoeStats };
   hugeBullet: BulletStats; // the Mookopter chaingun's "Bullet Huge"
   bomb: RocketStats;
@@ -328,6 +333,7 @@ export interface Unit {
   getUp: number; // MookBigGuyElite.getUpFrames, as time left getting up after a stomp
   hasJumped: boolean; // MookBigGuyElite.hasJumped
   dolph?: DolphState; // the universal soldier's mind and his revivals
+  alien?: AlienState; // an alien's mind (aliens.ts)
 }
 
 /** MookJetpack: its jetpack, the countdown of a wrecked one, its spiral down and the fuse that blows it up. */

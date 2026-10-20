@@ -1,3 +1,4 @@
+import type { AlienSpeeds } from './aliens';
 import type { AiStats, DoorStats, FoeStats, GameStats, PathCaps, RocketStats, UnitStats } from './types';
 
 type Raw = Record<string, Record<string, unknown>>;
@@ -105,6 +106,22 @@ function foe(raw: Raw, key: string, bike = false): FoeStats {
   return s;
 }
 
+/** An alien's DogAI: the PolymorphicAI fields and, when it has them, its attack range. */
+function alienAi(raw: Raw, key: string): AiStats {
+  const s = ai(raw, key);
+  const x = raw[key]?.attackRangeX;
+  const y = raw[key]?.attackRangeY;
+  if (typeof x === 'number' && typeof y === 'number') Object.assign(s, { attackRangeX: x, attackRangeY: y });
+  return s;
+}
+
+/** Alien's run speeds (a MookDog's); the mosquito, a plain Mook, runs at its speed. */
+function alienSpeeds(raw: Raw, key: string): AlienSpeeds {
+  const r = raw[key] ?? {};
+  const pick = (f: string): number => (typeof r[f] === 'number' ? (r[f] as number) : num(raw, key, 'speed'));
+  return { unaware: pick('unawareRunSpeed'), aware: pick('awareRunSpeed'), mega: Math.max(pick('awareMegaRunSpeed'), pick('unawareMegaRunSpeed')) };
+}
+
 function rocket(raw: Raw, key: string): RocketStats {
   return {
     damage: num(raw, key, 'damage'),
@@ -132,6 +149,13 @@ export function parseValues(raw: Raw): GameStats {
       mook_mortar: unit(raw, 'mook_mortar'),
       mook_bruiser_elite: unit(raw, 'mook_bruiser_elite'),
       mook_dolph: unit(raw, 'mook_dolph'),
+      alien_xeno: unit(raw, 'alien_xeno'),
+      alien_xeno_brain: unit(raw, 'alien_xeno_brain'),
+      alien_hugger: unit(raw, 'alien_hugger'),
+      alien_snake: unit(raw, 'alien_snake'),
+      alien_melter: unit(raw, 'alien_melter'),
+      alien_brute: unit(raw, 'alien_brute'),
+      alien_mosquito: unit(raw, 'alien_mosquito'),
       mook_alarmist: unit(raw, 'mook_alarmist'),
     },
     bros: {
@@ -147,6 +171,13 @@ export function parseValues(raw: Raw): GameStats {
       mook_mortar: enemyAi(raw, 'ai_mook_mortar'),
       mook_bruiser_elite: ai(raw, 'ai_mook_bruiser_elite'),
       mook_dolph: ai(raw, 'ai_mook_dolph'),
+      alien_xeno: alienAi(raw, 'ai_alien_xeno'),
+      alien_xeno_brain: alienAi(raw, 'ai_alien_xeno_brain'),
+      alien_hugger: alienAi(raw, 'ai_alien_hugger'),
+      alien_snake: alienAi(raw, 'ai_alien_snake'),
+      alien_melter: alienAi(raw, 'ai_alien_melter'),
+      alien_brute: alienAi(raw, 'ai_alien_brute'),
+      alien_mosquito: alienAi(raw, 'ai_alien_mosquito'),
     },
     paths: {
       mook: path(raw, 'path_mook'), mook_suicide: path(raw, 'path_mook_suicide'), mook_bazooka: path(raw, 'path_mook_bazooka'),
@@ -157,6 +188,13 @@ export function parseValues(raw: Raw): GameStats {
       mook_ninja: path(raw, 'path_mook_ninja'), mook_alarmist: path(raw, 'path_mook_alarmist'),
       mook_mortar: path(raw, 'path_mook_mortar'),
       mook_bruiser_elite: path(raw, 'path_mook_bruiser_elite'),
+      alien_xeno: path(raw, 'path_alien_xeno'),
+      alien_xeno_brain: path(raw, 'path_alien_xeno_brain'),
+      alien_hugger: path(raw, 'path_alien_hugger'),
+      alien_snake: path(raw, 'path_alien_snake'),
+      alien_melter: path(raw, 'path_alien_melter'),
+      alien_brute: path(raw, 'path_alien_brute'),
+      alien_mosquito: path(raw, 'path_alien_mosquito'),
       mook_dolph: { canJump: true, jumpHeight: 3, maxDropDistance: 4, canWallClimb: false, fudge: false, agentSize: 9 }, // he walks his own way
     },
     scoutRunSpeed: num(raw, 'mook_scout', 'runSpeed'),
@@ -180,6 +218,15 @@ export function parseValues(raw: Raw): GameStats {
     rocketMook: rocket(raw, 'rocket_mook'),
     launch: rocket(raw, 'rocket_launch'),
     drunk: { ...rocket(raw, 'rocket_drunk'), drunkSpeed: num(raw, 'rocket_drunk', 'drunkSpeed'), acceleration: num(raw, 'rocket_drunk', 'acceleration') },
+    alienSpeeds: {
+      alien_xeno: alienSpeeds(raw, 'alien_xeno'),
+      alien_xeno_brain: alienSpeeds(raw, 'alien_xeno_brain'),
+      alien_hugger: alienSpeeds(raw, 'alien_hugger'),
+      alien_snake: alienSpeeds(raw, 'alien_snake'),
+      alien_melter: alienSpeeds(raw, 'alien_melter'),
+      alien_brute: alienSpeeds(raw, 'alien_brute'),
+      alien_mosquito: alienSpeeds(raw, 'alien_mosquito'),
+    },
     foes: { truck: foe(raw, 'truck'), apc: foe(raw, 'apc'), bike: foe(raw, 'bike', true), nukebike: foe(raw, 'nukebike', true), artillery: {
       ...foe(raw, 'artillery', true), mooks: 0, attackTime: num(raw, 'ai_foe_artillery', 'attackTime'), sightDelay: num(raw, 'ai_foe_artillery', 'sightDelay'),
     }, kopter: {

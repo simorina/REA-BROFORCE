@@ -49,6 +49,7 @@ const BLOCKS: Record<string, BlockKind> = { d: 'dirt', a: 'sand', b: 'brick', t:
 const ENEMIES: Record<string, EnemyKind> = {
   m: 'mook', k: 'mook_suicide', z: 'mook_bazooka', o: 'mook_scout', h: 'mook_shield', n: 'mook_grenadier', q: 'dog',
   B: 'mook_bruiser', j: 'mook_jetpack', J: 'mook_jetpack_bazooka', N: 'mook_ninja', A: 'mook_alarmist', R: 'mook_mortar', G: 'mook_bruiser_elite', U: 'mook_dolph',
+  X: 'alien_xeno', Y: 'alien_xeno_brain', f: 'alien_hugger', S: 'alien_snake', L: 'alien_melter', K: 'alien_brute', W: 'alien_mosquito',
 };
 
 export function parseLevel(level: LevelData, stats: GameStats): ParsedLevel {

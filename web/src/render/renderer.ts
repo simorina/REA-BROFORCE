@@ -29,6 +29,8 @@ const ENEMY_SHEETS: Record<Exclude<UnitKind, 'bro'>, SheetKey> = {
   mook_jetpack: 'mook_jetpack', mook_jetpack_bazooka: 'mook_jetpack_bazooka', mook_ninja: 'mook_ninja', mook_alarmist: 'mook_alarmist',
   mook_mortar: 'mook', // ZMookMortar wears the trooper's mook2_anim
   mook_bruiser_elite: 'mook_bruiser_elite', mook_dolph: 'mook_dolph',
+  alien_xeno: 'alien_xeno', alien_xeno_brain: 'alien_xeno_brain', alien_hugger: 'alien_hugger', alien_snake: 'alien_snake',
+  alien_melter: 'alien_melter', alien_brute: 'alien_brute', alien_mosquito: 'alien_mosquito',
 };
 const BLOCK_SHEETS: Record<BlockKind, SheetKey> = {
   dirt: 'block_dirt', sand: 'block_sand', brick: 'block_brick', temple: 'block_temple', steel: 'block_steel', barrel: 'block_barrel',

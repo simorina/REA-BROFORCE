@@ -108,6 +108,11 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert sheets["mook_bruiser_elite"]["frameW"] == 36 and values["mook_bruiser_elite"]["health"] == 125
     assert values["mook_bruiser_elite"]["runSpeedMultiplier"] == pytest.approx(2.6) and values["ai_mook_bruiser_elite"]["jumpRange"] == 96
     assert values["rocket_drunk"]["drunkSpeed"] == pytest.approx(10.0) and sheets["rocket_evil"]["cols"] == 8
+    # the aliens: the xenomorph runs at 120, the brute charges at 160, the facehugger has 1 health
+    assert values["alien_xeno"]["awareRunSpeed"] == pytest.approx(120.0) and sheets["alien_xeno"]["frameW"] == 48
+    assert values["alien_brute"]["health"] == 100 and values["alien_brute"]["unawareMegaRunSpeed"] == pytest.approx(160.0)
+    assert values["alien_hugger"]["health"] == 1 and values["ai_alien_hugger"]["attackRangeX"] == pytest.approx(26.0)
+    assert sheets["alien_brute"]["frameW"] == 64 and values["ai_alien_mosquito"]["sightRangeX"] == 240
     # the universal soldier: 110 health, his launcher's attack 2.3 s
     assert values["mook_dolph"]["health"] == 110 and values["ai_mook_dolph"]["attackTime"] == pytest.approx(2.3)
     assert sheets["mook_dolph"]["frameW"] == 48 and sheets["dolph_gun"]["frameW"] == 64

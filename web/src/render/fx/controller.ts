@@ -577,6 +577,11 @@ export class Effects {
       case 'mine':
         this.mineBlast(x, y - MINE.unitY);
         return;
+      case 'acid':
+        // AlienMelter / AlienMosquito.MakeEffects: a range pop and a spray of green slime (ours: the suicide mook's blast)
+        this.rangePop(x, y, range * 4);
+        this.suicideBlast(x, y);
+        return;
       case 'stomp':
         this.rangePop(x, y, range * 2); // MookBigGuyElite.FallDamage: no fire, just the shock
         return;

@@ -35,6 +35,14 @@ export function unitFrame(u: Unit): Frame {
     return { col: 21 + (Math.floor(u.animTime / PANIC_FRAME_RATE) % (scout ? 4 : 8)), row: 0 };
   }
   if (u.kind === 'mook_ninja' && u.ducking && u.ai?.mental === 'hiding') return { col: 5, row: 6 }; // MookNinja: crouched, hidden
+  if (u.alien) {
+    const a = u.alien;
+    // AlienFaceHugger.AnimateSpecial: the crouch (row 3, 10-14) and the leap, turning with its flight (row 7, 0-12)
+    if (a.charge >= 0) return { col: 10 + Math.min(4, Math.floor(a.charge / 0.125)), row: 3 };
+    if (a.leaping || a.hugging || (u.kind === 'alien_mosquito' && a.flying)) {
+      return { col: Math.max(0, Math.min(12, 12 - Math.floor((Math.atan2(u.yI, Math.abs(u.xI) || 1) / Math.PI + 0.5) * 12.99))), row: u.kind === 'alien_mosquito' ? 2 : 7 };
+    }
+  }
   if (u.dolph) {
     const a = u.dolph.queue[0];
     if (u.dolph.charge > 0) return { col: 19 + Math.min(4, Math.floor((0.4 - u.dolph.charge) / 0.0667)), row: 2 }; // AnimateSpecial2: the crouch

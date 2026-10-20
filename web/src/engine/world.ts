@@ -12,12 +12,13 @@ import {
   SPEECH_DURATION, TILE, UNIT_BOX_HEIGHT, UNIT_WIDTH, BAZOOKA_RECOIL, DOOR_EXIT_INVULNERABLE, DOOR_FIRE_DAMAGE, SCOUT_WAVE_TIME,
   BOMB_FIRE_RANGE_M, SUICIDE_BURN_EXTRA, ALLURE_RANGE, FLEX_EVENT_FRAMES, FLEX_FRAME_RATE, FLEX_FRAMES, FLEX_HOLD,
   FLEX_RESTART_FRAME, FLEX_SLOW_FRAMES, FLEX_SLOW_RATE, TANK_EXIT_YI, MECH, DOG, DOG_BITE_COOLDOWN, GRENADIER_THROW_DELAY, CRICKET,
-  NEURALISER, DJANGO, MOLOTOV, MORTAR, ELITE, FOE,
+  NEURALISER, DJANGO, MOLOTOV, MORTAR, ELITE, FOE, ALIEN,
 } from './constants';
 import { alarmDoor, collapseDoor, doorLostSupport, makeDoor, stepDoor, type DoorSpawn, type MookDoor } from './doors';
 import { applyBlast, barrelBlast, suicideBlast, type Blast } from './explosions';
 import { parseLevel, type LevelData } from './level';
 import { makeBlock, type TileMap } from './map';
+import { hearAlien, isAlien, makeAlienState, stepAlien } from './aliens';
 import { makeDolphState, stepDolph } from './dolph';
 import { damageFoe, foeBlast, foeInBlast, makeFoe, nukeBlasts, stepFoe, type Foe } from './foes';
 import { mineBlast, plantMine, steppedOn, type Mine, type MineSign } from './mines';
@@ -185,6 +186,11 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
   const player = makeUnit(nextId++, 'bro', 'player', spawn.x, spawn.y, stats.bros[bro.base]);
   const enemies = parsed.enemies.map((e) => makeUnit(nextId++, e.kind, 'enemy', cellX(e.c), feetY(e.r), stats.units[e.kind]));
   for (const m of enemies) {
+    if (isAlien(m.kind)) { // an alien: its own mind (aliens.ts)
+      m.ai = null;
+      m.alien = makeAlienState(rng);
+      m.facing = rng() < 0.5 ? -1 : 1;
+    }
     if (m.kind === 'mook_dolph') { // the universal soldier: his own mind, not a mook's
       m.ai = null;
       m.dolph = makeDolphState(m.x);
@@ -461,6 +467,20 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
     const ai = m.ai;
     if (m.dolph) {
       stepDolph(w, m, t, blasts);
+      continue;
+    }
+    if (m.alien) {
+      const kind = m.kind as EnemyKind;
+      stepAlien(m, {
+        map: w.map, player, stats: w.stats.ai[kind], speeds: w.stats.alienSpeeds[m.kind as keyof GameStats['alienSpeeds']], rng: w.rng,
+        time: w.time, blasts, flexing: () => w.player.flex !== null,
+        panicMooks: (x, y, range) => panicUnits(w, x, y, range, ALIEN.panicTime, false),
+        alert: (x, y) => { w.events.push({ type: 'alert', x, y }); },
+        hug: (x, y) => { w.events.push({ type: 'bite', x, y }); },
+      }, t);
+      if (m.dead) m.deadTime += t;
+      stepBurning(w, m, t);
+      if (m.y < -64 && !m.dead) damageUnit(m, m.health);
       continue;
     }
     if (m.dead) {
@@ -1068,6 +1088,7 @@ function callMortarStrike(w: World): void {
 /** Map.DisturbWildLife: mooks within the noise range plus their own hearing range hear it. */
 function makeNoise(w: World, x: number, y: number, range: number): void {
   for (const m of w.enemies) {
+    if (m.alien) hearAlien(m, x, y, range);
     if (m.dead || !m.ai) continue;
     if (Math.abs(m.x - x) < range + m.stats.hearingX && Math.abs(m.y - y) < range + m.stats.hearingY) {
       hearSound(m, w.stats.ai[m.kind as EnemyKind], w.rng, x, y);

@@ -35,6 +35,7 @@ def test_units_read_all_movement_fields():
 
 
 def test_mook_ai_reads_the_polymorphic_ai_fields():
+    # PolymorphicAI minds read all its fields, then their own; EnemyAI's mortar and the vehicles read only what they use
     for ref in VALUES:
-        if ref.key.startswith("ai_"):
-            assert ref.fields == AI_FIELDS
+        if ref.key.startswith("ai_") and ref.key != "ai_mook_mortar" and not ref.key.startswith("ai_foe_"):
+            assert ref.fields[: len(AI_FIELDS)] == AI_FIELDS, ref.key

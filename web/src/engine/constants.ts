@@ -237,6 +237,24 @@ export const DOLPH = {
   landY: 16, landGround: 15, landGroundRange: 56, landDamage: 25, landRange: 32, landKill: 20, landForce: 150, landExtraY: 90, landNoise: 48,
   blastMax: 10, liftMax: 300, liftM: 5,
 };
+// The aliens. Alien.Update: alert, PanicUnits(36) every 0.2 s. AlienXenomorph.RunFiring: HitLivingUnits(6, Melee, 3, 8)
+// at (X + dir*11, Y + 6), forced attacks 0.4 s apart. AlienFaceHugger: the crouch (4 frames of 0.125 s and a 0.04 hold),
+// the leap (attackJumpXSpeed 140, attackJumpYSpeed 160), a hug within 6 by 8; 2 s on a face kills unless he flexes; it
+// tries again after 1.5 s within 90. AlienMelter: UseSpecial rolls at 300 / 140; dead, its acid goes 0.4 s later on the
+// ground (MakeEffects: DamageGround 15 over explodeRange 20, ExplodeUnits 9 within 46 / 30, 500 / 300). AlienBrute: the
+// charge's ram HitLivingUnits(20, BruteCharge, 7) at X + dir*16 after 0.3 s, 15 crush to what it runs into at waist and
+// head height, steel stuns it (smashedTerrainStunDelay * 3); its skid. AlienMosquito: flyingSpeed 60, diveSpeed 240 +
+// 120 a second, a 0.5 s warning, a dive within 3 s (maxDiveDelay).
+export const ALIEN = {
+  lookEvery: 0.15, panicEvery: 0.2, panicRange: 36, panicTime: 1, jumpAtX: 48,
+  xeno: { every: 0.4, clawX: 11, clawY: 6, clawW: 3, clawH: 8, damage: 6 },
+  hugger: { charge: 4 * 0.125 + 0.04, leapX: 140, leapY: 160, hugX: 6, hugY: 8, hugTime: 2, every: 1.5, range: 90, faceY: 14, gravityM: 0.66 },
+  melter: { rollRange: 72, rollX: 300, rollY: 140 },
+  acid: { range: 20, ground: 15, damage: 9, killM: 1.0, force: 500, extraY: 300, noise: 80, fuse: 0.4, y: 6 },
+  brute: { waist: 8, head: 20, smash: 15, stun: 6, recoil: 70, recoilY: 50, ramX: 16, ramW: 7, ramDelay: 0.3, damage: 20, ramPush: 200,
+    skidDecel: 400, rest: 1.5, minRam: 0.3, maxRam: 1.5, plodFrame: 0.0333 },
+  mosquito: { takeOff: 0.3, fly: 60, diveSpeed: 240, diveAccel: 120, diveDelay: 0.5, maxDelay: 3, hit: 4 },
+};
 export const DOG = { bite: 3, range: 6 }; // MookDog.RunFiring: Map.HitLivingUnits(3, Melee, 6, X, Y + 4)
 export const JET_ROCKET = { ox: [32, 8], oy: -5, x: 450, y: -285, jitter: 12 }; // HarrierJet.Update: two shots from (X+32, Y-5), (X+8, Y-5) at (450, -285) + insideUnitCircle * 12
 export const JET_DESCENT = { slow: 40, slowZone: 48 }; // HarrierJet.Start: yI -40 over its last 48 px
