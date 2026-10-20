@@ -283,3 +283,58 @@ Left out: Ellen's pulse rifle; the wall's `burnGround` and `damageDoodads` (no f
 barrels mind fire, and go up), the block its `burnBlocksInPath` damages (`BurnDamageBlock` at col + 1, row + 1, the
 diagonal, whichever way it spreads); its doors; rockets and grenades it would put out (only bullets go out); the
 special's 0.1 s wind-up.
+
+## More mobs and the levels reworked with them (eighth pass)
+
+**The Bruiser** is `MookBigGuy` ("ZMookBigGuy", health 25, speed 40, jump 120, its sheet 36 pixels wide) with
+`BigGuyAI` (sight 300 x 20, attack 1.2 s, delay 1.8). His minigun is in his arms (`mookbig_gun_anim`, row 0 idle and
+firing, row 1 running) and fires `Bullet MookMiniGun` (damage 1, life 0.45) every `fireRate` 0.07 s through his attack,
+only while he is on screen, from (X + dir*17, Y + 9) at dir*400 and Random.Range(0, 45) - 15 up; Broforce lets every
+third of them chip a block (a static counter; ours counts bullet ids). Hits barely move him (`Knock`: xI by a twentieth
+up to 200, the blast by half up to 10, a fifth of the lift up to 300), and a hit at half health or worse, or of 10 or
+more, makes him stumble and hold his fire 0.15 s.
+
+**The jetpack mooks** are `MookJetpack` (with `MookTrooperAI`) and `MookJetpackBazooka` (with `MookBazookaAi`). Alerted
+or suspicious, they light the jetpack after 0.55 s and `CalculateMovement` holds them 48 over the ground, shooting as
+they fly. Any hit wrecks the jetpack: it sputters `spiralDelayDuration` 0.5 s (four times that in the air), then spirals
+down and goes up like a suicide mook (`explosionRange` 40, `blastForce` 20); a dead one goes up 0.8 s after it lands.
+Their spiral frames are row 9 (`lowerLeftPixel` ten frames down). Ours: the spiral is a jolt up and back then a fall
+(Broforce scripts a climb, a half circle and a dive), the thrust is two drawn flames and a smoke puff every 0.1 s.
+
+**The ninja** is `MookNinja` ("ZMookNinja") with `MookNinjaAI`; his material is on `mook2_anim`, so he looks like a mook
+until he springs. He starts crouched in hiding facing either way (row 6, column 5), ignores a bro in plain sight until
+one comes within 48 and 20 of (X, Y + 8), then flips out at him (row 2, columns 21-30 at 0.025) and fights like a
+trooper. A hit gives him away.
+
+**The alarmist** is `MookGeneral` ("ZMook Alarmist", `MookTrooperAI`): unarmed, carrying a `DeadManSwitchAlarmTrap`.
+Killed, he flashes red for `alarmDelay` 0.25 s, then the alarm goes off where he lies, as the `AlarmSystem` of "Alarm
+Megaphones": a siren every `alarmRate` 3 s that brings the mooks within 200 running, and every `paratrooperRate` 9 s
+(the first after a third of that) four paratroopers over open sky, if fewer than `activeMookThreshold` 50 mooks are
+up. Ours: the alarm is at his body, and three waves at most (Broforce's alarms are level objects in a range of 170,
+and its megaphones call forever).
+
+**The minefield** is the `Mine Field Sign` trap doodad (`MineFieldSign`): `SetupMines` plants its one mine
+(`numberOfMines` 1) in a random one of the block under the sign and up to two surface blocks either side (ground at
+the sign's level and nothing over it, a side ending at its first gap), never steel, barrels, bridges or falling blocks
+(`CanPlaceInBlock`), nor a block that turns into one. The `Mine` (16 x 16, `LandMine`: dark, then red at x 16 once it
+is going off) sits on its block's centre. `TestVanDammeAnim.CheckForTraps` sets it off under anyone not invulnerable,
+corpses too: a foot within 10 of the block on rays at X and X +- 3. `Detonate` runs `detonationTime` 0.3 s into
+`Explode`: `DamageGround(12, range 20)` at the mine, `ExplodeUnits(20, 40, 40, 200, 300)` 6 below it fired as
+playerNum -10 (everyone), `DisturbWildLife` 120, a screen shake, smoke, ten flames and three large explosions and a
+medium one. Destroying its block sets it off at once (`Block.Collapse`: `Detonate(true)`). A shot does nothing to it
+(`Mine` has no `Damage`). Ours: the sign falls with the ground under it.
+
+**The levels.** Every mission now mixes these in, placed as Broforce's levels use them: a Bruiser as the heavy at the
+end of a stretch or holding a room (the harbor's warehouse and flag, the lobby's exit, the safe, the hangar, the
+terminal, the sanctum, the secret base), jetpack mooks taking off from high ground or over gaps (the desert's hill, the
+harbor's containers and crane, a hut's roof, the terraces, the control tower, the chasm, the ravine), ninjas crouched
+in long grass, under an overhang or on a dark upper floor, alarmists out in the open next to a group (the docks, the
+camp, a rooftop, the runway, the ritual chamber, the compound) so their paratroopers can drop, and minefields in open
+ground (the desert's field, the pier, the camp, the penthouse terrace, the airstrip's perimeter, the temple's entrance
+and pillars, the island's beach). A little geometry came with them: stacked containers and a gantry in the harbor, a
+two-storey hut in the burning jungle, a two-floor terminal at the airstrip and a mezzanine up a staircase in the
+temple's sanctum. The level tests check that every sign plants its mine, every alarmist has open sky over him and
+every jetpack mook room to take off, and that each mission still holds more enemies than the one before.
+
+Left out: the Bruiser's headshots, decapitation and fall damage, `BigGuyAI`'s laugh; a jetpack wrecked only from behind
+or by fire (any hit does here); the alarm's flashbang; mortars, trucks, the APC and the Mookopter (next).
