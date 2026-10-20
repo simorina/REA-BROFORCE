@@ -19,6 +19,8 @@ export interface RangePop {
 }
 
 const WHITE: RGBA = [1, 1, 1, 1];
+const TRICOLOUR_WALL_PUFFS = ['flameWallGreen', 'flameWallWhite', 'flameWallRed'] as const; // Ellen Ripbro's wall, in Meloni's colours
+const HELL_WALL_PUFFS = ['flameWallHell1', 'flameWallHell2', 'flameWallHell3'] as const; // "flameWallExplosion HellMook"
 const BLUE_SPARK: RGBA = [0.45, 0.85, 1, 1]; // NoisyCricket's SparkShrapnel Blue
 const ALARM_RED: RGBA = [1, 0.15, 0.1, 1];
 const RUN_FRAME_RATE = 0.025; // TestVanDammeAnim.runningFrameRate on the bro and mook prefabs
@@ -533,7 +535,8 @@ export class Effects {
         return;
       case 'flameWallPuff':
         // FlameWallExplosion.CreateFlashBangPoint: one of its explosionPuffs, flipped and pushed the way the fire spreads
-        this.puff((['flameWallGreen', 'flameWallWhite', 'flameWallRed'] as const)[e.variant] ?? 'flameWallRed', e.x, e.y, e.dir, e.xI, 0, WHITE, e.delay);
+        // (the hell Bruisers' wall puffs its hell flames; Ellen's, Meloni's tricolour)
+        this.puff((e.hell ? HELL_WALL_PUFFS : TRICOLOUR_WALL_PUFFS)[e.variant] ?? 'flameWallRed', e.x, e.y, e.dir, e.xI, 0, WHITE, e.delay);
         return;
       case 'cricketBeam':
         // NoisyCricket.RunBeam and RunCricketEffects: a beam puff, and blue sparks where the shot is

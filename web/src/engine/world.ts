@@ -118,7 +118,7 @@ export type GameEvent =
   | { type: 'cricketBeam'; x: number; y: number } // the Noisy Cricket's trail
   | { type: 'django'; x: number; y: number } // Samuel becomes Django
   | { type: 'molotovBurst'; x: number; y: number } // Che's Molotov goes up
-  | { type: 'flameWallPuff'; x: number; y: number; variant: number; delay: number; dir: 1 | -1; xI: number } // a cell of the wall catching fire
+  | { type: 'flameWallPuff'; x: number; y: number; variant: number; delay: number; dir: 1 | -1; xI: number; hell?: boolean } // a cell of the wall catching fire (an enemy's: hell flames)
   | { type: 'exitJet'; x: number; y: number }
   | { type: 'gunSwitch'; x: number; y: number }
   | { type: 'jetpack'; x: number; y: number; facing: 1 | -1 } // a jetpack's thrust

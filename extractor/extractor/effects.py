@@ -76,6 +76,8 @@ PREFAB_PUFFS = {"cricketBeam": ("Puff", "Noisy Cricket Beam Puff"), "cricketBall
 # Ellen Ripbro's flame wall (FlameWallExplosion.explosionPuffs), its three flames painted in the tricolour for Giorgia Meloni
 TRICOLOUR_PUFFS = {"flameWallGreen": ("Flame Wall Puff Test", FLAME_GREEN), "flameWallWhite": ("Flame Wall Puff Test 2", FLAME_WHITE),
                    "flameWallRed": ("Flame Wall Puff Test 3", FLAME_RED)}
+# The hell Bruisers' flame wall ("flameWallExplosion HellMook".explosionPuffs), as they are
+HELL_PUFFS = {"flameWallHell1": "Flame Wall Puff Hell 1", "flameWallHell2": "Flame Wall Puff Hell 2", "flameWallHell3": "Flame Wall Puff Hell 3"}
 # PuffTwoLayer: the stars over a blinded or stunned unit
 TWO_LAYER_PUFFS = {"stunnedStars1": "stunnedStars1Prefab", "stunnedStars2": "stunnedStars2Prefab",
                    "stunnedStars3": "stunnedStars3Prefab"}
@@ -521,7 +523,8 @@ def extract(streaming_assets: str, out) -> None:
         "emitters": {k: _emitter(scene, scene.field(holders[h], f)) for k, (h, f) in EMITTERS.items()},
         "puffs": {**{k: _puff(scene, scene.field(fx, f)) for k, f in PUFFS.items()},
                   **{k: _puff(scene, scene.find(*v)) for k, v in PREFAB_PUFFS.items()},
-                  **{k: _puff(scene, scene.find("Puff", n), tone=tone, tag=k) for k, (n, tone) in TRICOLOUR_PUFFS.items()}},
+                  **{k: _puff(scene, scene.find("Puff", n), tone=tone, tag=k) for k, (n, tone) in TRICOLOUR_PUFFS.items()},
+                  **{k: _puff(scene, scene.find("Puff", n)) for k, n in HELL_PUFFS.items()}},
         "twoLayerPuffs": {k: _puff(scene, scene.field(fx, f), True) for k, f in TWO_LAYER_PUFFS.items()},
         "bubbles": {k: _bubble(scene, *v) for k, v in BUBBLES.items()},
         "grass": _grass(scene),

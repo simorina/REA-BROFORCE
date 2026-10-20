@@ -32,7 +32,7 @@ export type ProjectileEvent =
   | { type: 'shieldHit'; unit: Unit; x: number; y: number; broke: boolean }
   | { type: 'scorch'; x: number; y: number; range: number; damage: number; xI: number; team: Team } // Map.HitUnits(.., Fire, ..): mooks catch fire, an enemy wall burns the bro
   | { type: 'quench'; x: number; y: number; range: number } // Map.HitProjectiles(.., Fire, ..): the shots around go out
-  | { type: 'flameWallPuff'; x: number; y: number; variant: number; delay: number; dir: 1 | -1; xI: number }
+  | { type: 'flameWallPuff'; x: number; y: number; variant: number; delay: number; dir: 1 | -1; xI: number; hell?: boolean }
   | { type: 'wallShake'; x: number; y: number }; // FlameWallExplosion.RunPoints: SortOfFollow.Shake(0.2)
 
 export interface ProjectileWorld {
@@ -428,7 +428,7 @@ function runPoints(f: FlameWall, w: ProjectileWorld, events: ProjectileEvent[], 
     const x = nc * TILE;
     const bottom = nr * TILE - TILE / 2;
     const variant = Math.min(2, Math.floor(rng() * 3));
-    events.push({ type: 'flameWallPuff', x, y: bottom + FLAME_WALL.puffY, variant, delay: rng() * s.puffDelay, dir: dc < 0 ? -1 : 1, xI: dc * FLAME_WALL.drift });
+    events.push({ type: 'flameWallPuff', x, y: bottom + FLAME_WALL.puffY, variant, delay: rng() * s.puffDelay, dir: dc < 0 ? -1 : 1, xI: dc * FLAME_WALL.drift, hell: !!f.stats });
     events.push({ type: 'scorch', x, y: bottom + FLAME_WALL.hitY, range: FLAME_WALL.hitRange, damage: s.damage, xI: dc * FLAME_WALL.hitXI, team });
     events.push({ type: 'quench', x: c * TILE, y: r * TILE, range: FLAME_WALL.quenchRange });
     f.left--;

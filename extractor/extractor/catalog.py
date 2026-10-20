@@ -103,6 +103,7 @@ SPRITES = (
     SpriteRef("bomb", "RocketBombardment", "Rocket Bombardment", False),
     SpriteRef("marker", "GrenadeAirstrike", "Grenade Airstrike", False),
     SpriteRef("block_dirt", "DirtBlock", "DirtBlock5", True),  # jungle earth: frame 0 has the grass on top
+    SpriteRef("block_dirt_hell", "DirtBlock", "Hell Dirt Block", True),  # Themeholder Hell's earth, laid out like the jungle's
     SpriteRef("block_sand", "DirtBlock", "Desert Earth", False),  # the beach
     SpriteRef("block_brick", "BrickBlock", "WallBrick1", False, frame=(0, 0, 16, 16)),
     SpriteRef("block_steel", "SteelBlock", "SteelBlock", False),

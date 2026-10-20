@@ -121,6 +121,7 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert values["hell_lostsoul"]["diveSpeedMax"] == pytest.approx(270.0) and values["hell_armoured"]["health"] == 30
     assert values["undead"]["health"] == 3 and values["undead_suicide"]["range"] == pytest.approx(40.0)
     assert sheets["hell_boomer"]["frameW"] == 36 and sheets["satan"]["frameW"] == 32 and sheets["warlock_portal"]["frameW"] == 32
+    assert sheets["block_dirt_hell"]["frameW"] == 16 and sheets["block_dirt_hell"]["cols"] == 2  # hell's earth
     # the universal soldier: 110 health, his launcher's attack 2.3 s
     assert values["mook_dolph"]["health"] == 110 and values["ai_mook_dolph"]["attackTime"] == pytest.approx(2.3)
     assert sheets["mook_dolph"]["frameW"] == 48 and sheets["dolph_gun"]["frameW"] == 64
@@ -188,6 +189,7 @@ def test_extracts_the_jungle_background_and_the_effects(tmp_path):
     assert fx["puffs"]["bloodGush1"]["frames"] == 7
     assert fx["puffs"]["cricketBeam"]["name"] == "Noisy Cricket Beam Puff" and fx["puffs"]["cricketBall"]["frames"] > 1
     # Ellen Ripbro's flame wall puffs, in Meloni's tricolour: the green one burns green
+    assert all(fx["puffs"][f"flameWallHell{i}"]["frames"] > 1 for i in (1, 2, 3))  # the hell Bruisers' wall, as it is
     wall = [fx["puffs"][k] for k in ("flameWallGreen", "flameWallWhite", "flameWallRed")]
     assert [p["name"] for p in wall] == ["Flame Wall Puff Test", "Flame Wall Puff Test 2", "Flame Wall Puff Test 3"]
     assert all(p["frames"] == 20 and p["frameRate"] == pytest.approx(0.0234) for p in wall)

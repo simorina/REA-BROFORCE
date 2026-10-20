@@ -206,6 +206,7 @@ export const PUFF_KEYS = [
   'footPoof3', 'landPoof1', 'landPoof2', 'muzzleFlash', 'smokeSmall1', 'smokeSmall2', 'smokeSmall3',
   'cricketBeam', 'cricketBall', // the Noisy Cricket's Puff prefabs
   'flameWallGreen', 'flameWallWhite', 'flameWallRed', // Ellen Ripbro's flame wall puffs, in Meloni's tricolour
+  'flameWallHell1', 'flameWallHell2', 'flameWallHell3', // the hell Bruisers' flame wall puffs, as they are
 ] as const;
 export const STAR_KEYS = ['stunnedStars1', 'stunnedStars2', 'stunnedStars3'] as const;
 export type EmitterKey = (typeof EMITTER_KEYS)[number];

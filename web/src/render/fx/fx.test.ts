@@ -225,6 +225,12 @@ describe("Giorgia Meloni's fire", () => {
     expect(fx.puffs[1].def.file).toContain('flameWallRed');
   });
 
+  it("a hell Bruiser's flame wall puffs hell's own flames", () => {
+    const fx = new Effects(TEST_EFFECTS, () => 0.5);
+    fx.onEvent({ type: 'flameWallPuff', x: 64, y: 28, variant: 1, delay: 0, dir: -1, xI: -66, hell: true }, () => 'mook');
+    expect(fx.puffs.map((p) => p.def.name)).toEqual(['Flame Wall Puff Hell 2']);
+  });
+
   it("her flamethrower flashes at the nozzle for each of its two flames (BaBroracus.FireWeapon: CreateMuzzleFlashEffect)", () => {
     const fx = new Effects(TEST_EFFECTS, () => 0.5);
     fx.onEvent({ type: 'shot', weapon: 'flamethrower', x: 50, y: 8, facing: 1 }, () => 'mook');

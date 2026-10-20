@@ -67,7 +67,10 @@ export class Renderer {
   ) {
     this.effects = new Effects(assets.effects, rng, assets.shuriken);
     this.background = placeBackground(assets.backgrounds[theme], parallax, rng);
+    this.dirtSheet = theme === 'hell' ? 'block_dirt_hell' : 'block_dirt'; // Themeholder Hell's earth
   }
+
+  private readonly dirtSheet: SheetKey;
 
   private sheetOf = (kind: UnitKind): string => (kind === 'bro' ? this.playerSheet() : ENEMY_SHEETS[kind]);
 
@@ -270,7 +273,7 @@ export class Renderer {
       for (let r = r0; r <= r1; r++) {
         const b = w.map.get(c, r);
         if (!b) continue;
-        this.sprite(BLOCK_SHEETS[b.kind], blockFrame(w.map, c, r), 0, c * TILE, r * TILE);
+        this.sprite(b.kind === 'dirt' ? this.dirtSheet : BLOCK_SHEETS[b.kind], blockFrame(w.map, c, r), 0, c * TILE, r * TILE);
         // Block.Bloody: the block's blood spray on each face blood landed on (Desert Earth uses the brick's)
         const sides = this.effects.decals.get(b);
         if (!sides) continue;

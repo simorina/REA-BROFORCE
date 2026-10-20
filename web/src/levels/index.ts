@@ -4,6 +4,7 @@ import { buildBurning } from './burning';
 import { buildConvoy } from './convoy';
 import { buildDesert } from './desert';
 import { buildHarbor } from './harbor';
+import { buildInferno } from './inferno';
 import { buildLab } from './lab';
 import { buildLevel1 } from './level1';
 import { buildTemple } from './temple';
@@ -22,7 +23,7 @@ export interface Mission {
 /**
  * The campaign "Operation: Little Saint James" — missions tracing the Epstein files from
  * desert intelligence intercepts through harbor raids, burning evidence, a Manhattan skyscraper,
- * a private airstrip, an underground temple, an armoured convoy and an alien lab, to the final assault on Epstein's island.
+ * a private airstrip, an underground temple, an armoured convoy, an alien lab and hell itself, to the final assault on Epstein's island.
  */
 export const MISSIONS: readonly Mission[] = [
   {
@@ -64,6 +65,11 @@ export const MISSIONS: readonly Mission[] = [
     id: 'lab', name: 'Il laboratorio',
     briefing: "Nel cuore della foresta del Congo l'isola finanzia un laboratorio segreto che alleva creature aliene, e qualcuno ha aperto le gabbie: xenomorfi, facehugger, melter acidi, zanzare giganti e due bruti corazzati girano tra le guardie in preda al panico. Attraversalo e libera i prigionieri. Se un facehugger ti salta in faccia, fletti i muscoli (F) prima che sia tardi!",
     build: buildLab, map: { x: 0.83, y: 0.48 }, territory: 'congo',
+  },
+  {
+    id: 'inferno', name: "L'inferno",
+    briefing: "Gli esperimenti del laboratorio hanno aperto un varco verso l'inferno, e l'inferno si sta riversando fuori: non-morti che si rialzano, mook scuoiati che ti saltano sulla schiena (fletti con F per scrollarteli di dosso), stregoni che evocano portali, anime perdute, Boomer che vomitano ed esplodono, Bruiser infernali con le loro ondate di fuoco. E Satana che ride. Attraversalo e chiudi il varco prima che raggiunga l'isola.",
+    build: buildInferno, map: { x: 0.92, y: 0.60 }, territory: 'hell',
   },
   {
     id: 'island', name: "L'isola di Epstein",
