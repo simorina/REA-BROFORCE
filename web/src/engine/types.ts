@@ -100,6 +100,8 @@ export interface FoeStats {
   sightY: number;
   attackX?: number; // MookMotorBikePolyAI.attackXRange
   jumpForce?: number; // MookMotorBike.mookJumpForce
+  attackTime?: number;
+  sightDelay?: number;
 }
 
 export interface RocketStats {
@@ -153,7 +155,7 @@ export interface GameStats {
   launch: RocketStats; // the mortar mook's RocketLaunch ("Rocket Launch Airstrike")
   drunk: RocketStats & { drunkSpeed: number; acceleration: number }; // DrunkRocket ("Rocket Drunk Evil")
   elite: { runSpeedMultiplier: number; jumpRange: number }; // MookBigGuyElite, BigGuyEliteAI
-  foes: { truck: FoeStats; apc: FoeStats; bike: FoeStats; nukebike: FoeStats };
+  foes: { truck: FoeStats; apc: FoeStats; bike: FoeStats; nukebike: FoeStats; artillery: FoeStats };
   bomb: RocketStats;
   marker: GrenadeStats;
   tank: TankStats;

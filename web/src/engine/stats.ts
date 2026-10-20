@@ -98,7 +98,7 @@ function foe(raw: Raw, key: string, bike = false): FoeStats {
     sightX: num(raw, `ai_foe_${key}`, 'sightRangeX'),
     sightY: num(raw, `ai_foe_${key}`, 'sightRangeY'),
   };
-  if (bike) {
+  if (bike && key !== 'artillery') {
     s.attackX = num(raw, `ai_foe_${key}`, 'attackXRange');
     s.jumpForce = num(raw, `foe_${key}`, 'mookJumpForce');
   }
@@ -177,7 +177,9 @@ export function parseValues(raw: Raw): GameStats {
     rocketMook: rocket(raw, 'rocket_mook'),
     launch: rocket(raw, 'rocket_launch'),
     drunk: { ...rocket(raw, 'rocket_drunk'), drunkSpeed: num(raw, 'rocket_drunk', 'drunkSpeed'), acceleration: num(raw, 'rocket_drunk', 'acceleration') },
-    foes: { truck: foe(raw, 'truck'), apc: foe(raw, 'apc'), bike: foe(raw, 'bike', true), nukebike: foe(raw, 'nukebike', true) },
+    foes: { truck: foe(raw, 'truck'), apc: foe(raw, 'apc'), bike: foe(raw, 'bike', true), nukebike: foe(raw, 'nukebike', true), artillery: {
+      ...foe(raw, 'artillery', true), mooks: 0, attackTime: num(raw, 'ai_foe_artillery', 'attackTime'), sightDelay: num(raw, 'ai_foe_artillery', 'sightDelay'),
+    } },
     elite: { runSpeedMultiplier: num(raw, 'mook_bruiser_elite', 'runSpeedMultiplier'), jumpRange: num(raw, 'ai_mook_bruiser_elite', 'jumpRange') },
     bomb: rocket(raw, 'bomb'),
     marker: { bounceM: num(raw, 'marker', 'bounceM'), frictionM: num(raw, 'marker', 'frictionM') },

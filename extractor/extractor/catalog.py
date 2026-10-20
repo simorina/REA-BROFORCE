@@ -70,6 +70,7 @@ SPRITES = (
     SpriteRef("truck", "MookTruck", "MookTruck", True),  # 74x64: rolling 0-1, wrecked 2
     SpriteRef("apc", "MookAPC", "MookAPC", True),  # 96x64: row 0 rolling (wreck at 8), row 1 the panel down
     SpriteRef("bike", "MookMotorBike", "MookMotorBike", True),  # 64x32: row 1 rolling 0-1, wrecked 2
+    SpriteRef("artillery", "MookArtilleryTruck", "MookArtilleryTruck", True),  # 64x96, anchored at its bottom: unfold row 0, fire row 2, wrecks row 4
     SpriteRef("grenade", "Grenade", "GrenadeEvilSmall Long fuse", False),  # the grenadier's long-fuse grenade
     SpriteRef("prisoner", "RescueBro", "Hobro", True),
     SpriteRef("cage", "Cage", "CageBig", True),
@@ -182,6 +183,8 @@ VALUES = (
     ValuesRef("foe_apc", "MookAPC", "MookAPC", ("health", "tankSpeed", "mooksToSpawn")),
     ValuesRef("ai_foe_apc", "MookTruckPolyAI", "MookAPC", ("sightRangeX", "sightRangeY")),
     ValuesRef("foe_bike", "MookMotorBike", "MookMotorBike", ("health", "tankSpeed", "mookJumpForce")),
+    ValuesRef("foe_artillery", "MookArtilleryTruck", "MookArtilleryTruck", ("health", "tankSpeed")),
+    ValuesRef("ai_foe_artillery", "MookArtilleryTruckPolyAI", "MookArtilleryTruck", ("sightRangeX", "sightRangeY", "attackTime", "sightDelay")),
     ValuesRef("ai_foe_bike", "MookMotorBikePolyAI", "MookMotorBike", ("sightRangeX", "sightRangeY", "attackXRange")),
     ValuesRef("foe_nukebike", "MookMotorBike", "MookMotorBike Nuclear", ("health", "tankSpeed", "mookJumpForce")),
     ValuesRef("ai_foe_nukebike", "MookMotorBikePolyAI", "MookMotorBike Nuclear", ("sightRangeX", "sightRangeY", "attackXRange")),

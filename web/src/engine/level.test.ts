@@ -24,7 +24,7 @@ describe('parseLevel', () => {
   });
 
   it('rejects unknown tiles and ragged rows', () => {
-    expect(() => parseLevel({ ...tiny, tiles: ['...CF', 'P.mQ.', 'ddxss'] }, TEST_STATS)).toThrow("unknown tile 'Q'");
+    expect(() => parseLevel({ ...tiny, tiles: ['...CF', 'P.m%.', 'ddxss'] }, TEST_STATS)).toThrow("unknown tile '%'");
     expect(() => parseLevel({ ...tiny, tiles: ['...CF', 'P.mc', 'ddxss'] }, TEST_STATS)).toThrow('row 1 has 4 columns');
     expect(() => parseLevel({ ...tiny, rows: 4 }, TEST_STATS)).toThrow('expected 4');
   });

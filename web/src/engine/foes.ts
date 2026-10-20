@@ -4,7 +4,7 @@ import { getColumn, getRow, type TileMap } from './map';
 import type { FoeStats, Unit } from './types';
 
 /** Broforce's enemy vehicles (Tank subclasses driven by a PolymorphicAI). */
-export type FoeKind = 'truck' | 'apc' | 'bike' | 'nukebike';
+export type FoeKind = 'truck' | 'apc' | 'bike' | 'nukebike' | 'artillery';
 
 export interface Foe {
   kind: FoeKind;
@@ -31,6 +31,13 @@ export interface Foe {
   hidden: boolean; // MookMotorBike inside an APC, disabled until released
   carrier: number; // the APC it rides in (its id), -1 if none
   immune: number; // a bike let out of a blown-up APC is clear of its blast (ours)
+  unfold: number; // MookArtilleryTruck.unfoldFrame: its cannon raised at 59
+  firing: boolean; // MookArtilleryTruck.firing: a volley under way
+  fireFrame: number; // MookArtilleryTruck.firingFrame
+  fireCount: number; // MookArtilleryTruck.fireCount: shots in this volley
+  fired: boolean; // MookArtilleryTruckPolyAI.hasAlreadyFired
+  aim: number; // the wait (sightDelay) before the volley starts, -1 when none
+  target: { x: number; y: number } | null; // MookArtilleryTruck.targetPosition
   frame: number;
   frameCounter: number;
 }
@@ -44,6 +51,8 @@ export interface FoeContext {
   releaseBike: (apc: Foe) => boolean; // MookAPC.ReleaseMotorBike: false when none is left
   hurtPlayer: (damage: number) => void;
   nuke: (f: Foe) => void; // MookMotorBike.ExplodeNuclearBomb
+  fireShell: (x: number, y: number, xI: number, yI: number) => void; // a HeavyShell "Shell Heavy"
+  rng: () => number;
 }
 
 /** The boxes the bro's shots and blasts find them by (their colliders, from the sprites). */
@@ -52,6 +61,7 @@ export const FOE_BOX: Record<FoeKind, { halfWidth: number; height: number }> = {
   apc: { halfWidth: 40, height: 44 },
   bike: { halfWidth: 14, height: 20 },
   nukebike: { halfWidth: 14, height: 20 },
+  artillery: { halfWidth: 26, height: 40 },
 };
 
 const isBike = (k: FoeKind): boolean => k === 'bike' || k === 'nukebike';
@@ -73,7 +83,8 @@ export function makeFoe(id: number, kind: FoeKind, x: number, y: number, s: FoeS
   return {
     kind, id, x, y, xI: 0, yI: 0, facing: -1, health: s.health, onGround: true, dead: false, deadTime: 0, hurt: 0,
     lastHit: -1, mental: 'idle', alerted: false, xMin: roadEnd(map, x, y, kind === 'apc' ? FOE.apc.lookAhead : 0), think: 0,
-    fireDelay: FOE.truck.fireDelay, spawned: 0, open: false, passenger: isBike(kind), hidden: false, carrier: -1, immune: 0, frame: 0,
+    fireDelay: FOE.truck.fireDelay, spawned: 0, open: false, passenger: isBike(kind), hidden: false, carrier: -1, immune: 0, unfold: 0, firing: false,
+    fireFrame: 0, fireCount: 0, fired: false, aim: -1, target: null, frame: 0,
     frameCounter: 0,
   };
 }
@@ -192,7 +203,7 @@ function move(f: Foe, map: TileMap, t: number): void {
 }
 
 function animate(f: Foe, t: number): void {
-  if (f.xI !== 0 && (f.frameCounter += t) > FOE.frameRate) { // MookTruck / MookMotorBike.AnimateRolling
+  if (f.kind !== 'artillery' && f.xI !== 0 && (f.frameCounter += t) > FOE.frameRate) { // MookTruck / MookMotorBike.AnimateRolling
     f.frameCounter -= FOE.frameRate;
     f.frame++;
   }
@@ -274,6 +285,77 @@ function stepBike(f: Foe, s: FoeStats, ctx: FoeContext, t: number): void {
   }
 }
 
+/**
+ * MookArtilleryTruck.AnimateIdle while firing: the cannon unfolds (59 frames, the first 30 two at a time), then each shot
+ * is 12 frames of 0.0334 s, the shell leaving on the sixth from (X + dir*9, Y + 68) at (dir*150, 150) * num, num aiming at
+ * the bro (0.2 + |dx| / 180 + dy / 300, at least 0.5), with 0.85-1.15 of its push; three shots a volley.
+ */
+function runVolley(f: Foe, ctx: FoeContext, t: number): void {
+  const a = FOE.artillery;
+  f.frameCounter += t;
+  if (f.frameCounter <= FOE.frameRate) return;
+  if (f.unfold < a.unfolded) {
+    f.frameCounter -= a.unfoldRate;
+    if (f.unfold < a.unfoldFast) {
+      f.frameCounter -= a.unfoldRate;
+      f.unfold++;
+    }
+    f.unfold++;
+    return;
+  }
+  f.frameCounter -= FOE.frameRate;
+  f.fireFrame++;
+  if (f.fireFrame === a.shotFrame) {
+    let num = a.blindM + ctx.rng() * a.blindRand;
+    if (f.target) num = Math.max(a.minNum, a.num + Math.abs(f.target.x - f.x) / a.numX + (f.target.y - f.y) / a.numY);
+    ctx.fireShell(f.x + f.facing * a.shellX, f.y + a.shellY, f.facing * a.push * num * (a.spread + ctx.rng() * a.spreadRand), a.push * num);
+  }
+  if (f.fireFrame >= a.frames) {
+    f.fireFrame = 0;
+    if (++f.fireCount > 2) {
+      f.firing = false;
+      f.fireCount = 0;
+    }
+  }
+}
+
+/**
+ * MookArtilleryTruck with MookArtilleryTruckPolyAI: it becomes alert with a bro ahead (256 by 128 from 32 up) or at the
+ * end of its road; until then, once on screen (48, 12), it drives there. Alert, it turns to the bro, waits sightDelay
+ * and fires a volley (attackTime), then waits 3 s; with no bro to shoot, half a second.
+ */
+function stepArtillery(f: Foe, s: FoeStats, ctx: FoeContext, t: number): void {
+  const p = ctx.player && !ctx.player.dead ? ctx.player : null;
+  if (!f.alerted && (playerAhead(p, f.x, f.y + FOE.artillery.eyeY, f.facing, s.sightX, s.sightY) || f.x <= f.xMin + 6)) {
+    f.alerted = true;
+    f.think = 0;
+  }
+  if (!f.alerted) {
+    if (f.mental === 'idle' && (f.think -= t) <= 0) {
+      f.think += FOE.truck.lookEvery;
+      if (ctx.visible(f.x, f.y + 16, FOE.bike.lookX, FOE.bike.lookY)) f.mental = 'driving';
+    }
+    if (f.mental === 'driving' && getColumn(f.x) === getColumn(f.xMin)) f.mental = 'idle';
+    f.xI = f.mental === 'driving' && f.onGround ? f.facing * s.speed : 0;
+  } else {
+    f.xI = 0;
+    if ((f.think -= t) <= 0) {
+      const inSight = p !== null && Math.abs(p.x - f.x) < s.sightX * 1.5 && Math.abs(p.y - (f.y + FOE.artillery.eyeY)) < s.sightY * 2;
+      if (p && inSight && (f.fired || ctx.visible(f.x, f.y, -4, 32))) {
+        f.fired = true;
+        f.target = { x: p.x, y: p.y };
+        f.facing = p.x < f.x ? -1 : 1; // FacePoint
+        f.aim = s.sightDelay ?? 0;
+        f.think = (s.sightDelay ?? 0) + (s.attackTime ?? 0) + FOE.artillery.rest;
+      } else {
+        f.think = FOE.artillery.retry;
+      }
+    }
+    if (f.aim >= 0 && (f.aim -= t) < 0) f.firing = true; // MookArtilleryTruck.FireWeapon
+  }
+  if (f.firing) runVolley(f, ctx, t);
+}
+
 /** One step of a foe: its own AI, then the Tank's movement and rolling frames. */
 export function stepFoe(f: Foe, s: FoeStats, ctx: FoeContext, t: number): void {
   if (f.hidden) return;
@@ -285,6 +367,7 @@ export function stepFoe(f: Foe, s: FoeStats, ctx: FoeContext, t: number): void {
     return;
   }
   if (isBike(f.kind)) stepBike(f, s, ctx, t);
+  else if (f.kind === 'artillery') stepArtillery(f, s, ctx, t);
   else stepCarrier(f, s, ctx, t);
   animate(f, t);
   move(f, ctx.map, t);

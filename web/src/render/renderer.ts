@@ -352,6 +352,14 @@ export class Renderer {
     if (f.kind === 'truck') {
       // MookTruck.AnimateRolling, SetDeathFrame
       this.sprite('truck', f.dead ? 2 : f.frame % 2, 0, f.x - f.facing * FOE.truck.drawX, f.y + this.assets.sheets.truck.offsetY, flip);
+    } else if (f.kind === 'artillery') {
+      // MookArtilleryTruck: rolling or unfolding on row 0, its volley on row 2, the wreck (folded or not) on row 4
+      const a = FOE.artillery;
+      const [col, row] = f.dead ? [f.unfold > a.deadUnfolded ? 1 : 0, 4]
+        : f.firing && f.unfold >= a.unfolded ? [f.fireFrame, 2]
+          : f.unfold >= a.unfolded ? [0, 2] : f.unfold > 0 ? [f.unfold, 0] : [f.frame % 2, 0];
+      const sheet = this.assets.sheets.artillery;
+      this.sprite('artillery', col, row, f.x, f.y + sheet.frameH / 2 + sheet.offsetY, flip); // its SpriteSM is anchored at the bottom
     } else if (f.kind === 'apc') {
       // MookAPC: rolling, its panel down once its mooks come out, the wreck
       const [col, row] = f.dead ? [8, 0] : f.open ? [0, 1] : [f.frame % 2, 0];

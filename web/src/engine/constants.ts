@@ -209,6 +209,12 @@ export const FOE = {
     crushX: 18, crushY: 12, crush: 20, bounceBelow: -120, bailXI: -110, bailM: 1.2, driverXI: 66, driverM: 0.8, bailInvulnerable: 0.1,
     driverX: 2, passengerX: 12, riderDrawY: 5, bombX: 14, bombY: 14,
   },
+  // MookArtilleryTruck / MookArtilleryTruckPolyAI
+  artillery: {
+    eyeY: 32, unfolded: 59, unfoldFast: 30, unfoldRate: 0.02, shotFrame: 6, frames: 12, shellX: 9, shellY: 68, push: 150,
+    num: 0.2, numX: 180, numY: 300, minNum: 0.5, blindM: 0.7, blindRand: 0.2, spread: 0.85, spreadRand: 0.3, rest: 3, retry: 0.5,
+    deadUnfolded: 46,
+  },
   // MookMotorBike.ExplodeNuclearBomb
   nuke: { y: 6, ground: 100, groundRange: 128, damage: 12, range: 144, kill: 96, crush: 32, force: 360, extraY: 200, noise: 300, burn: 160 },
 };

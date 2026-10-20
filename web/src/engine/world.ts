@@ -975,6 +975,11 @@ function stepFoes(w: World, t: number, blasts: Blast[]): void {
       releaseBike: (apc) => releaseBike(w, apc),
       hurtPlayer: (damage) => { if (player) damageUnit(player, damage); },
       nuke: (bike) => nuke(w, bike, blasts),
+      fireShell: (x, y, xI, yI) => {
+        w.projectiles.push({ id: w.nextId++, kind: 'shell', team: 'enemy', x, y, xI, yI, life: w.stats.tankShell.life, bounces: 0, dead: false });
+        w.events.push({ type: 'shot', weapon: 'shell', x, y, facing: xI < 0 ? -1 : 1 });
+      },
+      rng: w.rng,
     }, t);
     if (f.y < -64 && !f.dead) damageFoe(f, f.health, w.time);
   }

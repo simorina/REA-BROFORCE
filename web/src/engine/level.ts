@@ -44,7 +44,7 @@ export interface ParsedLevel {
   mech: Cell | null; // 'M': Epstein again, in his Goliath mech
 }
 
-const FOES: Record<string, FoeKind> = { T: 'truck', V: 'apc', I: 'bike', Z: 'nukebike' };
+const FOES: Record<string, FoeKind> = { T: 'truck', V: 'apc', I: 'bike', Z: 'nukebike', Q: 'artillery' };
 const BLOCKS: Record<string, BlockKind> = { d: 'dirt', a: 'sand', b: 'brick', t: 'temple', s: 'steel', x: 'barrel' };
 const ENEMIES: Record<string, EnemyKind> = {
   m: 'mook', k: 'mook_suicide', z: 'mook_bazooka', o: 'mook_scout', h: 'mook_shield', n: 'mook_grenadier', q: 'dog',

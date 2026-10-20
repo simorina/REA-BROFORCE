@@ -113,6 +113,8 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert values["foe_truck"]["mooksToSpawn"] == 7 and values["ai_foe_truck"]["sightRangeX"] == 120
     # the APC and the motorbikes (the nuclear one slower, its attack range 8)
     assert values["foe_apc"]["health"] == 40 and sheets["apc"]["frameW"] == 96 and sheets["bike"]["frameW"] == 64
+    assert values["foe_artillery"]["health"] == 25 and values["ai_foe_artillery"]["sightRangeX"] == 256
+    assert (sheets["artillery"]["frameW"], sheets["artillery"]["frameH"]) == (64, 96)
     assert values["foe_bike"]["tankSpeed"] == pytest.approx(150.0) and values["ai_foe_nukebike"]["attackXRange"] == pytest.approx(8.0)
     # the minefield: the mine's two frames (armed, going off) and the sign over it
     assert (sheets["mine"]["frameW"], sheets["mine"]["frameH"], sheets["mine"]["cols"]) == (16, 16, 2)

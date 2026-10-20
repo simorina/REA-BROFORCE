@@ -191,3 +191,38 @@ describe('the APC (MookAPC)', () => {
     expect(w.foes[1].hidden).toBe(false);
   });
 });
+
+describe('the artillery truck (MookArtilleryTruck, MookArtilleryTruckPolyAI)', () => {
+  it("reads the artillery truck ('Q'): 25 health", () => {
+    const w = createWorld(road('Q'), TEST_STATS, [BROLUSCONI], () => 0.5);
+    expect(w.foes[0]).toMatchObject({ kind: 'artillery', health: 25 });
+  });
+
+  it('with the bro ahead it unfolds its cannon, then lobs volleys of three heavy shells at him', () => {
+    const w = near('Q', 30, 12);
+    const art = w.foes[0];
+    const shells = new Map<number, number>();
+    for (let i = 0; i < steps(5); i++) {
+      play(w, 1);
+      for (const p of w.projectiles) if (p.kind === 'shell' && p.team === 'enemy' && !shells.has(p.id)) shells.set(p.id, p.xI);
+    }
+    expect(art.alerted).toBe(true);
+    expect(art.unfold).toBeGreaterThanOrEqual(59);
+    expect(shells.size).toBeGreaterThanOrEqual(3);
+    for (const xI of shells.values()) expect(Math.sign(xI)).toBe(-1);
+  });
+
+  it('a bro further off gets a harder lob: num = 0.2 + |dx| / 180 + dy / 300, at least 0.5', () => {
+    const near1 = near('Q', 30, 6);
+    const far1 = near('Q', 30, 11); // still on screen: it only opens fire once it is (IsItSortOfVisible(X, Y, -4, 32))
+    const first = (w: World): number => {
+      for (let i = 0; i < steps(5); i++) {
+        play(w, 1);
+        const s = w.projectiles.find((p) => p.kind === 'shell' && p.team === 'enemy');
+        if (s) return s.yI;
+      }
+      return 0;
+    };
+    expect(first(far1)).toBeGreaterThan(first(near1));
+  });
+});
