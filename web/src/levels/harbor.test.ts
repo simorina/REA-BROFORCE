@@ -21,20 +21,24 @@ describe('mission 2: the harbor', () => {
     expect(kinds).toEqual(new Set(['', 'dirt', 'brick', 'steel', 'barrel']));
   });
 
-  it('has 27 enemies, including shield mooks, grenadiers, dogs, a Bruiser and two jetpack mooks', () => {
-    expect(count('mook_bruiser')).toBe(1);
+  it('has 32 enemies, all the new mobs among them, and a minefield on the pier', () => {
+    expect(count('mook_bruiser')).toBe(2);
+    expect(count('mook_ninja')).toBe(2);
+    expect(count('mook_alarmist')).toBe(1);
     expect(count('mook_jetpack')).toBe(1);
     expect(count('mook_jetpack_bazooka')).toBe(1);
+    expect(parsed.signs).toHaveLength(2);
     expect(count('mook')).toBe(10);
     expect(count('mook_suicide')).toBe(3);
     expect(count('mook_bazooka')).toBe(3);
     expect(count('mook_scout')).toBe(1);
     expect(count('mook_shield')).toBe(2);
-    expect(count('mook_grenadier')).toBe(2);
+    expect(count('mook_grenadier')).toBe(3);
     expect(count('dog')).toBe(3);
+    expect(parsed.enemies).toHaveLength(32);
     expect(parsed.cages).toHaveLength(4);
     expect(parsed.doors).toHaveLength(1);
-    expect(parsed.checkpoints).toHaveLength(4);
+    expect(parsed.checkpoints).toHaveLength(3);
   });
 
   it('every scout can run to a mook door further on, over flat open ground', () => {

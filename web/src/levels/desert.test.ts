@@ -29,6 +29,8 @@ describe('mission 1: the desert', () => {
     expect(count('mook_shield')).toBe(1);
     expect(count('mook_grenadier')).toBe(1);
     expect(count('dog')).toBe(2);
+    expect(count('mook_jetpack')).toBe(1); // and a first taste of what is coming: a jetpack mook and a minefield
+    expect(parsed.signs).toHaveLength(2);
     expect(parsed.cages).toHaveLength(4);
     expect(parsed.checkpoints).toHaveLength(3);
     expect(parsed.doors).toHaveLength(1);

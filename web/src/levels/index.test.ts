@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseLevel } from '../engine/level';
+import { plantMine } from '../engine/mines';
 import { TEST_STATS } from '../engine/testStats';
 import { MISSIONS } from './index';
 
@@ -50,6 +51,44 @@ describe('the campaign missions', () => {
     for (let i = 0; i < built.length; i++) {
       for (const kind of ['mook_shield', 'mook_grenadier', 'dog']) {
         expect(enemies(i, kind), `${MISSIONS[i].id} ${kind}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('the desert brings in the minefield and a jetpack mook; from the harbor on, every mission mixes in all the new mobs', () => {
+    expect(enemies(0, 'mook_jetpack')).toBeGreaterThan(0);
+    expect(built[0].parsed.signs.length).toBeGreaterThan(0);
+    for (let i = 1; i < built.length; i++) {
+      for (const kind of ['mook_bruiser', 'mook_jetpack', 'mook_jetpack_bazooka', 'mook_ninja', 'mook_alarmist']) {
+        expect(enemies(i, kind), `${MISSIONS[i].id} ${kind}`).toBeGreaterThan(0);
+      }
+      expect(built[i].parsed.signs.length, `${MISSIONS[i].id} minefield`).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('every minefield sign stands on the surface in open air and plants its mine', () => {
+    for (const { m, parsed } of built) {
+      for (const s of parsed.signs) {
+        expect(parsed.map.isSolid(s.c, s.r - 1) && !parsed.map.isSolid(s.c, s.r), `${m.id} sign ${s.c},${s.r}`).toBe(true);
+        for (const roll of [0, 0.5, 0.99]) expect(plantMine(parsed.map, s, () => roll), `${m.id} sign ${s.c}`).not.toBeNull();
+      }
+    }
+  });
+
+  it('every alarmist stands under open sky, so the paratroopers his alarm calls can drop in', () => {
+    for (const { m, parsed } of built) {
+      for (const a of parsed.enemies.filter((e) => e.kind === 'mook_alarmist')) {
+        for (let c = a.c - 1; c <= a.c + 1; c++) {
+          for (let r = a.r; r < parsed.map.rows; r++) expect(parsed.map.isSolid(c, r), `${m.id} alarmist ${a.c}: ${c},${r}`).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('every jetpack mook has room over him to take off and hover (48 up)', () => {
+    for (const { m, parsed } of built) {
+      for (const j of parsed.enemies.filter((e) => e.kind === 'mook_jetpack' || e.kind === 'mook_jetpack_bazooka')) {
+        for (let r = j.r; r <= j.r + 3; r++) expect(parsed.map.isSolid(j.c, r), `${m.id} jetpack ${j.c}: row ${r}`).toBe(false);
       }
     }
   });

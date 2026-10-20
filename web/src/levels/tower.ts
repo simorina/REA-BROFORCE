@@ -46,7 +46,8 @@ export function buildTower(): LevelData {
   put(48, 8, 'm');
   put(52, 8, 'c');
   put(54, 8, 'z');
-  put(58, 4, 'm');
+  put(58, 4, 'B');
+  put(60, 8, 'N');
   put(62, 13, 'n');
 
   // Section 2: Ascending terraces (cols 66-125)
@@ -58,12 +59,14 @@ export function buildTower(): LevelData {
 
   ground(86, 105, 7, 'd');
   put(90, 8, 'm');
+  put(92, 8, 'j');
   put(94, 8, 'q');
   put(98, 8, 'c');
   put(102, 8, 'z');
 
   ground(106, 125, 9, 'd');
   put(110, 10, 'm');
+  put(112, 10, 'J');
   put(114, 10, 'k');
   put(117, 10, 'o');
   put(122, 10, 'D');
@@ -90,6 +93,8 @@ export function buildTower(): LevelData {
 
   put(142, 15, 'm');
   put(148, 15, 'z');
+  put(152, 15, 'N');
+  put(152, 19, 'A'); // on the roof: his paratroopers drop onto it
   put(156, 15, 'n');
   put(164, 15, 'm');
   put(172, 19, 'z');
@@ -105,11 +110,13 @@ export function buildTower(): LevelData {
   put(200, 12, 'm');
   put(204, 12, 'h');
   put(208, 12, 'k');
+  put(210, 12, 'w');
   put(212, 12, 'm');
   put(216, 12, 'x');
   put(217, 12, 'x');
   put(220, 12, 'c');
   put(224, 12, 'm');
+  put(226, 12, 'w');
   put(228, 12, 'n');
   put(232, 12, 'C');
 
@@ -121,7 +128,7 @@ export function buildTower(): LevelData {
   fill(255, 255, 12, 13, '.');
 
   put(240, 12, 'm');
-  put(245, 12, 'm');
+  put(245, 12, 'B'); // the safe's guard
   put(250, 12, 'c');
   put(258, 12, 'C');
   put(263, 12, 'F');

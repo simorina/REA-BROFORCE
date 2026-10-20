@@ -25,13 +25,20 @@ describe('mission 2: the burning jungle', () => {
   });
 
   it('is a step up from the desert: more of every enemy, the new kinds among them', () => {
-    expect(count('mook')).toBe(14);
+    expect(count('mook_bruiser')).toBe(1);
+    expect(count('mook_ninja')).toBe(2);
+    expect(count('mook_alarmist')).toBe(1);
+    expect(count('mook_jetpack')).toBe(1);
+    expect(count('mook_jetpack_bazooka')).toBe(1);
+    expect(parsed.signs).toHaveLength(2);
+    expect(count('mook')).toBe(12);
     expect(count('mook_suicide')).toBe(4);
     expect(count('mook_bazooka')).toBe(3);
     expect(count('mook_scout')).toBe(2);
     expect(count('mook_shield')).toBe(3);
     expect(count('mook_grenadier')).toBe(3);
     expect(count('dog')).toBe(4);
+    expect(parsed.enemies).toHaveLength(37);
     expect(parsed.cages).toHaveLength(5);
     expect(parsed.doors).toHaveLength(2);
   });

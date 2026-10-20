@@ -189,7 +189,6 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
   if (boss) enemies.push(boss);
   const mech = parsed.mech ? makeMech(nextId++, cellX(parsed.mech.c), feetY(parsed.mech.r), stats, parsed.map) : null;
   const doors = parsed.doors.map((d) => makeDoor(d.c, d.r, parsed.map, stats.door));
-  const mines = parsed.signs.map((s) => plantMine(parsed.map, s, rng)).filter((m): m is Mine => m !== null);
   const camera = { x: spawn.x, y: spawn.y };
   followCamera(camera, spawn, parsed.map, 1);
   // CheckPoint.Update: the three blocks under a flagpole turn to steel when destroyed
@@ -199,6 +198,7 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
       if (b) b.replacement = makeBlock('steel', stats);
     }
   }
+  const mines = parsed.signs.map((s) => plantMine(parsed.map, s, rng)).filter((m): m is Mine => m !== null);
   return {
     map: parsed.map, stats, bro, roster, rng, player, spawn, enemies, projectiles: [], effects: [],
     prisoners: parsed.cages.map((c) => ({ x: cellX(c.c), y: feetY(c.r), freed: false })),

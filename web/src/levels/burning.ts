@@ -39,9 +39,11 @@ export function buildBurning(): LevelData {
   put(20, 4, 'x');
   put(24, 4, 'q');
   hut(27, 35, 4);
+  hut(29, 33, 9); // a second storey, the prisoner inside it
   put(31, 4, 'h');
   put(31, 9, 'c');
-  put(33, 9, 'z');
+  put(35, 9, 'z');
+  put(27, 9, 'j');
   put(38, 4, 'k');
   put(41, 4, 'C');
 
@@ -53,6 +55,7 @@ export function buildBurning(): LevelData {
   put(63, 8, 'x');
   put(64, 8, 'x');
   put(67, 8, 'm');
+  put(69, 8, 'J');
   hut(72, 80, 8);
   put(75, 8, 'm');
   put(77, 8, 'q');
@@ -65,6 +68,7 @@ export function buildBurning(): LevelData {
   ground(91, 135, 7);
   put(95, 8, 'o');
   put(104, 8, 'D');
+  put(107, 8, 'N'); // crouched in the long grass
   put(108, 8, 'm');
   put(111, 8, 'h');
   put(114, 8, 'x');
@@ -78,13 +82,15 @@ export function buildBurning(): LevelData {
 
   // A second gap (136-138), then the camp (139-180): a steel bunker full of mooks, a grenadier and a prisoner on it.
   ground(139, 180, 7);
+  put(140, 8, 'w');
   put(143, 8, 'q');
-  put(146, 8, 'm');
+  put(146, 8, 'A');
   hut(150, 162, 8, 's');
   put(153, 8, 'm');
   put(156, 8, 'k');
   put(158, 8, 'x');
   put(160, 8, 'm');
+  put(164, 8, 'w');
   put(152, 13, 'c');
   put(156, 13, 'n');
   put(166, 8, 'h');
@@ -99,10 +105,11 @@ export function buildBurning(): LevelData {
   put(184, 8, 'o');
   put(193, 8, 'D');
   put(197, 8, 'm');
+  put(198, 8, 'N');
   put(200, 8, 'q');
   put(203, 8, 'k');
   put(206, 8, 'z');
-  put(209, 8, 'm');
+  put(209, 8, 'B'); // the Bruiser holding the way to the flag
   put(213, 8, 'F');
   fill(219, 219, 8, ROWS - 1, 's');
 

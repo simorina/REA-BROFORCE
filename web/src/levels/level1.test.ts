@@ -14,8 +14,8 @@ describe("level 1: Epstein's island", () => {
     expect(level.tiles.every((row) => row.length === 480)).toBe(true);
   });
 
-  it('has 31 mooks, 10 suicide mooks, 8 bazooka mooks, 4 scouts, 4 mook doors and 8 prisoners', () => {
-    expect(count('mook')).toBe(31);
+  it('has 28 mooks, 10 suicide mooks, 8 bazooka mooks, 4 scouts, 4 mook doors and 8 prisoners', () => {
+    expect(count('mook')).toBe(28);
     expect(count('mook_suicide')).toBe(10);
     expect(count('mook_bazooka')).toBe(8);
     expect(count('mook_scout')).toBe(4);
@@ -27,6 +27,15 @@ describe("level 1: Epstein's island", () => {
     expect(count('mook_shield')).toBe(4);
     expect(count('mook_grenadier')).toBe(4);
     expect(count('dog')).toBe(5);
+  });
+
+  it('and the newest: a Bruiser, two ninjas, an alarmist, two jetpack mooks and a minefield', () => {
+    expect(count('mook_bruiser')).toBe(1);
+    expect(count('mook_ninja')).toBe(2);
+    expect(count('mook_alarmist')).toBe(1);
+    expect(count('mook_jetpack')).toBe(1);
+    expect(count('mook_jetpack_bazooka')).toBe(1);
+    expect(parsed.signs).toHaveLength(2);
   });
 
   it('is the jungle-themed final mission', () => {

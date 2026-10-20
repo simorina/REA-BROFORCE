@@ -21,8 +21,14 @@ describe('mission 4: the skyscraper', () => {
     expect(kinds).toEqual(new Set(['', 'dirt', 'brick', 'steel', 'barrel']));
   });
 
-  it('has 41 enemies, 5 prisoners, 2 mook doors, and 6 checkpoints', () => {
-    expect(count('mook')).toBe(20);
+  it('has 46 enemies, 5 prisoners, 2 mook doors, and 6 checkpoints', () => {
+    expect(count('mook_bruiser')).toBe(2);
+    expect(count('mook_ninja')).toBe(2);
+    expect(count('mook_alarmist')).toBe(1);
+    expect(count('mook_jetpack')).toBe(1);
+    expect(count('mook_jetpack_bazooka')).toBe(1);
+    expect(parsed.signs).toHaveLength(2);
+    expect(count('mook')).toBe(18);
     expect(count('mook_suicide')).toBe(5);
     expect(count('mook_bazooka')).toBe(4);
     expect(count('mook_scout')).toBe(2);

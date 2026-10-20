@@ -61,6 +61,10 @@ describe('the minefield (MineFieldSign, Mine)', () => {
     expect(plantMine(map, { c: 10, r: 2 }, () => 0)).toMatchObject({ c: 9, r: 1 });
   });
 
+  it("never under a checkpoint's flagpole, whose blocks turn to steel", () => {
+    expect(mined(field(11, [], [[10, 'C']])).mines[0]).toMatchObject({ c: 12 });
+  });
+
   it('the createWorld plants one mine per sign, at the centre of its block', () => {
     const w = mined();
     expect(w.mines).toHaveLength(1);

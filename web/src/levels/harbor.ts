@@ -29,14 +29,17 @@ export function buildHarbor(): LevelData {
   put(19, 4, 'x');
   put(22, 4, 'q');
 
-  // Shipping containers (brick blocks)
-  fill(25, 29, 4, 7, 'b');
-  put(27, 8, 'c');
+  // Shipping containers (brick blocks): a stack of two, the top one overhanging, a ninja crouched under it
+  fill(24, 29, 4, 6, 'b');
+  fill(26, 31, 7, 9, 'b');
+  put(29, 10, 'c');
+  put(30, 4, 'N');
   put(32, 4, 'm');
   fill(35, 39, 4, 7, 'b');
   put(37, 8, 'n');
   put(41, 4, 'j'); // a jetpack mook takes off from between the containers
   put(43, 4, 'h');
+  put(45, 4, 'A'); // kill the alarmist and the paratroopers drop onto the docks
   put(47, 4, 'k');
   put(50, 4, 'C');
 
@@ -61,6 +64,7 @@ export function buildHarbor(): LevelData {
   put(74, 4, 'm');
   put(78, 12, 'z');
   put(80, 8, 'm');
+  put(82, 8, 'N'); // upstairs, in the dark
   put(84, 4, 'h');
   put(88, 4, 'B'); // a Bruiser holds the warehouse floor
   put(86, 8, 'm');
@@ -86,6 +90,8 @@ export function buildHarbor(): LevelData {
   put(119, 4, 'J'); // and a jetpack bazooka mook from under the crane
   put(122, 4, 'x');
   put(123, 4, 'x');
+  fill(126, 134, 7, 7, 's'); // a gantry off the crane's leg, a grenadier on it
+  put(130, 8, 'n');
   put(128, 4, 'm');
   put(131, 4, 'c');
   put(133, 4, 'k');
@@ -95,9 +101,12 @@ export function buildHarbor(): LevelData {
   put(142, 4, 'D');
 
   put(146, 4, 'z');
-  put(148, 4, 'C');
+  // The pier's end: a minefield, the last checkpoint, and a Bruiser holding the flag
+  put(150, 4, 'w');
   put(152, 4, 'x');
+  put(154, 4, 'w');
   put(156, 4, 'C');
+  put(160, 4, 'B');
   put(163, 4, 'F');
   fill(169, 169, 4, ROWS - 1, 's');
 

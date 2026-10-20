@@ -45,6 +45,7 @@ export function buildDesert(): LevelData {
   fill(48, 50, 4, 6, 's');
   put(49, 8, 'z');
   put(47, 8, 'n');
+  put(51, 8, 'j'); // a jetpack mook takes off from the hilltop
   put(53, 6, 'c');
   // Tunnel: a sand mass with a two-tile corridor holding a barrel, mooks and a prisoner.
   fill(58, 79, 4, 9, 'a');
@@ -54,7 +55,9 @@ export function buildDesert(): LevelData {
   put(69, 4, 'c');
   put(72, 4, 'm');
   put(76, 4, 'k');
-  // Open field with a brick tower, a riot shield mook and a second dog.
+  // Open field with a brick tower, a riot shield mook and a second dog; two minefield signs, a mine near each.
+  put(84, 4, 'w');
+  put(96, 4, 'w');
   put(86, 4, 'm');
   put(88, 4, 'h');
   put(90, 4, 'm');

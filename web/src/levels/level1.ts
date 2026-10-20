@@ -27,6 +27,7 @@ export function buildLevel1(): LevelData {
   ground(0, 39, 3, 'a');
   put(3, 4, 'P');
   put(12, 4, 'm');
+  put(15, 4, 'w');
   put(17, 4, 'm');
   fill(22, 28, 4, 4, 'a');
   fill(24, 26, 5, 5, 'a');
@@ -39,9 +40,10 @@ export function buildLevel1(): LevelData {
   // The jungle's edge (40-74): terraces up from the beach, mooks waiting in the long grass, a watchtower.
   ground(40, 47, 3);
   put(42, 4, 'C');
+  put(45, 4, 'w');
   ground(48, 57, 5);
   put(50, 6, 'm');
-  put(54, 6, 'm');
+  put(54, 6, 'N'); // crouched in the long grass
   put(56, 6, 'h');
   ground(58, 74, 7);
   put(59, 8, 'x');
@@ -68,6 +70,7 @@ export function buildLevel1(): LevelData {
   put(102, 8, 'k');
   put(105, 8, 'm');
   put(84, 15, 'z');
+  put(92, 15, 'j');
   put(96, 15, 'm');
   put(100, 15, 'k');
   put(106, 15, 'n');
@@ -75,6 +78,7 @@ export function buildLevel1(): LevelData {
 
   // The ravine (113-150): bottomless gaps between ledges held by mooks.
   ground(113, 117, 7);
+  put(115, 8, 'J'); // he hovers over the gaps, rockets at the ready
   ground(120, 127, 7);
   put(124, 8, 'm');
   put(126, 8, 'q');
@@ -105,7 +109,7 @@ export function buildLevel1(): LevelData {
   put(170, 17, 'c');
   put(174, 17, 'n');
   put(180, 8, 'q');
-  put(182, 8, 'm');
+  put(182, 8, 'A');
   put(185, 8, 'x');
   put(186, 8, 'x');
   put(188, 8, 'm');
@@ -116,6 +120,7 @@ export function buildLevel1(): LevelData {
 
   // The road up to the temple (201-245): terraces, long grass, a last scout and door.
   ground(201, 212, 7);
+  put(203, 8, 'N');
   put(205, 8, 'm');
   put(207, 8, 'h');
   put(209, 8, 'z');
@@ -176,7 +181,7 @@ export function buildLevel1(): LevelData {
   put(367, 4, 'x');
   put(370, 4, 'o');
   put(371, 4, 'k');
-  put(376, 4, 'm');
+  put(376, 4, 'B');
   put(380, 4, 'D');
   put(340, 9, 'm');
   put(352, 9, 'z');

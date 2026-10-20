@@ -21,10 +21,16 @@ describe('mission 5: the airstrip', () => {
     expect(kinds).toEqual(new Set(['', 'sand', 'brick', 'steel', 'barrel']));
   });
 
-  it('has 49 enemies, 6 prisoners, 2 mook doors, and 6 checkpoints', () => {
-    expect(count('mook')).toBe(23);
+  it('has 55 enemies, 6 prisoners, 2 mook doors, and 6 checkpoints', () => {
+    expect(count('mook_bruiser')).toBe(2);
+    expect(count('mook_ninja')).toBe(2);
+    expect(count('mook_alarmist')).toBe(1);
+    expect(count('mook_jetpack')).toBe(2);
+    expect(count('mook_jetpack_bazooka')).toBe(1);
+    expect(parsed.signs).toHaveLength(3);
+    expect(count('mook')).toBe(20);
     expect(count('mook_suicide')).toBe(6);
-    expect(count('mook_bazooka')).toBe(5);
+    expect(count('mook_bazooka')).toBe(6);
     expect(count('mook_scout')).toBe(2);
     expect(count('mook_shield')).toBe(4);
     expect(count('mook_grenadier')).toBe(4);

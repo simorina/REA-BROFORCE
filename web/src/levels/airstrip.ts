@@ -31,9 +31,12 @@ export function buildAirstrip(): LevelData {
   put(23, 4, 'x');
   put(26, 4, 'k');
   put(30, 4, 'm');
+  put(33, 4, 'w'); // the perimeter is mined
   put(35, 4, 'h');
+  put(38, 4, 'w');
   put(40, 4, 'z');
   put(44, 4, 'q');
+  put(46, 4, 'w');
   put(48, 4, 'c');
   put(52, 4, 'k');
   put(56, 4, 'C');
@@ -55,12 +58,13 @@ export function buildAirstrip(): LevelData {
   put(85, 4, 'x');
   put(90, 4, 'm');
   put(95, 4, 'k');
-  put(100, 4, 'm');
+  put(100, 4, 'B');
   put(104, 4, 'q');
 
   put(76, 8, 'm');
   put(82, 8, 'z');
   put(88, 8, 'c');
+  put(92, 8, 'N');
   put(96, 8, 'n');
   put(102, 12, 'z');
 
@@ -71,13 +75,15 @@ export function buildAirstrip(): LevelData {
   ground(121, 185, 3, 'a');
   put(124, 4, 'm');
   put(128, 4, 'q');
+  put(130, 4, 'j');
   put(132, 4, 'h');
   put(136, 4, 'k');
-  put(140, 4, 'm');
+  put(140, 4, 'A'); // out on the open runway: the paratroopers come down all around
   put(144, 4, 'c');
   put(148, 4, 'n');
   put(152, 4, 'x');
   put(153, 4, 'x');
+  put(156, 4, 'J');
   put(158, 4, 'm');
 
   // Scout 1 running to door at 170
@@ -102,6 +108,7 @@ export function buildAirstrip(): LevelData {
   put(197, 9, 'z');
   put(198, 9, 'c');
   put(200, 15, 'n');
+  put(194, 15, 'j'); // he takes off from the control tower's roof
 
   put(206, 4, 'm');
   put(210, 4, 'q');
@@ -126,10 +133,20 @@ export function buildAirstrip(): LevelData {
   put(272, 4, 'm');
   put(276, 4, 'n');
   put(280, 4, 'C');
+  // The terminal: two floors, up through the gap by its far wall or in at its upper window
+  fill(284, 284, 4, 11, 'b');
+  fill(306, 306, 4, 11, 'b');
+  fill(284, 306, 12, 12, 'b');
+  fill(285, 303, 8, 8, 'b');
+  fill(284, 284, 4, 5, '.');
+  fill(306, 306, 4, 5, '.');
+  fill(306, 306, 9, 10, '.');
   put(286, 4, 'm');
   put(292, 4, 'm');
-  put(298, 4, 'm');
+  put(298, 4, 'B');
   put(304, 4, 'c');
+  put(288, 9, 'N');
+  put(292, 9, 'z');
   put(310, 4, 'C');
   put(318, 4, 'F');
   fill(329, 329, 4, ROWS - 1, 's');

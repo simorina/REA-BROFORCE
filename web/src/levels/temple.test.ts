@@ -21,8 +21,14 @@ describe('mission 6: the underground temple', () => {
     expect(kinds).toEqual(new Set(['', 'temple', 'steel', 'barrel']));
   });
 
-  it('has 59 enemies, 6 prisoners, 2 mook doors, and 6 checkpoints', () => {
-    expect(count('mook')).toBe(28);
+  it('has 65 enemies, 6 prisoners, 2 mook doors, and 6 checkpoints', () => {
+    expect(count('mook_bruiser')).toBe(2);
+    expect(count('mook_ninja')).toBe(5);
+    expect(count('mook_alarmist')).toBe(1);
+    expect(count('mook_jetpack')).toBe(1);
+    expect(count('mook_jetpack_bazooka')).toBe(1);
+    expect(parsed.signs).toHaveLength(3);
+    expect(count('mook')).toBe(24);
     expect(count('mook_suicide')).toBe(9);
     expect(count('mook_bazooka')).toBe(6);
     expect(count('mook_scout')).toBe(2);

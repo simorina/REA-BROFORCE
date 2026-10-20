@@ -35,8 +35,9 @@ export function buildTemple(): LevelData {
   put(34, 4, 'h');
   put(38, 4, 'z');
   put(42, 4, 'c');
+  put(44, 4, 'w');
   put(46, 4, 'k');
-  put(50, 4, 'm');
+  put(50, 4, 'N');
   put(55, 4, 'q');
   put(60, 4, 'n');
   put(65, 4, 'C');
@@ -62,15 +63,17 @@ export function buildTemple(): LevelData {
   put(114, 4, 'm');
   put(120, 4, 'h');
   put(126, 4, 'k');
-  put(132, 4, 'm');
+  put(132, 4, 'B');
 
   put(90, 8, 'm');
   put(96, 8, 'z');
+  put(100, 8, 'N');
   put(102, 8, 'c');
   put(106, 13, 'n');
   put(110, 8, 'n');
   put(118, 8, 'z');
   put(124, 8, 'm');
+  put(128, 8, 'N');
 
   put(144, 4, 'm');
   put(148, 4, 'C');
@@ -86,9 +89,11 @@ export function buildTemple(): LevelData {
   put(174, 4, 'm');
   put(178, 4, 'c');
   put(182, 4, 'z');
-  put(186, 4, 'm');
+  put(186, 4, 'A');
   put(190, 4, 'k');
   put(194, 4, 'm');
+  put(196, 4, 'w'); // the pillars are booby-trapped
+  put(206, 4, 'w');
 
   // Pillars
   fill(200, 200, 4, 9, 't');
@@ -109,6 +114,7 @@ export function buildTemple(): LevelData {
   put(239, 6, 'h');
   put(243, 6, 'k');
   put(247, 6, 'z');
+  put(249, 6, 'j'); // he flies out over the chasm
 
   // Chasm pit
   fill(251, 254, 0, 0, 's');
@@ -118,6 +124,7 @@ export function buildTemple(): LevelData {
   put(262, 8, 'q');
   put(266, 8, 'c');
   put(270, 8, 'n');
+  put(272, 8, 'J');
   put(274, 8, 'C');
 
   ground(276, 310, 5, 't');
@@ -140,6 +147,12 @@ export function buildTemple(): LevelData {
   fill(320, 360, 13, 13, 't');
   fill(320, 320, 4, 5, '.');
   fill(360, 360, 4, 5, '.');
+  fill(324, 339, 8, 8, 't'); // the mezzanine, open at 340-343
+  fill(344, 356, 8, 8, 't');
+  put(341, 4, 't'); // a staircase up to it
+  fill(342, 342, 4, 5, 't');
+  put(330, 9, 'N');
+  put(348, 9, 'N');
 
   put(325, 4, 'm');
   put(330, 4, 'z');
@@ -147,7 +160,7 @@ export function buildTemple(): LevelData {
   put(340, 4, 'c');
   put(345, 4, 'k');
   put(350, 4, 'm');
-  put(355, 4, 'm');
+  put(355, 4, 'B'); // the sanctum's guardian
 
   put(365, 4, 'm');
   put(370, 4, 'C');
