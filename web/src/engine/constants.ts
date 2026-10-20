@@ -151,6 +151,15 @@ export const GRENADIER = { ox: 8, oy: 24, x: 130, y: 130 }; // MookGrenadier.Ani
 // of the push (to 200), half of it as blast (to 10) and a fifth of the lift (to 300); Damage: a hit at half health or worse,
 // or of 10 or more, stumbles him and holds his fire (hurtStumbleFireDelay)
 export const BRUISER = { ox: 17, oy: 9, speed: 400, spreadFrom: -15, spreadCount: 45, knockX: 20, knockMax: 200, blastMax: 10, liftM: 5, liftMax: 300, stumble: 0.15, stumbleDamage: 10 };
+// MookJetpack: Start puts its hover 48 over the ground; Update lights the jetpack jetpacksDelay after it is alerted;
+// CalculateMovement: under the hover it thrusts up 300/s², in the 12 around it it eases (yI * (1 - 3t) past 50) and sinks
+// 250/s², above it it sinks 400/s² with drag 4; sideways it drifts to a stop (1 - 6t). A wrecked jetpack sputters
+// spiralDelayDuration (four times that in the air), then it spirals; Land with no health left: 0.8 s of sputter, then the
+// spiral; deathCounter 0.7 s from the crash to the blast. Ours: the spiral is a jolt up and back, then a fall.
+export const JETPACK = {
+  height: 48, delay: 0.55, thrust: 300, band: 12, below: 2, ease: 3, easeAbove: 50, sink: 250, above: 400, aboveDrag: 4, airDrag: 6,
+  airCrashM: 4, deadCrash: 0.8, fuse: 0.7, spiralUp: 240, spiralBack: 120, spiralMax: 2.5, blastY: 5, flameEvery: 0.1,
+};
 export const DOG = { bite: 3, range: 6 }; // MookDog.RunFiring: Map.HitLivingUnits(3, Melee, 6, X, Y + 4)
 export const JET_ROCKET = { ox: [32, 8], oy: -5, x: 450, y: -285, jitter: 12 }; // HarrierJet.Update: two shots from (X+32, Y-5), (X+8, Y-5) at (450, -285) + insideUnitCircle * 12
 export const JET_DESCENT = { slow: 40, slowZone: 48 }; // HarrierJet.Start: yI -40 over its last 48 px

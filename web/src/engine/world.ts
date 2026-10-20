@@ -5,7 +5,7 @@ import {
 import type { BroDef } from './bro';
 import { followCamera, isVisible, screenMaxY, type Camera } from './camera';
 import {
-  ALERT_TOUCH, BAZOOKA_FIRE_DELAY, FLAME_WALL_SHAKE, SHAKE_TIME, CHECKPOINT_FAST_SPEED, CHECKPOINT_RANGE_X, CHECKPOINT_RANGE_X_FAST,
+  ALERT_TOUCH, BAZOOKA_FIRE_DELAY, FLAME_WALL_SHAKE, JETPACK, SHAKE_TIME, CHECKPOINT_FAST_SPEED, CHECKPOINT_RANGE_X, CHECKPOINT_RANGE_X_FAST,
   CHECKPOINT_RANGE_Y, CHECKPOINT_SPAWN_UP, CHECKPOINT_Y_OFFSET, CORPSE_TIME, EXPLOSION_DURATION, EXTRACTION_TIME,
   FLAG_REACH, GRENADE_PANIC_RANGE, GRENADE_PANIC_RATE, GRENADE_PANIC_TIME, GRENADE_WARNING_LIFE, HALF_TILE,
   LIVES_START, PRISONER_RESCUE_DIST, RESCUE_INVULNERABLE, RESPAWN_DELAY, SPAWN_INVULNERABLE, SPECIAL2_TIME,
@@ -110,7 +110,8 @@ export type GameEvent =
   | { type: 'molotovBurst'; x: number; y: number } // Che's Molotov goes up
   | { type: 'flameWallPuff'; x: number; y: number; variant: number; delay: number; dir: 1 | -1; xI: number } // a cell of the wall catching fire
   | { type: 'exitJet'; x: number; y: number }
-  | { type: 'gunSwitch'; x: number; y: number };
+  | { type: 'gunSwitch'; x: number; y: number }
+  | { type: 'jetpack'; x: number; y: number; facing: 1 | -1 }; // a jetpack's thrust
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
 
 export interface World {
@@ -426,6 +427,7 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
       // MookSuicide.Update: a killed suicide mook goes off 0.7 s later, whatever killed it
       if (m.kind === 'mook_suicide' && ai && !ai.exploded && (ai.deathFuse -= t) <= 0) explodeSuicide(w, m, blasts);
       if (!m.gibbed) stepUnit(m, NO_INTENT, w.map, t, w.time);
+      if (m.jet) stepJetpack(w, m, t, blasts);
       stepBurning(w, m, t);
       continue;
     }
@@ -442,6 +444,9 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
       onScreen: (x, y, bx, by) => isVisible(w.camera, x, y, bx, by), inGrass: (x, y, range) => inGrass(w, x, y, range),
       path: w.stats.paths[kind], doors: w.doorPoints, runSpeed: w.stats.scoutRunSpeed, dogRunSpeed: w.stats.dogRunSpeed,
     }, t);
+    const jet = m.jet;
+    if (jet?.on) out.intent = { ...out.intent, hover: jet.height, jumpPressed: false, jumpHeld: false };
+    else if (jet && (jet.spiral || jet.crash >= 0)) out.intent = { ...NO_INTENT }; // sputtering, then out of control
     if (m.special2 >= 0 && ((m.special2 += t) > SPECIAL2_TIME || out.intent.dir !== 0 || !m.onGround)) m.special2 = -1;
     if ((ai?.bubble === '!' && bubble !== '!') || (ai && ai.rambro > rambro)) w.events.push({ type: 'alert', x: m.x, y: m.y });
     if (out.alertNearby) alertMooks(w, m.x, m.y, SCOUT_SHOUT.x, SCOUT_SHOUT.y);
@@ -454,9 +459,10 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
       if (out.explode) explodeSuicide(w, m, blasts);
     } else if (m.kind === 'dog') {
       dogBite(w, m, t);
-    } else if (runFiring(m, out.fire, t)) {
-      useFire(w, m);
+    } else if (runFiring(m, out.fire && !(jet && (jet.spiral || jet.crash >= 0)), t)) {
+      useFire(w, m); // MookJetpack.UseFire: not while it sputters or spirals
     }
+    if (jet) stepJetpack(w, m, t, blasts);
     stepBurning(w, m, t);
     if (m.kind === 'mook_bruiser') runGun(m, t); // MookBigGuy.RunGun: his minigun's muzzle frames
     if (m.y < -64) damageUnit(m, m.health);
@@ -634,7 +640,7 @@ function useFire(w: World, m: Unit): void {
     if (!isVisible(w.camera, m.x, m.y)) return;
     m.waveTime = SCOUT_WAVE_TIME; // ScoutMook.FireWeapon
     w.events.push({ type: 'wave', x: m.x, y: m.y });
-  } else if (m.kind === 'mook_bazooka') {
+  } else if (m.kind === 'mook_bazooka' || m.kind === 'mook_jetpack_bazooka') { // MookJetpackBazooka.FireWeapon: the same
     if (!isVisible(w.camera, m.x, m.y + 8, 4, 8)) return;
     const rocket = fireBazookaRocket(w.nextId++, m, w.stats, w.rng);
     if (m.blindTime > 0) rocket.team = 'player'; // Confused shot misses players and damages other enemies
@@ -656,6 +662,61 @@ function useFire(w: World, m: Unit): void {
     w.projectiles.push(bullet);
     w.events.push({ type: 'shot', weapon: 'bullet', x: m.x, y: m.y, facing: m.facing });
   }
+}
+
+/**
+ * MookJetpack.Update: alerted (or suspicious) it lights its jetpack after jetpacksDelay; a wrecked jetpack sputters,
+ * then the mook spirals off (ours: a jolt up and back) and blows up 0.7 s after it hits the ground. Dead, it sputters
+ * once it is down, and goes up the same way; gibbed, it goes up at once (MookJetpack.Gib).
+ */
+function stepJetpack(w: World, m: Unit, t: number, blasts: Blast[]): void {
+  const j = m.jet;
+  if (!j || j.exploded) return;
+  if (m.gibbed) {
+    explodeJetpack(w, m, blasts);
+    return;
+  }
+  if (m.dead) {
+    j.on = false;
+    if (j.crash < 0 && j.fuse < 0 && !j.spiral && m.onGround) j.crash = JETPACK.deadCrash;
+  }
+  if (j.crash >= 0 && (j.crash -= t) < 0) {
+    j.spiral = true; // StartSpiralling
+    j.spiralTime = 0;
+    if (m.onGround) {
+      j.fuse = JETPACK.fuse; // lowSpiralCurve: it blows up where it is
+    } else {
+      m.yI = JETPACK.spiralUp;
+      m.xI = -m.facing * JETPACK.spiralBack;
+    }
+  }
+  if (j.spiral && j.fuse < 0 && (m.onGround || (j.spiralTime += t) > JETPACK.spiralMax)) j.fuse = JETPACK.fuse;
+  if (j.fuse >= 0 && (j.fuse -= t) < 0) {
+    explodeJetpack(w, m, blasts);
+    return;
+  }
+  const mental = m.ai?.mental;
+  if (!m.dead && !j.on && !j.spiral && j.crash < 0 && (mental === 'alerted' || mental === 'suspicious') && (j.delay -= t) <= 0) {
+    j.on = true; // StartJetPacks
+  }
+  if (j.on && (j.flameCounter += t) >= JETPACK.flameEvery) {
+    j.flameCounter -= JETPACK.flameEvery;
+    w.events.push({ type: 'jetpack', x: m.x, y: m.y, facing: m.facing });
+  }
+}
+
+/** MookJetpack.Explode: ExplodeUnits(9, explosionRange, blastForce * 40, 300), DamageGround(10), BurnUnitsAround: the suicide mook's blast. */
+function explodeJetpack(w: World, m: Unit, blasts: Blast[]): void {
+  const j = m.jet;
+  if (!j || j.exploded) return;
+  j.exploded = true;
+  j.on = false;
+  blasts.push({ ...suicideBlast(m.x, m.y + JETPACK.blastY, w.stats.jetpack), owner: m });
+  if (!m.dead) {
+    m.dead = true;
+    m.deadTime = 0;
+  }
+  m.gibbed = true;
 }
 
 /** MookSuicide.MakeEffects: the blast at its feet, then it gibs. */

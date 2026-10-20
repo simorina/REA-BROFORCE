@@ -35,6 +35,7 @@ export function buildHarbor(): LevelData {
   put(32, 4, 'm');
   fill(35, 39, 4, 7, 'b');
   put(37, 8, 'n');
+  put(41, 4, 'j'); // a jetpack mook takes off from between the containers
   put(43, 4, 'h');
   put(47, 4, 'k');
   put(50, 4, 'C');
@@ -82,6 +83,7 @@ export function buildHarbor(): LevelData {
   fill(115, 125, 12, 12, 's');
   put(120, 13, 'z');
 
+  put(119, 4, 'J'); // and a jetpack bazooka mook from under the crane
   put(122, 4, 'x');
   put(123, 4, 'x');
   put(128, 4, 'm');

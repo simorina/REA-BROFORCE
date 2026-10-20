@@ -187,6 +187,15 @@ describe('Effects call sites', () => {
   });
 });
 
+describe("the jetpack mooks' thrust", () => {
+  it('leaves a little puff of smoke from between its nozzles, pushed down', () => {
+    const fx = new Effects(TEST_EFFECTS, () => 0.5);
+    fx.onEvent({ type: 'jetpack', x: 100, y: 60, facing: 1 }, () => 'mook');
+    expect(fx.flames).toHaveLength(0);
+    expect(fx.puffs.map((p) => [p.def.name.startsWith('SmokeSmall'), p.x, p.y, p.yI])).toEqual([[true, 97, 61, -30]]);
+  });
+});
+
 describe("the Bruiser's minigun", () => {
   it('flashes at the muzzle, 17 ahead and 9 up (MookBigGuy.FireWeapon)', () => {
     const fx = new Effects(TEST_EFFECTS, () => 0.5);

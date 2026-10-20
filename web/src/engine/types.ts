@@ -1,7 +1,8 @@
 export type Team = 'player' | 'enemy';
 export type BlastTeam = Team | 'neutral';
 export type BlockKind = 'dirt' | 'sand' | 'brick' | 'temple' | 'steel' | 'barrel';
-export type EnemyKind = 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout' | 'mook_shield' | 'mook_grenadier' | 'dog' | 'mook_bruiser';
+export type EnemyKind = 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout' | 'mook_shield' | 'mook_grenadier' | 'dog' | 'mook_bruiser'
+  | 'mook_jetpack' | 'mook_jetpack_bazooka';
 export type UnitKind = 'bro' | EnemyKind | 'boss';
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
 export const BRO_BASES = ['bro_base', 'bro_lee', 'bro_soldier', 'bro_in_black', 'bro_rambro', 'bro_ellen'] as const;
@@ -134,6 +135,7 @@ export interface GameStats {
   door: DoorStats;
   bullet: BulletStats;
   minigun: BulletStats; // the Bruiser's Bullet MookMiniGun
+  jetpack: { range: number; blastForce: number; spiralDelay: number }; // MookJetpack.explosionRange, blastForce, spiralDelayDuration
   rocketMook: RocketStats;
   bomb: RocketStats;
   marker: GrenadeStats;
@@ -293,6 +295,21 @@ export interface Unit {
   ai: AiState | null;
   boss: BossState | null; // Jeffrey Epstein's mind, on the boss only
   shield: number; // MookRiotShield: what his shield can still take (0: he has none)
+  jet: JetpackState | null; // MookJetpack's jetpack
+}
+
+/** MookJetpack: its jetpack, the countdown of a wrecked one, its spiral down and the fuse that blows it up. */
+export interface JetpackState {
+  on: boolean; // jetpacksOn
+  height: number; // jetPackHeight: 48 over the ground it started on
+  delay: number; // jetpacksDelay: once alerted, it lights after this
+  crash: number; // spiralDelay: counting down to the spiral (negative: none)
+  crashDelay: number; // spiralDelayDuration
+  spiral: boolean; // spiralling
+  spiralTime: number;
+  fuse: number; // deathCounter: counting down to the blast (negative: none)
+  exploded: boolean;
+  flameCounter: number;
 }
 
 /** Neuraliser: the line from where Bro In Black used it to its tip (the projectile's x), growing then flashing. */

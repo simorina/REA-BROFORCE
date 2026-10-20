@@ -25,6 +25,7 @@ const FLAME_SHEETS: readonly SheetKey[] = ['flame_green', 'flame_white', 'flame_
 const ENEMY_SHEETS: Record<Exclude<UnitKind, 'bro'>, SheetKey> = {
   mook: 'mook', mook_suicide: 'mook_suicide', mook_bazooka: 'mook_bazooka', mook_scout: 'mook_scout', boss: 'epstein',
   mook_shield: 'mook_shield', mook_grenadier: 'mook_grenadier', dog: 'dog', mook_bruiser: 'mook_bruiser',
+  mook_jetpack: 'mook_jetpack', mook_jetpack_bazooka: 'mook_jetpack_bazooka',
 };
 const BLOCK_SHEETS: Record<BlockKind, SheetKey> = {
   dirt: 'block_dirt', sand: 'block_sand', brick: 'block_brick', temple: 'block_temple', steel: 'block_steel', barrel: 'block_barrel',
@@ -329,6 +330,7 @@ export class Renderer {
       this.sprite('bruiser_gun', running ? f.col : u.gunFrame, running ? 1 : 0, u.x + u.facing * gunOffsetX('bruiser_gun'),
         u.y + this.assets.sheets[key].offsetY, u.facing < 0);
     }
+    if (u.jet?.on && !u.dead) this.drawThrust(u, time);
     if (u.kind === 'bro' && this.django && !u.dead) this.drawDjangoHat(u);
     // MookRiotShield: the shield is his gun sprite, held until it is knocked away
     if (u.shield > 0 && !u.dead) this.sprite('shield', 0, 0, u.x, u.y + this.assets.sheets[key].offsetY, u.facing < 0);
@@ -506,6 +508,21 @@ export class Renderer {
   }
 
   /** Django's hat, our own pixel art: a brown cowboy hat with a dark band, on the bro's head (its brim at feet + 17). */
+  /** A jetpack's thrust under its two nozzles, (dir * 1, 3) and (-dir * 6, 3): ours, little flickering flames. */
+  private drawThrust(u: Unit, time: number): void {
+    const { ctx } = this;
+    const s = this.scale;
+    const flicker = Math.floor(time * 30) % 3;
+    for (const nx of [1, -6]) {
+      const x = u.x + u.facing * nx - 1;
+      const len = 2 + ((flicker + (nx > 0 ? 1 : 0)) % 3);
+      ctx.fillStyle = '#ff8a1e';
+      ctx.fillRect(Math.round(this.sx(x)), Math.round(this.sy(u.y + 3)), 2 * s, len * s);
+      ctx.fillStyle = '#ffe36b';
+      ctx.fillRect(Math.round(this.sx(x)), Math.round(this.sy(u.y + 3)), 2 * s, Math.max(1, len - 2) * s);
+    }
+  }
+
   private drawDjangoHat(u: Unit): void {
     const { ctx } = this;
     const s = this.scale;

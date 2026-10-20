@@ -21,6 +21,29 @@ function run(u: Unit, map: TileMap, intent: MoveIntent, frames: number, start = 
   return now;
 }
 
+describe("stepUnit with a jetpack's hover (MookJetpack.CalculateMovement)", () => {
+  it('thrusts up to the hover height and hangs there, never falling', () => {
+    const u = makeUnit(2, 'mook_jetpack', 'enemy', 80, 8, TEST_STATS.units.mook_jetpack);
+    const map = floorMap();
+    const heights: number[] = [];
+    let now = 0;
+    for (let i = 0; i < 240; i++) {
+      now += FIXED_DT;
+      stepUnit(u, { ...NO_INTENT, hover: 56 }, map, FIXED_DT, now);
+      if (i >= 120) heights.push(u.y);
+    }
+    expect(Math.min(...heights)).toBeGreaterThan(44);
+    expect(Math.max(...heights)).toBeLessThan(68);
+  });
+
+  it('drifts to a stop when it stops moving sideways', () => {
+    const u = makeUnit(2, 'mook_jetpack', 'enemy', 80, 56, TEST_STATS.units.mook_jetpack);
+    u.xI = 70;
+    run(u, floorMap(), { ...NO_INTENT, hover: 56 }, 60);
+    expect(Math.abs(u.xI)).toBeLessThan(1);
+  });
+});
+
 describe('stepUnit (TestVanDammeAnim movement)', () => {
   it('stands still on the floor', () => {
     const u = bro();

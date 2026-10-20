@@ -499,6 +499,10 @@ export class Effects {
         // Samuel becomes Django: a puff of dust around him
         for (let i = 0; i < 5; i++) this.smoke(e.x + (i - 2) * 5, e.y + 4 + (i % 2) * 6, (i - 2) * 20, 20);
         return;
+      case 'jetpack':
+        // MookJetpack.Update: CreatePlumeParticle at its two nozzles; ours: a puff of smoke from one, the thrust is drawn
+        this.puff(this.pick(['smokeSmall1', 'smokeSmall2', 'smokeSmall3'] as const), e.x - e.facing * 3, e.y + 1, 1, 0, -30);
+        return;
       case 'flameWallPuff':
         // FlameWallExplosion.CreateFlashBangPoint: one of its explosionPuffs, flipped and pushed the way the fire spreads
         this.puff((['flameWallGreen', 'flameWallWhite', 'flameWallRed'] as const)[e.variant] ?? 'flameWallRed', e.x, e.y, e.dir, e.xI, 0, WHITE, e.delay);

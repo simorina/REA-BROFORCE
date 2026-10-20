@@ -44,6 +44,14 @@ describe('parseValues', () => {
     expect(s.minigun).toEqual({ damage: 1, life: 0.45 });
   });
 
+  it('reads the jetpack mooks (MookJetpack with MookTrooperAI, MookJetpackBazooka with MookBazookaAi)', () => {
+    const s = parseValues(RAW_VALUES);
+    expect(s.units.mook_jetpack).toMatchObject({ health: 3, speed: 70 });
+    expect(s.ai.mook_jetpack).toMatchObject({ sightY: 48, delayBetweenFiring: 0.33 });
+    expect(s.ai.mook_jetpack_bazooka).toMatchObject({ sightY: 96, delayBetweenFiring: 1.76 });
+    expect(s.jetpack).toEqual({ range: 40, blastForce: 20, spiralDelay: 0.5 });
+  });
+
   it('maps values.json onto GameStats', () => {
     expect(parseValues(RAW_VALUES)).toEqual(TEST_STATS);
   });

@@ -42,6 +42,7 @@ DOOR_FIELDS = ("spawningRate", "maxMookCount", "chanceToSpawnSuicideMook", "maxA
 BULLET_FIELDS = ("damage", "life")
 ROCKET_FIELDS = ("damage", "range", "blastForce", "blastForceExtraY", "life")
 GRENADE_FIELDS = ("bounceM", "frictionM")
+JETPACK_FIELDS = ("explosionRange", "blastForce", "spiralDelayDuration")  # MookJetpack
 
 SPRITES = (
     SpriteRef("bro_base", "DoubleBroSeven", "DoubleBroSeven", True),
@@ -61,6 +62,8 @@ SPRITES = (
     SpriteRef("mook_grenadier", "MookGrenadier", "ZMook Grenadier", True),
     SpriteRef("dog", "MookDog", "ZMookDog", True),
     SpriteRef("mook_bruiser", "MookBigGuy", "ZMookBigGuy", True),  # the Bruiser: 36x32 frames
+    SpriteRef("mook_jetpack", "MookJetpack", "ZMookJetpack", True),
+    SpriteRef("mook_jetpack_bazooka", "MookJetpackBazooka", "ZMookJetpackBazooka", True),
     SpriteRef("grenade", "Grenade", "GrenadeEvilSmall Long fuse", False),  # the grenadier's long-fuse grenade
     SpriteRef("prisoner", "RescueBro", "Hobro", True),
     SpriteRef("cage", "Cage", "CageBig", True),
@@ -141,6 +144,12 @@ VALUES = (
     ValuesRef("ai_mook_bruiser", "BigGuyAI", "ZMookBigGuy", AI_FIELDS),
     ValuesRef("path_mook_bruiser", "PathAgent", "ZMookBigGuy", PATH_FIELDS),
     ValuesRef("minigun_bullet", "MookMiniGunBullet", "Bullet MookMiniGun", BULLET_FIELDS),
+    ValuesRef("mook_jetpack", "MookJetpack", "ZMookJetpack", MOOK_FIELDS + JETPACK_FIELDS),
+    ValuesRef("ai_mook_jetpack", "MookTrooperAI", "ZMookJetpack", AI_FIELDS),
+    ValuesRef("path_mook_jetpack", "PathAgent", "ZMookJetpack", PATH_FIELDS),
+    ValuesRef("mook_jetpack_bazooka", "MookJetpackBazooka", "ZMookJetpackBazooka", MOOK_FIELDS + JETPACK_FIELDS),
+    ValuesRef("ai_mook_jetpack_bazooka", "MookBazookaAi", "ZMookJetpackBazooka", AI_FIELDS),
+    ValuesRef("path_mook_jetpack_bazooka", "PathAgent", "ZMookJetpackBazooka", PATH_FIELDS),
     ValuesRef("grenade_mook", "Grenade", "GrenadeEvilSmall Long fuse",
               ("bounceM", "frictionM", "gravityM", "damage", "range", "blastForce")),
     ValuesRef("path_mook", "PathAgent", "ZMook", PATH_FIELDS),

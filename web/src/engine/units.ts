@@ -1,6 +1,6 @@
 import { makeAiState } from './ai';
-import { BRUISER, FIRE_START_LIMIT, GIB_THRESHOLD, GUN_FRAME_RATE, SHIELD, UNIT_BOX_HEIGHT, UNIT_WIDTH } from './constants';
-import type { Team, Unit, UnitKind, UnitStats } from './types';
+import { BRUISER, FIRE_START_LIMIT, JETPACK, GIB_THRESHOLD, GUN_FRAME_RATE, SHIELD, UNIT_BOX_HEIGHT, UNIT_WIDTH } from './constants';
+import type { JetpackState, Team, Unit, UnitKind, UnitStats } from './types';
 
 export function makeUnit(id: number, kind: UnitKind, team: Team, x: number, y: number, stats: UnitStats): Unit {
   return {
@@ -16,6 +16,7 @@ export function makeUnit(id: number, kind: UnitKind, team: Team, x: number, y: n
     ai: team === 'enemy' ? makeAiState(id) : null,
     boss: null,
     shield: kind === 'mook_shield' ? SHIELD.points : 0,
+    jet: kind === 'mook_jetpack' || kind === 'mook_jetpack_bazooka' ? makeJetpack(y) : null,
   };
 }
 
@@ -23,6 +24,14 @@ export function makeUnit(id: number, kind: UnitKind, team: Team, x: number, y: n
  * TestVanDammeAnim.Damage: invulnerable units take nothing; corpses keep taking damage, and a unit
  * whose health falls below gibThreshold is gibbed. Returns true when this damage killed the unit.
  */
+/** MookJetpack.Start: its hover 48 over the ground it stands on. */
+export function makeJetpack(groundY: number, crashDelay = 0.5): JetpackState {
+  return {
+    on: false, height: groundY + JETPACK.height, delay: JETPACK.delay, crash: -1, crashDelay, spiral: false, spiralTime: 0,
+    fuse: -1, exploded: false, flameCounter: 0,
+  };
+}
+
 export function damageUnit(u: Unit, amount: number, ignoreInvulnerable = false): boolean {
   if (amount <= 0 || (u.invulnerable > 0 && !ignoreInvulnerable) || u.gibbed) return false;
   if (u.boss?.flees) { // the island's boss, with his Goliath still to come, can't die here: he runs (boss.ts)
@@ -34,6 +43,13 @@ export function damageUnit(u: Unit, amount: number, ignoreInvulnerable = false):
   // MookBigGuy.Damage: a hit when he is down to half, or a big one, makes the Bruiser stumble and hold his fire
   if (u.kind === 'mook_bruiser' && u.health > 0 && !ignoreInvulnerable && (u.health <= u.stats.health / 2 || amount >= BRUISER.stumbleDamage)) {
     u.fireDelay = Math.max(u.fireDelay, BRUISER.stumble);
+  }
+  // MookJetpack.Damage: a hit that leaves it alive wrecks the jetpack (in the game, a hit in the back or fire); it
+  // sputters, then spirals down to a crash
+  const j = u.jet;
+  if (j && u.health > 0 && !j.exploded && !j.spiral && j.crash < 0) {
+    j.on = false;
+    j.crash = u.onGround ? j.crashDelay : j.crashDelay * JETPACK.airCrashM;
   }
   if (u.dead || u.health > 0) return false;
   u.dead = true;

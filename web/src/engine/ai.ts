@@ -573,7 +573,7 @@ function think(m: Unit, ai: AiState, ctx: AiContext): void {
     ai.queue.push(act('move', 0, getColumn(m.x) + ai.walkDir * randInt(ctx.rng, 2, 4), getRow(m.y))); // DoPanicThink
   }
   else if (m.kind === 'mook_suicide' || m.kind === 'dog') suicideThink(m, ai, ctx); // DogAI: it runs at the bro too
-  else if (m.kind === 'mook_bazooka' || m.kind === 'mook_grenadier') bazookaThink(m, ai, ctx); // the grenadier's AI is MookBazookaAi
+  else if (m.kind === 'mook_bazooka' || m.kind === 'mook_grenadier' || m.kind === 'mook_jetpack_bazooka') bazookaThink(m, ai, ctx); // the grenadier's and the jetpack bazooka's AI is MookBazookaAi
   else if (m.kind === 'mook_scout') baseAlertedThink(m, ai, ctx);
   else if (m.kind === 'mook_bruiser') bruiserThink(m, ai, ctx);
   else trooperThink(m, ai, ctx);
@@ -692,7 +692,7 @@ function input(m: Unit, ai: AiState, a: AiAction | undefined, ctx: AiContext, t:
     if (c < a.c && m.facing < 0) m.facing = 1;
     return { dir: 0, fire: false, down: true };
   }
-  if (a.type === 'fire') return { dir: 0, fire: m.onGround };
+  if (a.type === 'fire') return { dir: 0, fire: m.onGround || m.jet?.on === true }; // a jetpack mook shoots as it flies
   if (a.type === 'move' && m.onGround) {
     const tx = targetX(ai, a);
     if (Math.abs(m.x - tx) > 1) return { dir: m.x > tx ? -1 : 1, fire: false };

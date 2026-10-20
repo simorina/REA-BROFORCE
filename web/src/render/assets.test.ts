@@ -64,6 +64,13 @@ describe('loadData', () => {
     expect(missingSheets(old)).toEqual(['epstein', 'block_sand', 'block_temple']);
   });
 
+  it('draws the jetpack mooks', () => {
+    const noJet: Record<string, unknown> = { ...sheets };
+    delete noJet.mook_jetpack;
+    delete noJet.mook_jetpack_bazooka;
+    expect(missingSheets(noJet)).toEqual(['mook_jetpack', 'mook_jetpack_bazooka']);
+  });
+
   it('draws the Bruiser and his minigun, 4 forward of him like his Gun sprite', () => {
     const noBruiser: Record<string, unknown> = { ...sheets };
     delete noBruiser.mook_bruiser;

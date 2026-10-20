@@ -92,6 +92,10 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert values["mook_bruiser"]["health"] == 25 and values["mook_bruiser"]["fireRate"] == pytest.approx(0.07)
     assert values["ai_mook_bruiser"]["attackTime"] == pytest.approx(1.2) and values["path_mook_bruiser"]["agentSize"] > 0
     assert values["minigun_bullet"]["damage"] == 1 and values["minigun_bullet"]["life"] == pytest.approx(0.45)
+    # the jetpack mooks: a trooper and a bazooka mook (their AIs) who fly, and blow up when their jetpack fails
+    assert sheets["mook_jetpack"]["frameW"] == 32 and sheets["mook_jetpack_bazooka"]["frameW"] == 32
+    assert values["mook_jetpack"]["explosionRange"] == 40.0 and values["mook_jetpack"]["spiralDelayDuration"] == pytest.approx(0.5)
+    assert values["ai_mook_jetpack"]["delayBetweenFiring"] == pytest.approx(0.33) and values["ai_mook_jetpack_bazooka"]["sightRangeY"] == 96
     assert values["block_sand"]["health"] > 0 and values["block_dirt"]["health"] > 0
 
 

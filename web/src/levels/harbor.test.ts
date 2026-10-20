@@ -21,8 +21,10 @@ describe('mission 2: the harbor', () => {
     expect(kinds).toEqual(new Set(['', 'dirt', 'brick', 'steel', 'barrel']));
   });
 
-  it('has 25 enemies, including shield mooks, grenadiers, dogs and a Bruiser', () => {
+  it('has 27 enemies, including shield mooks, grenadiers, dogs, a Bruiser and two jetpack mooks', () => {
     expect(count('mook_bruiser')).toBe(1);
+    expect(count('mook_jetpack')).toBe(1);
+    expect(count('mook_jetpack_bazooka')).toBe(1);
     expect(count('mook')).toBe(10);
     expect(count('mook_suicide')).toBe(3);
     expect(count('mook_bazooka')).toBe(3);

@@ -34,6 +34,10 @@ export function unitFrame(u: Unit): Frame {
     return { col: 21 + (Math.floor(u.animTime / PANIC_FRAME_RATE) % (scout ? 4 : 8)), row: 0 };
   }
   if (u.ducking) return { col: 6, row: 0 }; // AnimateActualIdleDuckingFrames
+  if (u.jet?.spiral && Math.abs(u.xI) + Math.abs(u.yI) > 200) {
+    // MookJetpack.SetSpiralFrame: the frame of its flight's angle on row 10
+    return { col: Math.max(0, Math.min(12, 12 - Math.floor((Math.atan2(u.yI, Math.abs(u.xI)) / Math.PI + 0.5) * 12.99))), row: 10 };
+  }
   if (!u.onGround) {
     // AnimateActualJumpingFrames (useNewFrames)
     const fast = Math.abs(u.xI) > 50;

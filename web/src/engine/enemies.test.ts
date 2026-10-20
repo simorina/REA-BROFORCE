@@ -81,6 +81,64 @@ describe('the Bruiser (MookBigGuy, BigGuyAI)', () => {
   });
 });
 
+describe('the jetpack mooks (MookJetpack, MookJetpackBazooka)', () => {
+  it("reads the jetpack mook ('j') and the jetpack bazooka mook ('J')", () => {
+    expect(parseLevel({ cols: 5, rows: 2, tiles: ['PjJ.F', 'ddddd'] }, TEST_STATS).enemies.map((e) => e.kind)).toEqual(['mook_jetpack', 'mook_jetpack_bazooka']);
+  });
+
+  it('alerted, it lights its jetpack after 0.55 s and flies up to hover 48 above the ground', () => {
+    const { w, m } = alerted('j', 'mook_jetpack');
+    w.player.invulnerable = 999;
+    play(w, {}, steps(0.5));
+    expect(m.jet?.on).toBe(false);
+    play(w, {}, steps(3));
+    expect(m.jet?.on).toBe(true);
+    expect(m.y).toBeGreaterThan(24 + 36);
+    expect(m.y).toBeLessThan(24 + 60);
+  });
+
+  it('flying, the trooper fires bullets and the bazooka mook rockets', () => {
+    for (const [ch, kind, shot] of [['j', 'mook_jetpack', 'bullet'], ['J', 'mook_jetpack_bazooka', 'rocket']] as const) {
+      const { w } = alerted(ch, kind, 9);
+      w.player.invulnerable = 999;
+      const kinds = new Set<string>();
+      for (let i = 0; i < steps(6); i++) {
+        play(w, {}, 1);
+        for (const p of w.projectiles) kinds.add(p.kind);
+      }
+      expect(kinds.has(shot)).toBe(true);
+    }
+  });
+
+  it('a hit wrecks its jetpack: after a moment it crashes and blows up', () => {
+    const { w, m } = alerted('j', 'mook_jetpack');
+    w.player.invulnerable = 999;
+    play(w, {}, steps(3));
+    expect(m.jet?.on).toBe(true);
+    damageUnit(m, 1);
+    expect(m.jet?.on).toBe(false);
+    let blew = false;
+    for (let i = 0; i < steps(5) && !blew; i++) {
+      play(w, {}, 1);
+      blew = w.events.some((e) => e.type === 'explosion' && e.source === 'suicide');
+    }
+    expect(blew).toBe(true);
+    expect(m.gibbed).toBe(true);
+    expect(w.enemies).not.toContain(m); // blown to pieces: gone
+  });
+
+  it('killed, it blows up a moment after it comes down', () => {
+    const w = createWorld(strip('j'), TEST_STATS, [BROLUSCONI], () => 0.5);
+    const m = w.enemies[0];
+    damageUnit(m, m.health);
+    play(w, {}, steps(1));
+    expect(m.gibbed).toBe(false);
+    play(w, {}, steps(1.5));
+    expect(m.gibbed).toBe(true);
+    expect(w.events.some((e) => e.type === 'explosion' && e.source === 'suicide')).toBe(true);
+  });
+});
+
 describe("the riot shield mook (MookRiotShield)", () => {
   it('his shield stops shots at his face; shots in his back hurt him', () => {
     const w = createWorld(strip('h'), TEST_STATS, [BROLUSCONI], () => 0.5);

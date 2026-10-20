@@ -1,5 +1,5 @@
 import {
-  ACCEL_M, DASH_ACCEL_M, DASH_SPEED_M, GRAVITY, GROUND_FRICTION_M, JUMP_BUFFER, JUMP_GRACE, JUMP_TIME, LOW_SPEED_ACCEL_M,
+  ACCEL_M, DASH_ACCEL_M, DASH_SPEED_M, GRAVITY, GROUND_FRICTION_M, JETPACK, JUMP_BUFFER, JUMP_GRACE, JUMP_TIME, LOW_SPEED_ACCEL_M,
   LOW_SPEED_THRESHOLD, MIN_START_SPEED, TILE, UNIT_HALF_WIDTH, UNIT_HEIGHT, WALL_CLIMB_BOOST,
   WALL_CLIMB_CYCLE, WALL_CLIMB_GRAVITY_M,
 } from './constants';
@@ -13,6 +13,7 @@ export interface MoveIntent {
   dash: boolean;
   speed?: number; // overrides stats.speed, as MookSuicide does while charging
   down?: boolean; // ducking (a hidden mook crouches in the grass)
+  hover?: number; // MookJetpack with its jetpack on: the height it holds, no gravity
 }
 
 export const NO_INTENT: MoveIntent = { dir: 0, jumpPressed: false, jumpHeld: false, dash: false };
@@ -70,6 +71,22 @@ function moveAndCollide(u: Unit, map: TileMap, t: number, now: number): void {
   }
 }
 
+/** MookJetpack.CalculateMovement with its jetpacks on: up to its hover height, hanging there, drifting to a stop. */
+function hover(u: Unit, h: number, dir: -1 | 0 | 1, t: number): void {
+  const j = JETPACK;
+  if (u.y < h - j.below) {
+    u.yI += j.thrust * t;
+  } else if (u.y < h + j.band - j.below) {
+    if (Math.abs(u.yI) > j.easeAbove) u.yI *= 1 - t * j.ease;
+    u.yI -= j.sink * t;
+  } else {
+    u.yI -= j.above * t;
+    u.yI *= 1 - t * j.aboveDrag;
+  }
+  if (dir === 0) u.xI *= 1 - Math.min(1, t * j.airDrag);
+  u.onGround = false;
+}
+
 /**
  * One fixed step of TestVanDammeAnim-style movement. Simplified: no water, quicksand, ladders,
  * ziplines, parachutes, air dash or wall drag (see docs/findings.md).
@@ -84,6 +101,11 @@ export function stepUnit(u: Unit, intent: MoveIntent, map: TileMap, t: number, n
   }
   u.ducking = !!intent.down && u.onGround && intent.dir === 0;
   runHorizontal(u, intent.dir, intent.speed ?? u.stats.speed, t);
+  if (intent.hover !== undefined) {
+    hover(u, intent.hover, intent.dir, t);
+    moveAndCollide(u, map, t, now);
+    return;
+  }
   if (u.jumpBuffer > 0) u.jumpBuffer -= t;
   const canJump = u.yI <= 0 && (u.onGround || now - u.lastGroundedTime < JUMP_GRACE);
   if (canJump && (intent.jumpPressed || (u.jumpBuffer > 0 && intent.jumpHeld))) {
