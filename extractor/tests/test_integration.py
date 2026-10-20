@@ -96,6 +96,8 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert sheets["mook_jetpack"]["frameW"] == 32 and sheets["mook_jetpack_bazooka"]["frameW"] == 32
     assert values["mook_jetpack"]["explosionRange"] == 40.0 and values["mook_jetpack"]["spiralDelayDuration"] == pytest.approx(0.5)
     assert values["ai_mook_jetpack"]["delayBetweenFiring"] == pytest.approx(0.33) and values["ai_mook_jetpack_bazooka"]["sightRangeY"] == 96
+    # the ninja: a trooper who waits crouched until you come close (MookNinjaAI)
+    assert sheets["mook_ninja"]["frameW"] == 32 and values["mook_ninja"]["health"] == 3 and values["ai_mook_ninja"]["sightRangeX"] > 0
     assert values["block_sand"]["health"] > 0 and values["block_dirt"]["health"] > 0
 
 

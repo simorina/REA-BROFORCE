@@ -6,6 +6,7 @@ import type { Tank, Turret } from '../engine/tank';
 
 const PANIC_FRAME_RATE = 0.044455; // Mook.AnimateRunning while burning, blind or scared
 const SPECIAL2_FRAME_RATE = 0.045; // MookSuicide.AnimateSpecial2, with frame 9 held for 1 s
+const NINJA_FLIP_RATE = 0.025; // MookNinja.AnimateActualJumpingFrames
 
 /** MookSuicide.AnimateSpecial2's frame t seconds in. */
 export function special2Frame(t: number): number {
@@ -33,10 +34,14 @@ export function unitFrame(u: Unit): Frame {
   if (u.onGround && (u.blindTime > 0 || u.burnTime > 0 || (scout && u.waveTime > 0)) && Math.abs(u.xI) > 1) {
     return { col: 21 + (Math.floor(u.animTime / PANIC_FRAME_RATE) % (scout ? 4 : 8)), row: 0 };
   }
+  if (u.kind === 'mook_ninja' && u.ducking && u.ai?.mental === 'hiding') return { col: 5, row: 6 }; // MookNinja: crouched, hidden
   if (u.ducking) return { col: 6, row: 0 }; // AnimateActualIdleDuckingFrames
   if (u.jet?.spiral && Math.abs(u.xI) + Math.abs(u.yI) > 200) {
     // MookJetpack.SetSpiralFrame: the frame of its flight's angle on row 10
-    return { col: Math.max(0, Math.min(12, 12 - Math.floor((Math.atan2(u.yI, Math.abs(u.xI)) / Math.PI + 0.5) * 12.99))), row: 10 };
+    return { col: Math.max(0, Math.min(12, 12 - Math.floor((Math.atan2(u.yI, Math.abs(u.xI)) / Math.PI + 0.5) * 12.99))), row: 9 };
+  }
+  if (u.kind === 'mook_ninja' && !u.onGround && u.yI >= -150) {
+    return { col: 21 + (Math.floor(u.animTime / NINJA_FLIP_RATE) % 10), row: 2 }; // MookNinja.AnimateActualJumpingFrames: the flip
   }
   if (!u.onGround) {
     // AnimateActualJumpingFrames (useNewFrames)

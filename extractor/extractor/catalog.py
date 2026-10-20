@@ -64,6 +64,7 @@ SPRITES = (
     SpriteRef("mook_bruiser", "MookBigGuy", "ZMookBigGuy", True),  # the Bruiser: 36x32 frames
     SpriteRef("mook_jetpack", "MookJetpack", "ZMookJetpack", True),
     SpriteRef("mook_jetpack_bazooka", "MookJetpackBazooka", "ZMookJetpackBazooka", True),
+    SpriteRef("mook_ninja", "MookNinja", "ZMookNinja", True),
     SpriteRef("grenade", "Grenade", "GrenadeEvilSmall Long fuse", False),  # the grenadier's long-fuse grenade
     SpriteRef("prisoner", "RescueBro", "Hobro", True),
     SpriteRef("cage", "Cage", "CageBig", True),
@@ -150,6 +151,9 @@ VALUES = (
     ValuesRef("mook_jetpack_bazooka", "MookJetpackBazooka", "ZMookJetpackBazooka", MOOK_FIELDS + JETPACK_FIELDS),
     ValuesRef("ai_mook_jetpack_bazooka", "MookBazookaAi", "ZMookJetpackBazooka", AI_FIELDS),
     ValuesRef("path_mook_jetpack_bazooka", "PathAgent", "ZMookJetpackBazooka", PATH_FIELDS),
+    ValuesRef("mook_ninja", "MookNinja", "ZMookNinja", MOOK_FIELDS),
+    ValuesRef("ai_mook_ninja", "MookNinjaAI", "ZMookNinja", AI_FIELDS),
+    ValuesRef("path_mook_ninja", "PathAgent", "ZMookNinja", PATH_FIELDS),
     ValuesRef("grenade_mook", "Grenade", "GrenadeEvilSmall Long fuse",
               ("bounceM", "frictionM", "gravityM", "damage", "range", "blastForce")),
     ValuesRef("path_mook", "PathAgent", "ZMook", PATH_FIELDS),

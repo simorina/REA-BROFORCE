@@ -1,5 +1,5 @@
 import {
-  AI_FACE_LINGER, AI_GREET_WAIT, AI_SAME_SPOT_TIME, AI_STUCK_TIME, BUBBLE_TIME, SIGHT_EYE, SIGHT_PROBE_BACK,
+  AI_FACE_LINGER, AI_GREET_WAIT, AI_SAME_SPOT_TIME, AI_STUCK_TIME, BUBBLE_TIME, NINJA, SIGHT_EYE, SIGHT_PROBE_BACK,
   SIGHT_PROBE_UP, SUICIDE_BLOCKED_M, SUICIDE_DEATH_FUSE, SUICIDE_DELAY, SUICIDE_SPEED_ALERTED, SUICIDE_TIMER,
   SUICIDE_TRIGGER, TILE, UNIT_HALF_WIDTH,
 } from './constants';
@@ -306,8 +306,9 @@ function lookForEnemy(m: Unit, ctx: AiContext): void {
   const p = alive(ctx.player);
   if (!p) return;
   if (m.ai?.mental === 'hiding') {
-    // HeroController.GetNearestPlayer(X, Y + 8, hidingLookXRange, 20)
-    if (Math.abs(p.x - m.x) < ctx.stats.hidingLookX && Math.abs(p.y - (m.y + 8)) < 20) {
+    // HeroController.GetNearestPlayer(X, Y + 8, hidingLookXRange, 20); MookNinjaAI's range is 48
+    const range = m.kind === 'mook_ninja' ? NINJA.lookX : ctx.stats.hidingLookX;
+    if (Math.abs(p.x - m.x) < range && Math.abs(p.y - (m.y + 8)) < 20) {
       fullyAlert(m, ctx.stats, p.x, p.y, ctx.rng, sceneOf(m, ctx));
     }
     return;

@@ -34,6 +34,9 @@ export const RAW_VALUES: Record<string, Record<string, unknown>> = {
   mook_jetpack_bazooka: { speed: 70, _jumpForce: 200, health: 3, fireRate: 0.17, maxFallSpeed: -400, canWallClimb: 0, canDash: 0, originalSpecialAmmo: 3, hearingRangeX: 50, hearingRangeY: 0, canHideInGrass: 1, canBeSetOnFire: 1, willPanicWhenOnFire: 1, explosionRange: 40, blastForce: 20, spiralDelayDuration: 0.5 },
   ai_mook_jetpack_bazooka: { sightRangeX: 300, sightRangeY: 96, attackTime: 0.3, sightDelay: 1, delayBetweenFiring: 1.76, patrolBlocksRadius: 2, minIdleWaitDuration: 0.3, maxIdleWaitDuration: 1, hidingLookXRange: 64 },
   path_mook_jetpack_bazooka: { agentSize: 9, capabilities: { canJump: 1, canWallClimb: 0, fudge: 0, jumpHeight: 3, maxDropDistance: 4 } },
+  mook_ninja: { speed: 70, _jumpForce: 260, health: 3, fireRate: 0.17, maxFallSpeed: -400, canWallClimb: 0, canDash: 0, originalSpecialAmmo: 3, hearingRangeX: 50, hearingRangeY: 0, canHideInGrass: 0, canBeSetOnFire: 1, willPanicWhenOnFire: 1 },
+  ai_mook_ninja: { sightRangeX: 300, sightRangeY: 20, attackTime: 0.06, sightDelay: 1.66, delayBetweenFiring: 1.78, patrolBlocksRadius: 2, minIdleWaitDuration: 0.3, maxIdleWaitDuration: 1, hidingLookXRange: 64 },
+  path_mook_ninja: { agentSize: 9, capabilities: { canJump: 1, canWallClimb: 0, fudge: 0, jumpHeight: 3, maxDropDistance: 4 } },
   mook_scout: { speed: 80, _jumpForce: 160, health: 3, fireRate: 0.1, maxFallSpeed: -400, canWallClimb: 0, canDash: 0, originalSpecialAmmo: 3, hearingRangeX: 350, hearingRangeY: 150, canHideInGrass: 0, canBeSetOnFire: 1, willPanicWhenOnFire: 1, runSpeed: 100 },
   ai_mook: { sightRangeX: 300, sightRangeY: 20, attackTime: 0.06, sightDelay: 1.66, delayBetweenFiring: 1.78, patrolBlocksRadius: 2, minIdleWaitDuration: 0.3, maxIdleWaitDuration: 1, hidingLookXRange: 50 },
   ai_mook_suicide: { sightRangeX: 300, sightRangeY: 20, attackTime: 7, sightDelay: 0.55, delayBetweenFiring: 1.25, patrolBlocksRadius: 2, minIdleWaitDuration: 0.3, maxIdleWaitDuration: 1, hidingLookXRange: 50 },
@@ -83,6 +86,7 @@ export const TEST_STATS: GameStats = {
     mook_bruiser: { ...ENEMY, maxFallSpeed: -600, speed: 40, jumpForce: 120, health: 25, fireRate: 0.07, hearingX: 80, hearingY: 25, canHideInGrass: false },
     mook_jetpack: { ...ENEMY, speed: 70, jumpForce: 200, health: 3, fireRate: 0.17, hearingX: 50, hearingY: 0 },
     mook_jetpack_bazooka: { ...ENEMY, speed: 70, jumpForce: 200, health: 3, fireRate: 0.17, hearingX: 50, hearingY: 0 },
+    mook_ninja: { ...ENEMY, speed: 70, jumpForce: 260, health: 3, fireRate: 0.17, hearingX: 50, hearingY: 0, canHideInGrass: false },
   },
   bros: {
     bro_base: { speed: 110, jumpForce: 260, health: 1, fireRate: 0.27, maxFallSpeed: -400, canWallClimb: true, canDash: true, specialAmmo: 4, hearingX: 300, hearingY: 200, canHideInGrass: false, canBeSetOnFire: false, panicsOnFire: false },
@@ -103,6 +107,7 @@ export const TEST_STATS: GameStats = {
     mook_bruiser: { ...AI, sightY: 20, attackTime: 1.2, sightDelay: 0.667, delayBetweenFiring: 1.8, maxIdleWait: 0.8, hidingLookX: 64 },
     mook_jetpack: { ...AI, sightY: 48, attackTime: 0.06, sightDelay: 0.6, delayBetweenFiring: 0.33, hidingLookX: 64 },
     mook_jetpack_bazooka: { ...AI, sightY: 96, attackTime: 0.3, sightDelay: 1, delayBetweenFiring: 1.76, hidingLookX: 64 },
+    mook_ninja: { ...AI, sightY: 20, attackTime: 0.06, sightDelay: 1.66, delayBetweenFiring: 1.78, hidingLookX: 64 },
   },
   paths: {
     mook: { ...PATH, jumpHeight: 3, maxDropDistance: 4 },
@@ -115,6 +120,7 @@ export const TEST_STATS: GameStats = {
     mook_bruiser: { ...PATH, agentSize: 12, jumpHeight: 2, maxDropDistance: 2 },
     mook_jetpack: { ...PATH, jumpHeight: 3, maxDropDistance: 4 },
     mook_jetpack_bazooka: { ...PATH, jumpHeight: 3, maxDropDistance: 4 },
+    mook_ninja: { ...PATH, jumpHeight: 3, maxDropDistance: 4 },
   },
   scoutRunSpeed: 100,
   dogRunSpeed: 140,

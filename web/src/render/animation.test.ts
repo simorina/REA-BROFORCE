@@ -24,10 +24,10 @@ describe("a jetpack mook spiralling down (MookJetpack.SetSpiralFrame)", () => {
     return m;
   };
 
-  it('turns with its flight on row 10: 12 - (angle / pi + 0.5) * 12.99, when it flies faster than 200', () => {
-    expect(unitFrame(jetMook(0, 300))).toEqual({ col: 0, row: 10 }); // straight up
-    expect(unitFrame(jetMook(300, 0))).toEqual({ col: 6, row: 10 }); // level
-    expect(unitFrame(jetMook(0, -300))).toEqual({ col: 12, row: 10 }); // straight down
+  it('turns with its flight on row 9 (lowerLeftPixel 10 frames down): 12 - (angle / pi + 0.5) * 12.99, faster than 200', () => {
+    expect(unitFrame(jetMook(0, 300))).toEqual({ col: 0, row: 9 }); // straight up
+    expect(unitFrame(jetMook(300, 0))).toEqual({ col: 6, row: 9 }); // level
+    expect(unitFrame(jetMook(0, -300))).toEqual({ col: 12, row: 9 }); // straight down
     expect(unitFrame(jetMook(50, 50)).row).toBe(2); // slow: its jumping frames
   });
 });

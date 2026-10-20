@@ -160,6 +160,8 @@ export const JETPACK = {
   height: 48, delay: 0.55, thrust: 300, band: 12, below: 2, ease: 3, easeAbove: 50, sink: 250, above: 400, aboveDrag: 4, airDrag: 6,
   airCrashM: 4, deadCrash: 0.8, fuse: 0.7, spiralUp: 240, spiralBack: 120, spiralMax: 2.5, blastY: 5, flameEvery: 0.1,
 };
+// MookNinjaAI.LookForEnemy: hidden, he springs on a bro within 48 and 20 of (X, Y + 8)
+export const NINJA = { lookX: 48 };
 export const DOG = { bite: 3, range: 6 }; // MookDog.RunFiring: Map.HitLivingUnits(3, Melee, 6, X, Y + 4)
 export const JET_ROCKET = { ox: [32, 8], oy: -5, x: 450, y: -285, jitter: 12 }; // HarrierJet.Update: two shots from (X+32, Y-5), (X+8, Y-5) at (450, -285) + insideUnitCircle * 12
 export const JET_DESCENT = { slow: 40, slowZone: 48 }; // HarrierJet.Start: yI -40 over its last 48 px

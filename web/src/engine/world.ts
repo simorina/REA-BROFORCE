@@ -163,6 +163,12 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
   const spawn = { x: cellX(parsed.player.c), y: feetY(parsed.player.r) };
   const player = makeUnit(nextId++, 'bro', 'player', spawn.x, spawn.y, stats.bros[bro.base]);
   const enemies = parsed.enemies.map((e) => makeUnit(nextId++, e.kind, 'enemy', cellX(e.c), feetY(e.r), stats.units[e.kind]));
+  for (const m of enemies) {
+    if (m.kind === 'mook_ninja' && m.ai) { // MookNinja.Start / MookNinjaAI: crouched in hiding, looking either way
+      m.ai.mental = 'hiding';
+      m.facing = rng() < 0.5 ? -1 : 1;
+    }
+  }
   const boss = parsed.boss ? makeBoss(nextId++, cellX(parsed.boss.c), feetY(parsed.boss.r), stats, parsed.mech !== null) : null;
   if (boss) enemies.push(boss);
   const mech = parsed.mech ? makeMech(nextId++, cellX(parsed.mech.c), feetY(parsed.mech.r), stats, parsed.map) : null;
@@ -444,6 +450,10 @@ function stepEnemies(w: World, t: number, blasts: Blast[]): void {
       onScreen: (x, y, bx, by) => isVisible(w.camera, x, y, bx, by), inGrass: (x, y, range) => inGrass(w, x, y, range),
       path: w.stats.paths[kind], doors: w.doorPoints, runSpeed: w.stats.scoutRunSpeed, dogRunSpeed: w.stats.dogRunSpeed,
     }, t);
+    // MookNinja.Damage: a hit gives a hidden ninja away
+    if (m.kind === 'mook_ninja' && ai?.mental === 'hiding' && m.health < m.stats.health) {
+      fullyAlert(m, w.stats.ai.mook_ninja, w.player.x, w.player.y, w.rng);
+    }
     const jet = m.jet;
     if (jet?.on) out.intent = { ...out.intent, hover: jet.height, jumpPressed: false, jumpHeld: false };
     else if (jet && (jet.spiral || jet.crash >= 0)) out.intent = { ...NO_INTENT }; // sputtering, then out of control

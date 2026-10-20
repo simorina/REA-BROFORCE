@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BROLUSCONI } from '../bros';
 import { fullyAlert } from './ai';
+import { unitFrame } from '../render/animation';
 import { DOG, FIXED_DT, SHIELD } from './constants';
 import { parseLevel, type LevelData } from './level';
 import { TEST_STATS } from './testStats';
@@ -136,6 +137,50 @@ describe('the jetpack mooks (MookJetpack, MookJetpackBazooka)', () => {
     play(w, {}, steps(1.5));
     expect(m.gibbed).toBe(true);
     expect(w.events.some((e) => e.type === 'explosion' && e.source === 'suicide')).toBe(true);
+  });
+});
+
+describe('the ninja (MookNinja, MookNinjaAI)', () => {
+  it("reads the ninja ('N') and starts him crouched in hiding, looking either way", () => {
+    expect(parseLevel({ cols: 4, rows: 2, tiles: ['PN.F', 'dddd'] }, TEST_STATS).enemies.map((e) => e.kind)).toEqual(['mook_ninja']);
+    const w = createWorld(strip('N'), TEST_STATS, [BROLUSCONI], () => 0.5);
+    expect(w.enemies[0].ai?.mental).toBe('hiding');
+  });
+
+  it('ignores the bro in plain sight until he comes within 48, then jumps out at him', () => {
+    const w = createWorld(strip('N', 9), TEST_STATS, [BROLUSCONI], () => 0.5);
+    const m = w.enemies[0];
+    play(w, {}, steps(2));
+    expect(m.ai?.mental).toBe('hiding');
+    expect(m.ducking).toBe(true);
+    w.player.x = m.x - 40;
+    let rose = false;
+    for (let i = 0; i < steps(1) && !rose; i++) {
+      play(w, {}, 1);
+      rose = m.yI > 0;
+    }
+    expect(m.ai?.mental).toBe('alerted');
+    expect(rose).toBe(true);
+    expect(m.facing).toBe(-1);
+  });
+
+  it('a hit gives him away', () => {
+    const w = createWorld(strip('N'), TEST_STATS, [BROLUSCONI], () => 0.5);
+    const m = w.enemies[0];
+    damageUnit(m, 1);
+    play(w, {}, 2);
+    expect(m.ai?.mental).toBe('alerted');
+  });
+
+  it('crouches on row 6 while hidden and flips through row 2, columns 21-30, as he leaps (MookNinja.Animate*)', () => {
+    const w = createWorld(strip('N'), TEST_STATS, [BROLUSCONI], () => 0.5);
+    const m = w.enemies[0];
+    play(w, {}, steps(0.5));
+    expect(unitFrame(m)).toEqual({ col: 5, row: 6 });
+    Object.assign(m, { onGround: false, yI: 100, animTime: 0.06 });
+    m.ai!.mental = 'alerted';
+    m.ducking = false;
+    expect(unitFrame(m)).toEqual({ col: 23, row: 2 });
   });
 });
 
