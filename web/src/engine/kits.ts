@@ -1,6 +1,6 @@
 import type { SpecialId, WeaponId } from './bro';
 import { startJudo } from './judo';
-import { stepTeslaGun } from './tesla';
+import { stepLaserGun } from './laser';
 import { CRICKET, REVOLVER, RIFLE } from './constants';
 import { getColumn, getRow } from './map';
 import {
@@ -143,7 +143,7 @@ export const WEAPON_KITS: Record<WeaponId, WeaponKit> = {
   tesla: {
     repeat: false,
     fire() {}, // the step does it all
-    step: stepTeslaGun, // Broden.StartFiring / RunFiring: four zaps a press
+    step: stepLaserGun, // the Tesla laser: charge, beam, battery (laser.ts)
   },
   rpg: {
     repeat: true,

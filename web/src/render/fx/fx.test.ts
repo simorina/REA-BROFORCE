@@ -232,6 +232,16 @@ describe("Giorgia Meloni's fire", () => {
     expect(fx.puffs.map((p) => p.def.name)).toEqual(['Noisy Cricket Ball Puff', 'Noisy Cricket Beam Puff']);
   });
 
+  it("Musk's laser eating into a wall bursts in the Noisy Cricket's beam puff and throws blue and white sparks back at him", () => {
+    const fx = new Effects(TEST_EFFECTS, () => 0.5);
+    fx.onEvent({ type: 'laserHit', x: 64, y: 28, dir: 1 }, () => 'mook');
+    expect(fx.puffs.map((p) => p.def.name)).toEqual(['Noisy Cricket Beam Puff']);
+    const sparks = fx.particles.list;
+    expect(sparks.length).toBeGreaterThanOrEqual(6);
+    expect(sparks.every((p) => p.xI < 0)).toBe(true);
+    expect(new Set(sparks.map((p) => p.color.join()))).toEqual(new Set(['0.45,0.85,1,1', '1,1,1,1']));
+  });
+
   it("a hell Bruiser's flame wall puffs hell's own flames", () => {
     const fx = new Effects(TEST_EFFECTS, () => 0.5);
     fx.onEvent({ type: 'flameWallPuff', x: 64, y: 28, variant: 1, delay: 0, dir: -1, xI: -66, hell: true }, () => 'mook');

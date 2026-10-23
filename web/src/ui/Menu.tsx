@@ -10,7 +10,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   rpg: 'Lanciarazzi RPG: razzo balistico diretto a forte impatto',
   m60: 'Mitragliatrice M60 di Rambro: raffica continua tenendo premuto',
   flamethrower: 'Lanciafiamme di B.A. Broracus a fiamme tricolori: a corto raggio, dà fuoco ai nemici',
-  tesla: 'Fucile Tesla: quattro fulmini a ogni pressione, a lunga gittata; ognuno aggancia il nemico più vicino e rimbalza su altri due',
+  tesla: 'Laser Tesla: tieni premuto, si carica e spara un raggio continuo che brucia i nemici, perfora la terra e lancia fulmini (batteria di 2,5 secondi: occhio al surriscaldamento)',
 };
 const SPECIAL_HINT: Record<SpecialId, string> = {
   airstrike: 'Attacco aereo (con ↓ lo lanci corto)',

@@ -113,6 +113,7 @@ export interface FoeStats {
 import type { AlienSpeeds, AlienState } from './aliens';
 import type { DolphState } from './dolph';
 import type { HellState } from './hell';
+import type { LaserState } from './laser';
 import type { RocketpackState } from './rocketpack';
 
 export interface RocketStats {
@@ -168,7 +169,7 @@ export interface GameStats {
   elite: { runSpeedMultiplier: number; jumpRange: number }; // MookBigGuyElite, BigGuyEliteAI
   alienSpeeds: Record<'alien_xeno' | 'alien_xeno_brain' | 'alien_hugger' | 'alien_snake' | 'alien_melter' | 'alien_brute' | 'alien_mosquito' | 'hell_lostsoul', AlienSpeeds>;
   hell: HellStats;
-  tesla: TeslaStats; // Broden's lightning: Elon Musk's Tesla gun
+  tesla: TeslaStats; // the ElectricZap: the Tesla arcs off Elon Musk's laser
   drone: { speed: number; fireRate: number; health: number }; // "Drone Machinegun"
   rocketpack: RocketpackStats; // The Brocketeer's jetpack
   foes: { truck: FoeStats; apc: FoeStats; bike: FoeStats; nukebike: FoeStats; artillery: FoeStats; kopter: FoeStats };
@@ -344,6 +345,7 @@ export interface Unit {
   alien?: AlienState; // an alien's mind (aliens.ts)
   hell?: HellState; // what a hell mob keeps on top of its mook's mind (hell.ts)
   rocketpack?: RocketpackState; // The Brocketeer's jetpack on a bro who has one (rocketpack.ts)
+  laser?: LaserState; // Elon Musk's Tesla laser (laser.ts)
 }
 
 /** MookJetpack: its jetpack, the countdown of a wrecked one, its spiral down and the fuse that blows it up. */
@@ -406,11 +408,8 @@ export interface FlamePoint {
 }
 
 /** FlameWallExplosion's state: its band of cells, the cells burning at its front and those already burnt. */
-/** Broden: lightningRange, maxElectricShocks and his fireRate; the ElectricZap's MaxDeviation, MaxLife and ZapDuration. */
+/** The ElectricZap's MaxDeviation, MaxLife and ZapDuration (Broden's lightning), for the arcs off Musk's laser. */
 export interface TeslaStats {
-  range: number;
-  shocks: number;
-  fireRate: number;
   deviation: number;
   life: number;
   zapTime: number;

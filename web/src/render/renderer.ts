@@ -9,11 +9,13 @@ import type { Jet } from '../engine/jet';
 import type { Mech } from '../engine/mech';
 import type { Tank } from '../engine/tank';
 import { isBoomer, isHellBigGuy, isSuicide } from '../engine/hell';
+import { LASER, type LaserState } from '../engine/laser';
 import type { Zap } from '../engine/tesla';
 import type { BlockKind, Projectile, TeslaStats, Unit, UnitKind } from '../engine/types';
 import { speaker, type Effect, type GameEvent, type World } from '../engine/world';
 import {
-  blockFrame, flameLook, helicopterFrame, jetFrameCentreY, loopFrame, mechFrame, prisonerFrame, SATAN_GONE, tankHullFrame, turretFrame, unitFrame,
+  blockFrame, flameLook, helicopterFrame, jetFrameCentreY, laserLook, loopFrame, mechFrame, prisonerFrame, SATAN_GONE, tankHullFrame, turretFrame,
+  unitFrame,
 } from './animation';
 import { gunOffsetX, type Assets, type SheetKey } from './assets';
 import { Effects } from './fx/controller';
@@ -43,6 +45,15 @@ const BLOCK_SHEETS: Record<BlockKind, SheetKey> = {
   dirt: 'block_dirt', sand: 'block_sand', brick: 'block_brick', temple: 'block_temple', steel: 'block_steel', barrel: 'block_barrel',
 };
 const WHITE_TEXTURE = 'sprites/fx/white.png';
+/**
+ * Musk's laser as we draw it (world units): Satan's fire 32/3 across, so that its texture's 32 px meet our 3x pixel for
+ * pixel, flowing out at `flow` a second; the halos round it; its white-hot core; the two strands twisting round it (a
+ * turn every `helix`, spinning `spin` radians a second); a pulse of energy every `pulseGap` running out at `pulse`; and
+ * the glowing drops at the gun (`flare` its head) and where it strikes (`impact`).
+ */
+const PLASMA = {
+  band: 32 / 3, halo: 13, glow: 26, core: 2.2, strand: 6, helix: 36, spin: 24, flow: 300, pulse: 520, pulseGap: 56, flare: 5, impact: 8,
+};
 const quant = (v: number): number => Math.round(Math.min(1, Math.max(0, v)) * 31) / 31;
 
 export class Renderer {
@@ -55,6 +66,7 @@ export class Renderer {
   private readonly tints = new Map<string, HTMLCanvasElement>();
   private shaderCanvas: HTMLCanvasElement | null = null; // the PixelExplosion layer, one pixel per world unit
   private shaderImage: ImageData | null = null;
+  private plasmaPattern: CanvasPattern | null = null; // plasma_beam turned to run along the beam, made on first use
 
   constructor(
     private readonly ctx: CanvasRenderingContext2D,
@@ -123,6 +135,8 @@ export class Renderer {
     const boarded = w.state === 'extracting' && w.extractionTime >= EXTRACTION_TIME / 2;
     if (!boarded && !w.driving) this.drawUnit(w.player, w.time);
     for (const d of w.drones) this.drawDrone(d);
+    const laser = !boarded && !w.driving && !w.player.dead ? w.player.laser : undefined;
+    if (laser) this.drawLaser(laser, w.time);
     this.drawZaps(w.zaps, w.stats.tesla);
     this.drawGibs();
     this.drawParticles();
@@ -132,6 +146,7 @@ export class Renderer {
     this.drawGrass(w, 'blades');
     for (const p of w.projectiles) this.drawProjectile(p, w.time);
     for (const e of w.effects) this.drawEffect(e, w);
+    if (laser) this.drawBattery(w.player, laser, w.time);
     for (const e of w.enemies) this.drawBubble(e);
     if (w.state === 'extracting') this.drawHelicopter(w);
   }
@@ -712,6 +727,260 @@ export class Renderer {
       for (const [x, y] of pts.slice(1)) ctx.lineTo(x, y);
       ctx.stroke();
     }
+  }
+
+  /**
+   * Elon Musk's laser, after Satan's (LaserBeamVisuals): his flowing fire (laserBeam, in plasma blue) tiled along the beam
+   * and scrolling out from the gun, swelling to half its width while it charges and thinning out as it dissipates
+   * (laserLook). Ours glows round it: a wide blue halo, a white-hot core, pulses of energy running down it, two strands
+   * twisting round it, sparks crackling off it, a flare at the gun, the glowing drop (laserBeamBits) where it eats into a
+   * wall with sparks flying back off it, and a flash and a shockwave as it lights. Charging, sparks rush in to the gun
+   * and a thin sight line flickers out to where it will strike; dissipating, it comes apart in motes that drift up.
+   */
+  private drawLaser(l: LaserState, time: number): void {
+    if (l.phase === 'off') return;
+    const look = laserLook(l);
+    const { ctx } = this;
+    const s = this.scale;
+    const len = Math.abs(l.x1 - l.x0) * s;
+    const w = look.width;
+    const on = look.tint; // 0 charging, 1 burning, going as it dissipates
+    const flicker = 0.9 + 0.1 * Math.sin(time * 70);
+    let seed = (Math.floor(time / 0.05) * 7919 + 1) % 2147483647 || 1; // its sparks, redrawn every 0.05 s
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    ctx.save();
+    ctx.translate(this.sx(l.x0), this.sy(l.y0));
+    if (l.dir < 0) ctx.scale(-1, 1); // from here on it runs along +x, out from the gun
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    if (l.phase === 'charge') this.drawLaserCharge(l, len, time);
+    if (w > 0) {
+      // the halo: a wide faint glow round a tighter bright one
+      for (const [half, a] of [[PLASMA.glow, 0.16], [PLASMA.halo, 0.42]] as const) {
+        const h = half * w * s;
+        const g = ctx.createLinearGradient(0, -h, 0, h);
+        g.addColorStop(0, 'rgba(20, 90, 255, 0)');
+        g.addColorStop(0.5, `rgba(40, 140, 255, ${a * flicker * (0.5 + 0.5 * on)})`);
+        g.addColorStop(1, 'rgba(20, 90, 255, 0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(-2 * s, -h, len + 4 * s, h * 2);
+      }
+      // Satan's fire in plasma blue flowing out along it, and a second sheet of it over it, slower and upside down
+      const band = PLASMA.band * w * s;
+      const k = band / 32; // the texture's 32 px across the band
+      const pattern = this.plasma();
+      if (pattern) {
+        const tile = 128 * k;
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 0.55 + 0.45 * on;
+        pattern.setTransform(new DOMMatrix().translate((time * PLASMA.flow * s) % tile, -band / 2).scale(k, k));
+        ctx.fillStyle = pattern;
+        ctx.fillRect(0, -band / 2, len, band);
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.4 * on;
+        pattern.setTransform(new DOMMatrix().translate((time * PLASMA.flow * 0.6 * s) % tile, band / 2).scale(k, -k));
+        ctx.fillStyle = pattern;
+        ctx.fillRect(0, -band / 2, len, band);
+        ctx.globalAlpha = 1;
+      }
+      // the white-hot core
+      const core = PLASMA.core * w * s * (0.85 + 0.15 * Math.sin(time * 90));
+      const cg = ctx.createLinearGradient(0, -core * 2, 0, core * 2);
+      cg.addColorStop(0, 'rgba(120, 230, 255, 0)');
+      cg.addColorStop(0.3, 'rgba(150, 240, 255, 0.55)');
+      cg.addColorStop(0.5, 'rgba(255, 255, 255, 1)');
+      cg.addColorStop(0.7, 'rgba(150, 240, 255, 0.55)');
+      cg.addColorStop(1, 'rgba(120, 230, 255, 0)');
+      ctx.fillStyle = cg;
+      ctx.fillRect(0, -core * 2, len, core * 4);
+      if (on > 0) {
+        // pulses of energy running out along it
+        const gap = PLASMA.pulseGap * s;
+        for (let x = (time * PLASMA.pulse * s) % gap; x < len; x += gap) this.glow(x, 0, 4.5 * s, 0.6 * on, 2.5);
+        // two strands twisting round it, from the gun to where it strikes
+        const turn = (Math.PI * 2) / (PLASMA.helix * s);
+        for (const phase of [0, Math.PI]) {
+          ctx.beginPath();
+          for (let x = 0; x <= len; x += 1.5 * s) {
+            const taper = Math.min(1, x / (16 * s), (len - x) / (8 * s));
+            const y = Math.sin(x * turn - time * PLASMA.spin + phase) * PLASMA.strand * s * taper;
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.strokeStyle = `rgba(110, 220, 255, ${0.7 * on})`;
+          ctx.lineWidth = 1.3 * s;
+          ctx.stroke();
+          ctx.strokeStyle = `rgba(235, 255, 255, ${0.85 * on})`;
+          ctx.lineWidth = 0.5 * s;
+          ctx.stroke();
+        }
+        // sparks crackling off it: short jagged spurs, up and down
+        for (let i = 0, n = 2 + Math.floor(rnd() * 3); i < n; i++) {
+          const bx = len * (0.08 + rnd() * 0.88);
+          const a = (rnd() < 0.5 ? -1 : 1) * (Math.PI / 2 + (rnd() - 0.5) * 1.4);
+          const r = (6 + rnd() * 12) * s;
+          const pts: Array<[number, number]> = [[bx, 0]];
+          for (let j = 1; j <= 4; j++) {
+            const side = (rnd() * 2 - 1) * 2.5 * s;
+            pts.push([bx + Math.cos(a) * r * (j / 4) - Math.sin(a) * side, Math.sin(a) * r * (j / 4) + Math.cos(a) * side]);
+          }
+          this.strokeBolt(pts, [[`rgba(70, 200, 255, ${0.55 * on})`, 2], [`rgba(240, 255, 255, ${0.95 * on})`, 0.7]]);
+        }
+        // where it strikes: a big glow, the drop splashing back along it and sparks flying back off the wall
+        const ir = PLASMA.impact * s * (0.9 + 0.2 * rnd());
+        this.glow(len, 0, ir * (l.blocked ? 2 : 1.2), (l.blocked ? 0.9 : 0.5) * on);
+        if (l.blocked) {
+          this.drawFlare(len, 0, ir, Math.PI, on);
+          ctx.lineWidth = 0.8 * s;
+          for (let i = 0; i < 7; i++) {
+            const a = Math.PI + (rnd() - 0.5) * 2.6;
+            const r0 = rnd() * 4 * s;
+            const r1 = r0 + (3 + rnd() * 9) * s;
+            ctx.strokeStyle = rnd() < 0.5 ? `rgba(255, 255, 255, ${0.95 * on})` : `rgba(110, 225, 255, ${0.9 * on})`;
+            ctx.beginPath();
+            ctx.moveTo(len + Math.cos(a) * r0, Math.sin(a) * r0);
+            ctx.lineTo(len + Math.cos(a) * r1, Math.sin(a) * r1);
+            ctx.stroke();
+          }
+        }
+      }
+      // the flare at the gun: a glow, the drop pointing out along the beam, and a cross of light
+      const fl = (0.75 + 0.25 * Math.sin(time * 55)) * (0.4 + 0.6 * on);
+      this.glow(0, 0, (8 + 3 * w) * s, fl);
+      this.drawFlare(0, 0, PLASMA.flare * w * s, 0, fl);
+      this.lensCross(0, 0, 26 * s, 11 * s, fl * on);
+    }
+    if (look.flash > 0) {
+      // the shockwave as it lights
+      ctx.strokeStyle = `rgba(190, 245, 255, ${look.flash})`;
+      ctx.lineWidth = 2 * s * look.flash;
+      ctx.beginPath();
+      ctx.arc(0, 0, (4 + 34 * (1 - look.flash)) * s, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    if (l.phase === 'fade') {
+      // it comes apart in motes that drift up
+      ctx.fillStyle = `rgba(170, 240, 255, ${0.9 * w})`;
+      for (let i = 0; i < 28; i++) {
+        const x = ((i * 0.618034) % 1) * len;
+        const y = (((i * 0.414214) % 1) - 0.5) * PLASMA.band * s - (1 - w) * (6 + (i % 5) * 4) * s;
+        ctx.fillRect(x, y, s, s);
+      }
+    }
+    ctx.restore();
+    if (look.flash > 0) {
+      // ...and its flash
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = `rgba(120, 200, 255, ${0.18 * look.flash})`;
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.restore();
+    }
+  }
+
+  /** Charging: sparks rushing in to the gun from all round, its glow gathering, a thin sight line flickering out to where it will strike. */
+  private drawLaserCharge(l: LaserState, len: number, time: number): void {
+    const { ctx } = this;
+    const s = this.scale;
+    const q = Math.min(1, l.time / LASER.charge);
+    ctx.fillStyle = `rgba(90, 200, 255, ${(Math.floor(time * 40) % 2 ? 0.55 : 0.25) * (0.4 + 0.6 * q)})`;
+    ctx.fillRect(0, -s / 3, len, (2 * s) / 3);
+    ctx.lineWidth = 0.8 * s;
+    for (let i = 0; i < 12; i++) {
+      const f = (time * 3.2 + i / 12) % 1; // 0 far out, 1 at the gun
+      const a = i * 2.39996 + time * 4;
+      const r = (1 - f) * 22 * s;
+      const tail = 4 * s * (1 - f * 0.5);
+      ctx.strokeStyle = `rgba(150, 235, 255, ${0.3 + 0.7 * f})`;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+      ctx.lineTo(Math.cos(a) * (r + tail), Math.sin(a) * (r + tail));
+      ctx.stroke();
+    }
+    this.glow(0, 0, (3 + 9 * q) * s, 0.5 + 0.5 * q);
+  }
+
+  /** A soft glow of radius r (screen px) at (x, y) of the current transform, `stretch` times as long along x, white-hot at its heart. */
+  private glow(x: number, y: number, r: number, alpha: number, stretch = 1): void {
+    if (r <= 0 || alpha <= 0) return;
+    const { ctx } = this;
+    const a = Math.min(1, alpha);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(stretch, 1);
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    g.addColorStop(0, `rgba(255, 255, 255, ${a})`);
+    g.addColorStop(0.3, `rgba(110, 225, 255, ${a * 0.6})`);
+    g.addColorStop(1, 'rgba(30, 120, 255, 0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(-r, -r, r * 2, r * 2);
+    ctx.restore();
+  }
+
+  /** A cross of light at (x, y) of the current transform: a streak `w` long either way, and one `h` up and down. */
+  private lensCross(x: number, y: number, w: number, h: number, alpha: number): void {
+    if (alpha <= 0) return;
+    const { ctx } = this;
+    const t = 0.6 * this.scale;
+    const across = ctx.createLinearGradient(x - w, 0, x + w, 0);
+    const down = ctx.createLinearGradient(0, y - h, 0, y + h);
+    for (const g of [across, down]) {
+      g.addColorStop(0, 'rgba(90, 200, 255, 0)');
+      g.addColorStop(0.5, `rgba(235, 255, 255, ${Math.min(1, alpha)})`);
+      g.addColorStop(1, 'rgba(90, 200, 255, 0)');
+    }
+    ctx.fillStyle = across;
+    ctx.fillRect(x - w, y - t, w * 2, t * 2);
+    ctx.fillStyle = down;
+    ctx.fillRect(x - t, y - h, t * 2, h * 2);
+  }
+
+  /** plasma_flare (laserBeamBits' glowing drop, in plasma blue): its head, r round, at (x, y) of the current transform and its tail pointing at angle a. */
+  private drawFlare(x: number, y: number, r: number, a: number, alpha: number): void {
+    if (r <= 0 || alpha <= 0) return;
+    const { ctx } = this;
+    const m = r / 35; // the drop's head is 35 px round (64, 52) of the texture, its tail running down from there
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, alpha);
+    ctx.imageSmoothingEnabled = true;
+    ctx.translate(x, y);
+    ctx.rotate(a - Math.PI / 2);
+    ctx.drawImage(this.assets.images.plasma_flare, 24, 0, 80, 240, -40 * m, -52 * m, 80 * m, 240 * m);
+    ctx.restore();
+  }
+
+  /** plasma_beam (Satan's laserBeam in plasma blue) turned a quarter, so that its long side, which runs along his beam (UpdateUVTiling), runs along x; as a pattern. */
+  private plasma(): CanvasPattern | null {
+    if (!this.plasmaPattern) {
+      const img = this.assets.images.plasma_beam;
+      const c = document.createElement('canvas');
+      c.width = img.height;
+      c.height = img.width;
+      const g = c.getContext('2d')!;
+      g.translate(c.width / 2, c.height / 2);
+      g.rotate(-Math.PI / 2);
+      g.drawImage(img, -img.width / 2, -img.height / 2);
+      this.plasmaPattern = this.ctx.createPattern(c, 'repeat');
+    }
+    return this.plasmaPattern;
+  }
+
+  /** Ours: the Tesla gun's battery over Musk's head while it isn't full: cyan, amber when low, red and blinking while it has overheated. */
+  private drawBattery(p: Unit, l: LaserState, time: number): void {
+    if (l.battery >= 1 && l.phase === 'off') return;
+    const { ctx } = this;
+    const s = this.scale;
+    const w = 16;
+    const x = Math.round(this.sx(p.x - w / 2));
+    const y = Math.round(this.sy(p.y + 30));
+    const fill = Math.round(w * l.battery) * s;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(x - s, y - s, (w + 2) * s, 4 * s);
+    ctx.fillStyle = l.overheated ? (Math.floor(time * 8) % 2 ? '#ff3b3b' : '#8a1414') : l.battery < 0.25 ? '#ffb02e' : '#5af0ff';
+    ctx.fillRect(x, y, fill, 2 * s);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.fillRect(x, y, fill, s);
   }
 
   private drawDjangoHat(u: Unit): void {

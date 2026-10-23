@@ -40,6 +40,13 @@ describe('sfx', () => {
     expect(sfxFor({ type: 'shot', weapon: 'flameWall', x: 0, y: 0, facing: 1 })).toBe('roar');
   });
 
+  it("gives Musk's laser its charge, its blast, its hum, its power-down and its overheat alarm; his arcs crackle", () => {
+    const laser = (phase: 'charge' | 'on' | 'hum' | 'stop' | 'overheat') => sfxFor({ type: 'laser', phase, x: 0, y: 0 });
+    expect((['charge', 'on', 'hum', 'stop', 'overheat'] as const).map(laser)).toEqual(['laserCharge', 'laserBlast', 'laserHum', 'laserStop', 'overheat']);
+    expect(sfxFor({ type: 'zapHit', x: 0, y: 0, unit: true })).toBe('zap');
+    expect(sfxFor({ type: 'laserHit', x: 0, y: 0, dir: 1 })).toBeNull();
+  });
+
   it('pans with the position and fades sounds far off screen', () => {
     expect(placement(100, 100)).toEqual({ pan: 0, gain: 1 });
     expect(placement(400, 100).pan).toBeCloseTo(0.6);

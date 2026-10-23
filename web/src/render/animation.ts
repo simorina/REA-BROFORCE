@@ -3,6 +3,7 @@ import {
   TANK_RUN_FRAME_RATE, UNDEAD, UNDEAD_SUICIDE, WARLOCK,
 } from '../engine/constants';
 import { isBoomer } from '../engine/hell';
+import { LASER, type LaserState } from '../engine/laser';
 import type { TileMap } from '../engine/map';
 import type { Tank, Turret } from '../engine/tank';
 
@@ -160,6 +161,28 @@ export function helicopterFrame(facing: 1 | -1): number {
 
 export function jetFrameCentreY(y: number, frameH: number): number {
   return y + frameH / 2 - JET_WHEELS;
+}
+
+export const LASER_FLASH = 0.1; // ours: the flash as Musk's laser lights
+
+/**
+ * LaserBeamVisuals.LateUpdate on Elon Musk's laser: charging, the beam swells from nothing to half its width in the
+ * charge's tint (TintLerp 0); burning, it is full width in its own colour (TintLerp 1); dissipating, it thins out to
+ * nothing as the tint goes. Ours flashes as it lights, from full to nothing over LASER_FLASH.
+ */
+export function laserLook(l: LaserState): { width: number; tint: number; flash: number } {
+  switch (l.phase) {
+    case 'charge':
+      return { width: 0.5 * Math.min(1, l.time / LASER.charge), tint: 0, flash: 0 };
+    case 'on':
+      return { width: 1, tint: 1, flash: Math.max(0, 1 - l.time / LASER_FLASH) };
+    case 'fade': {
+      const k = Math.max(0, 1 - l.time / LASER.fade);
+      return { width: k, tint: k, flash: 0 };
+    }
+    default:
+      return { width: 0, tint: 0, flash: 0 };
+  }
 }
 
 /** TankBroTank: AnimateActualIdleFrames (0, 0); AnimateRunning, columns 0-2 at runningFrameRate; AnimateJumping, row 1 by yI. */

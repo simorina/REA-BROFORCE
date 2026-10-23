@@ -144,6 +144,8 @@ TEXTURES = (
     TextureRef("slime_vomit", "Slime Vomit"),  # the Boomer's SlimeDrop
     TextureRef("brobocop_gun", "BROBOCOP_gun_anim", frame=(32, 32)),  # Brobocop's pistol and arm, repainted into the tesla_gun
     TextureRef("drone_gun", "DroneGun_anim", frame=(32, 32)),  # the drone's machine gun: 0 at rest, 1-3 firing
+    TextureRef("laser_beam_src", "laserBeam", frame=(32, 128)),  # Satan's laser: fire flowing along it, repainted plasma_beam
+    TextureRef("laser_bits_src", "laserBeamBits", frame=(256, 256)),  # its glowing drop, repainted plasma_flare
 )
 
 VALUES = (
@@ -265,7 +267,6 @@ VALUES = (
     ValuesRef("path_warlock", "PathAgent", "ZMookWarlock", PATH_FIELDS),
     ValuesRef("warlock_portal", "WarlockPortal", "WarlockPortal Suicide", ("launchDelay", "riseTime", "riseSpeed")),
     ValuesRef("satan", "Satan", "ZSatan", MOOK_FIELDS),
-    ValuesRef("tesla", "Broden", "Broden", ("lightningRange", "maxElectricShocks", "fireRate")),  # Elon Musk's Tesla gun
     ValuesRef("tesla_zap", "ElectricZap", "ElectricZap", ("MaxDeviation", "MaxLife", "ZapDuration")),
     ValuesRef("drone", "Drone", "Drone Machinegun", ("speed", "fireRate", "health")),
     ValuesRef("rocketpack", "TheBrocketeer", "TheBrocketeer", ("hoverDuration", "defaultHoverForce", "hoverSinForce", "hoverSinSpeed",

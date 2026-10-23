@@ -5,7 +5,7 @@ import type { GameEvent } from '../engine/world';
 export type SfxName =
   | 'kick' | 'throw' | 'shot' | 'rocket' | 'boom' | 'pop' | 'crumble' | 'splat' | 'grunt' | 'death' | 'alert'
   | 'rescue' | 'checkpoint' | 'whistle' | 'flex' | 'swish' | 'mortar' | 'cannon' | 'clank' | 'bite' | 'flame' | 'roar' | 'siren' | 'beep'
-  | 'zap';
+  | 'zap' | 'laserCharge' | 'laserBlast' | 'laserHum' | 'laserStop' | 'overheat';
 
 export function sfxFor(e: GameEvent): SfxName | null {
   switch (e.type) {
@@ -32,8 +32,6 @@ export function sfxFor(e: GameEvent): SfxName | null {
           return 'flame';
         case 'flameWall':
           return 'roar';
-        case 'tesla':
-          return 'zap';
         default:
           return 'shot';
       }
@@ -82,10 +80,16 @@ export function sfxFor(e: GameEvent): SfxName | null {
       return 'siren';
     case 'mineArmed':
       return 'beep';
+    case 'laser':
+      return LASER_SOUNDS[e.phase];
+    case 'zapHit':
+      return 'zap';
     default:
       return null;
   }
 }
+
+const LASER_SOUNDS = { charge: 'laserCharge', on: 'laserBlast', hum: 'laserHum', stop: 'laserStop', overheat: 'overheat' } as const;
 
 /** Stereo position and loudness of a sound at world x heard from the camera at camX. */
 export function placement(x: number, camX: number): { pan: number; gain: number } {
@@ -256,11 +260,41 @@ const RECIPES: Record<SfxName, (s: Sfx, out: AudioNode, t: number) => void> = {
     s.hiss(o, t, 'bandpass', 900, 380, 0.16, 0.3);
     s.hiss(o, t, 'lowpass', 520, 220, 0.16, 0.22);
   },
-  // the Tesla gun's bolt: a crackle over a falling buzz
+  // a Tesla arc striking: a crackle over a falling buzz
   zap: (s, o, t) => {
     s.hiss(o, t, 'highpass', 3200, 1800, 0.09, 0.32);
     s.tone(o, t, 'sawtooth', 1600, 240, 0.08, 0.13);
     s.tone(o, t + 0.02, 'square', 900, 180, 0.06, 0.06);
+  },
+  // Musk's laser: a whine rising through the quarter-second charge
+  laserCharge: (s, o, t) => {
+    s.tone(o, t, 'sine', 260, 1900, 0.27, 0.16);
+    s.tone(o, t, 'square', 130, 950, 0.27, 0.04);
+    s.hiss(o, t, 'bandpass', 700, 4200, 0.27, 0.18);
+  },
+  // ...the beam lighting: a thump, a falling roar and a crackle
+  laserBlast: (s, o, t) => {
+    s.tone(o, t, 'sine', 170, 45, 0.32, 0.7);
+    s.tone(o, t, 'sawtooth', 1100, 140, 0.38, 0.22);
+    s.tone(o, t, 'square', 2600, 700, 0.12, 0.06);
+    s.hiss(o, t, 'highpass', 5200, 1500, 0.28, 0.4);
+  },
+  // ...burning: a buzz every 0.12 s, a little longer than the gap, so that it throbs
+  laserHum: (s, o, t) => {
+    s.tone(o, t, 'sawtooth', 112, 104, 0.15, 0.13);
+    s.tone(o, t, 'square', 224, 212, 0.15, 0.035);
+    s.hiss(o, t, 'bandpass', 2600, 1900, 0.13, 0.13);
+  },
+  // ...let go: it powers down
+  laserStop: (s, o, t) => {
+    s.tone(o, t, 'sine', 950, 70, 0.32, 0.16);
+    s.hiss(o, t, 'lowpass', 2400, 180, 0.26, 0.2);
+  },
+  // ...run flat: two falling alarm blips over the hiss of the gun venting
+  overheat: (s, o, t) => {
+    [0, 0.16].forEach((d) => s.tone(o, t + d, 'square', 1400, 900, 0.13, 0.09));
+    s.hiss(o, t, 'highpass', 3800, 2200, 0.9, 0.22);
+    s.tone(o, t, 'sine', 600, 60, 0.4, 0.12);
   },
   // a mine's click: two quick blips, then it goes up
   beep: (s, o, t) => [0, 0.12].forEach((d) => s.tone(o, t + d, 'square', 1850, 1850, 0.06, 0.12)),

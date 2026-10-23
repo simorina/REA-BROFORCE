@@ -269,10 +269,7 @@ export function parseValues(raw: Raw): GameStats {
       alien_mosquito: alienSpeeds(raw, 'alien_mosquito'),
       hell_lostsoul: alienSpeeds(raw, 'hell_lostsoul'),
     },
-    tesla: {
-      range: num(raw, 'tesla', 'lightningRange'), shocks: num(raw, 'tesla', 'maxElectricShocks'), fireRate: num(raw, 'tesla', 'fireRate'),
-      deviation: num(raw, 'tesla_zap', 'MaxDeviation'), life: num(raw, 'tesla_zap', 'MaxLife'), zapTime: num(raw, 'tesla_zap', 'ZapDuration'),
-    },
+    tesla: { deviation: num(raw, 'tesla_zap', 'MaxDeviation'), life: num(raw, 'tesla_zap', 'MaxLife'), zapTime: num(raw, 'tesla_zap', 'ZapDuration') },
     drone: { speed: num(raw, 'drone', 'speed'), fireRate: num(raw, 'drone', 'fireRate'), health: num(raw, 'drone', 'health') },
     rocketpack: {
       duration: num(raw, 'rocketpack', 'hoverDuration'), force: num(raw, 'rocketpack', 'defaultHoverForce'),

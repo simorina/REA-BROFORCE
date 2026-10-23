@@ -3,7 +3,11 @@ import { TEST_STATS } from '../engine/testStats';
 import { makeUnit } from '../engine/units';
 import { TileMap, makeBlock } from '../engine/map';
 import { makeTank } from '../engine/tank';
-import { blockFrame, flameLook, helicopterFrame, jetFrameCentreY, mechFrame, loopFrame, prisonerFrame, special2Frame, stripFrame, tankHullFrame, turretFrame, unitFrame } from './animation';
+import { LASER, makeLaser, type LaserState } from '../engine/laser';
+import {
+  blockFrame, flameLook, helicopterFrame, jetFrameCentreY, LASER_FLASH, laserLook, mechFrame, loopFrame, prisonerFrame, special2Frame, stripFrame,
+  tankHullFrame, turretFrame, unitFrame,
+} from './animation';
 
 const bro = (patch: Partial<ReturnType<typeof makeUnit>>) =>
   Object.assign(makeUnit(1, 'bro', 'player', 0, 8, TEST_STATS.bros.bro_base), { onGround: true }, patch);
@@ -168,6 +172,27 @@ describe('blockFrame', () => {
 describe('the Goliath', () => {
   it('draws its turning frames: 0 facing right, 3 facing us, 6 facing left', () => {
     expect([0, 2.6, 6, 7, -1].map(mechFrame)).toEqual([0, 3, 6, 6, 0]);
+  });
+});
+
+describe("Elon Musk's laser (LaserBeamVisuals.LateUpdate)", () => {
+  const laser = (phase: LaserState['phase'], time: number): LaserState => ({ ...makeLaser(), phase, time });
+
+  it('swells to half its width as it charges, in the charge tint; burns full width in its own colour; thins out as it dissipates', () => {
+    expect(laserLook(laser('off', 0))).toEqual({ width: 0, tint: 0, flash: 0 });
+    expect(laserLook(laser('charge', 0))).toEqual({ width: 0, tint: 0, flash: 0 });
+    expect(laserLook(laser('charge', LASER.charge / 2)).width).toBeCloseTo(0.25);
+    expect(laserLook(laser('charge', LASER.charge))).toEqual({ width: 0.5, tint: 0, flash: 0 });
+    expect(laserLook(laser('on', 1))).toEqual({ width: 1, tint: 1, flash: 0 });
+    const fading = laserLook(laser('fade', LASER.fade / 2));
+    expect([fading.width, fading.tint]).toEqual([0.5, 0.5]);
+    expect(laserLook(laser('fade', LASER.fade)).width).toBe(0);
+  });
+
+  it('flashes as it lights: from full to nothing over LASER_FLASH', () => {
+    expect(laserLook(laser('on', 0)).flash).toBe(1);
+    expect(laserLook(laser('on', LASER_FLASH / 2)).flash).toBeCloseTo(0.5);
+    expect(laserLook(laser('on', LASER_FLASH)).flash).toBe(0);
   });
 });
 

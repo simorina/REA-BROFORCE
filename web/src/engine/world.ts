@@ -23,6 +23,7 @@ import { hearAlien, isAlien, makeAlienState, stepAlien } from './aliens';
 import { makeDolphState, stepDolph } from './dolph';
 import { DRONE, liveDrones, spawnDrones, stepDrones } from './drones';
 import { blastOff, makeRocketpack, stepRocketpack } from './rocketpack';
+import { burnLaser } from './laser';
 import { stepZaps, type Zap } from './tesla';
 import {
   boomerBlast, findPortalSpot, isBoomer, isDog, isHell, isHellBigGuy, isSuicide, makeHellState, stepBoomerDeath, stepUndeadCorpse,
@@ -92,7 +93,7 @@ export interface Grass {
 /** What happened during a step, for sound, particles and the voice line. Positions are world units. */
 export type GameEvent =
   | { type: 'voice'; text: string; lang: string }
-  | { type: 'shot'; weapon: ProjectileKind | 'judo' | 'blade' | 'cricket' | 'revolver' | 'm60' | 'flamethrower' | 'tesla'; x: number; y: number; facing: 1 | -1 }
+  | { type: 'shot'; weapon: ProjectileKind | 'judo' | 'blade' | 'cricket' | 'revolver' | 'm60' | 'flamethrower'; x: number; y: number; facing: 1 | -1 }
   | { type: 'explosion'; x: number; y: number; big: boolean; source: Blast['source']; range: number }
   | { type: 'airstrike'; x: number; y: number } // GrenadeAirstrike.Death: the marker calls the strike in
   | { type: 'block'; x: number; y: number; kind: BlockKind; damage: number }
@@ -128,7 +129,9 @@ export type GameEvent =
   | { type: 'alarmWarning'; x: number; y: number } // the alarmist's dead man's switch, counting down
   | { type: 'siren'; x: number; y: number } // an alarm going off
   | { type: 'mineArmed'; x: number; y: number } // a mine stepped on: its click
-  | { type: 'zapHit'; x: number; y: number; unit: boolean }; // a Tesla bolt strikes (a mook, or a wall or the air)
+  | { type: 'zapHit'; x: number; y: number; unit: boolean } // a Tesla arc strikes (a mook, or a wall or the air)
+  | { type: 'laser'; phase: 'charge' | 'on' | 'hum' | 'stop' | 'overheat'; x: number; y: number } // the Tesla laser's sounds
+  | { type: 'laserHit'; x: number; y: number; dir: -1 | 1 }; // where the Tesla laser eats into a block (dir: the way it runs)
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
 
 /** AlarmSystem, as "Alarm Megaphones": its siren and its paratroopers. */
@@ -411,6 +414,7 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
   const p = w.player;
   if (p.dead) {
     p.deadTime += t;
+    p.laser = undefined; // his laser goes out with him
     if (!p.gibbed) stepUnit(p, NO_INTENT, w.map, t, w.time);
     w.respawnTimer -= t;
     if (w.respawnTimer <= 0) {
@@ -422,6 +426,7 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
   if (p.invulnerable > 0) p.invulnerable = p.invulnerable - t > 1e-9 ? p.invulnerable - t : 0;
   if (w.driving) {
     driveVehicle(w, controls, prev);
+    p.laser = undefined; // at the wheel his laser goes out
   } else {
     if (!p.attack) startOrStopFlex(p, controls, prev);
     const fromX = p.x;
@@ -449,6 +454,8 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
       weapon.fire(w, p);
       p.fireCooldown = p.stats.fireRate;
     }
+    if (w.bro.weapon === 'tesla' && !w.django) burnLaser(w, p, t, blasts, (f, damage) => hitFoe(w, f, damage, blasts));
+    else p.laser = undefined;
     stepJudo(w, p, t, blasts);
     runGun(p, t);
     if (w.django && (w.django.time -= t) <= 0) w.django = null; // Django's time is up

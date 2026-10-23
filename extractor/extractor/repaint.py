@@ -258,6 +258,23 @@ FLAME_GREEN = flame_tone((0x05, 0x5A, 0x2A), (0x00, 0x92, 0x46), (0x9B, 0xE8, 0x
 FLAME_WHITE = flame_tone((0x9A, 0xA6, 0xB8), (0xDD, 0xE2, 0xEA), (0xFF, 0xFF, 0xFF))
 FLAME_RED = flame_tone((0x7A, 0x0B, 0x14), (0xCE, 0x2B, 0x37), (0xFF, 0x5A, 0x5A))  # its hottest still red, not salmon
 
+# Satan's laser -> Elon Musk's: the hell fire in Tesla blue
+PLASMA_DEEP: RGB = (0x18, 0x50, 0xFF)   # its orange
+PLASMA_CYAN: RGB = (0x5A, 0xF0, 0xFF)   # its yellow flames
+PLASMA_WHITE: RGB = (0xE6, 0xFF, 0xFF)  # its white core
+
+
+def plasma(rgb: RGB) -> RGB:
+    """Satan's LaserBeam is fire: orange (#FF6000) under yellow flames (#FFE000) round a white core, and its drop
+    (laserBeamBits) fades to dark red at the edge. Green says how hot (orange to yellow), blue how white, red how
+    bright: the tone keeps all three and paints the heat from deep blue through cyan to a blue-white core."""
+    r, g, b = rgb
+    t = max(0.0, min(1.0, (g - 0x60) / (0xE0 - 0x60)))
+    k = b / 0xFF
+    v = r / 0xFF
+    return tuple(round((PLASMA_DEEP[i] + (PLASMA_CYAN[i] - PLASMA_DEEP[i]) * t) * (1 - k) * v + PLASMA_WHITE[i] * k * v)
+                 for i in range(3))
+
 
 @dataclass(frozen=True)
 class Recipe:
@@ -290,6 +307,8 @@ RECIPES = (
     Recipe("musk", "bro_brobocop", MUSK_MAP),
     Recipe("tesla_gun", "brobocop_gun", TESLA_GUN_MAP),
     Recipe("drone", "drone_src", DRONE_MAP),
+    Recipe("plasma_beam", "laser_beam_src", {}, tone=plasma),
+    Recipe("plasma_flare", "laser_bits_src", {}, tone=plasma),
 )
 
 

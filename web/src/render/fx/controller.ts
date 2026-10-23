@@ -544,6 +544,14 @@ export class Effects {
         else this.puff('cricketBeam', e.x, e.y);
         this.sparkShower(e.x, e.y, e.unit ? 6 : 3, 2, e.unit ? 120 : 60, 0, 40, 0, 0, BLUE_SPARK);
         return;
+      case 'laserHit':
+        // ours: Musk's laser eating into a block: the Noisy Cricket's beam puff, blue and white sparks flying back at
+        // him, and now and then a wisp of smoke
+        this.puff('cricketBeam', e.x, e.y);
+        this.sparkShower(e.x, e.y, 4, 2, 70, -e.dir * 90, 40, 0, 0, BLUE_SPARK);
+        this.sparkShower(e.x, e.y, 3, 2, 50, -e.dir * 120, 60, 0, 0, WHITE);
+        if (this.rng() < 0.25) this.puff(this.pick(['smokeSmall1', 'smokeSmall2', 'smokeSmall3'] as const), e.x - e.dir * 3, e.y + 2, 1, -e.dir * 10, 25);
+        return;
       case 'cricketBeam':
         // NoisyCricket.RunBeam and RunCricketEffects: a beam puff, and blue sparks where the shot is
         this.puff('cricketBeam', e.x, e.y);

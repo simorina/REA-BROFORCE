@@ -147,7 +147,6 @@ export const RAW_VALUES: Record<string, Record<string, unknown>> = {
   path_warlock: { agentSize: 9, capabilities: { canJump: 1, canWallClimb: 0, fudge: 0, jumpHeight: 3, maxDropDistance: 4 } },
   warlock_portal: { launchDelay: 1, riseSpeed: 56, riseTime: 1.1 },
   satan: { _jumpForce: 260, canBeSetOnFire: 1, canDash: 0, canHideInGrass: 0, canWallClimb: 0, fireRate: 0.1, health: 3, hearingRangeX: 300, hearingRangeY: 200, maxFallSpeed: -400, originalSpecialAmmo: 3, speed: 70, willPanicWhenOnFire: 1 },
-  tesla: { lightningRange: 60, maxElectricShocks: 4, fireRate: 0.1 },
   tesla_zap: { MaxDeviation: 2, MaxLife: 0.15, ZapDuration: 0.15 },
   drone: { speed: 80, fireRate: 0.25, health: 1 },
   rocketpack: { hoverDuration: 2.2, defaultHoverForce: 0.09, hoverSinForce: 0.08, hoverSinSpeed: 12, hoverSinStart: 20, jetpackSideDirection: { x: 160, y: -330, z: 0 }, jetpackDownDirection: { x: 0, y: -370, z: 0 } },
@@ -298,7 +297,7 @@ export const TEST_STATS: GameStats = {
     alien_mosquito: { unaware: 45, aware: 45, mega: 45 },
     hell_lostsoul: { unaware: 25, aware: 25, mega: 25 },
   },
-  tesla: { range: 60, shocks: 4, fireRate: 0.1, deviation: 2, life: 0.15, zapTime: 0.15 },
+  tesla: { deviation: 2, life: 0.15, zapTime: 0.15 },
   drone: { speed: 80, fireRate: 0.25, health: 1 },
   rocketpack: { duration: 2.2, force: 0.09, sinForce: 0.08, sinSpeed: 12, sinStart: 20, side: { x: 160, y: -330 }, down: { x: 0, y: -370 } },
   hell: {

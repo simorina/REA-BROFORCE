@@ -4,6 +4,7 @@ from extractor.catalog import SPRITES, TEXTURES
 from extractor.repaint import HULL_MAP, PALETTE_MAP, PUTIN_HAIR, PUTIN_MAP, RECIPES, RU_FLAG, TRUMP_MAP, TURRET_MAP, repaint, stealth
 from extractor.repaint import CHE_GUN_MAP, CHE_MAP, CHE_STAR, EPSTEIN_MAP, SAMUEL_GUN_MAP, TEMPLE_MAP
 from extractor.repaint import FLAME_GREEN, FLAME_RED, FLAME_WHITE, MELONI_GUN_MAP, MELONI_MAP
+from extractor.repaint import PLASMA_CYAN, PLASMA_DEEP, PLASMA_WHITE, plasma
 
 
 def test_maps_known_colours_and_keeps_alpha():
@@ -247,3 +248,19 @@ def test_the_flames_burn_in_the_tricolour_hottest_lightest():
     assert repaint(img, {}, tone=FLAME_GREEN).getpixel((0, 0))[3] == 200
     pairs = {(r.key, r.source) for r in RECIPES}
     assert {("flame_green", "flame_1"), ("flame_white", "flame_2"), ("flame_red", "flame_3")} <= pairs
+
+
+def test_satans_laser_burns_in_tesla_blue_round_a_white_core():
+    orange, yellow, white, ember = (0xFF, 0x60, 0x00), (0xFF, 0xE0, 0x00), (0xFF, 0xFF, 0xFF), (0x40, 0x00, 0x00)
+    assert (plasma(orange), plasma(yellow), plasma(white)) == (PLASMA_DEEP, PLASMA_CYAN, PLASMA_WHITE)
+    for rgb in (orange, (0xFF, 0xA0, 0x00), yellow, (0xFF, 0xF0, 0x80)):
+        r, g, b = plasma(rgb)
+        assert b == 0xFF and r < g  # blue, never fire
+    assert sum(plasma(white)) > sum(plasma((0xFF, 0xF0, 0x80))) > sum(plasma(yellow)) > sum(plasma(orange))
+    assert max(plasma(ember)) < 0x50 and plasma((0, 0, 0)) == (0, 0, 0)  # the drop's dark edge stays dark
+    img = Image.new("RGBA", (1, 1), (*yellow, 90))
+    assert repaint(img, {}, tone=plasma).getpixel((0, 0)) == (*PLASMA_CYAN, 90)
+    pairs = {(r.key, r.source) for r in RECIPES}
+    assert {("plasma_beam", "laser_beam_src"), ("plasma_flare", "laser_bits_src")} <= pairs
+    textures = {t.key: (t.texture, t.frame) for t in TEXTURES}
+    assert textures["laser_beam_src"] == ("laserBeam", (32, 128)) and textures["laser_bits_src"] == ("laserBeamBits", (256, 256))

@@ -122,11 +122,14 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert values["undead"]["health"] == 3 and values["undead_suicide"]["range"] == pytest.approx(40.0)
     assert sheets["hell_boomer"]["frameW"] == 36 and sheets["satan"]["frameW"] == 32 and sheets["warlock_portal"]["frameW"] == 32
     assert sheets["block_dirt_hell"]["frameW"] == 16 and sheets["block_dirt_hell"]["cols"] == 2  # hell's earth
-    # Elon Musk: Broden's lightning, the Drone Machinegun, The Brocketeer's jetpack, and his repaints
-    assert values["tesla"]["lightningRange"] == 60 and values["tesla"]["maxElectricShocks"] == 4
+    # Elon Musk: the ElectricZap's arcs, the Drone Machinegun, The Brocketeer's jetpack, and his repaints
+    assert "tesla" not in values  # his gun is a laser now: Broden's lightning is no longer read
     assert values["tesla_zap"]["ZapDuration"] == pytest.approx(0.15) and values["drone"]["fireRate"] == pytest.approx(0.25)
     assert values["rocketpack"]["hoverDuration"] == pytest.approx(2.2) and values["rocketpack"]["jetpackDownDirection"]["y"] == pytest.approx(-370.0)
     assert sheets["musk"]["frameW"] == 32 and sheets["tesla_gun"]["frameW"] == 32 and sheets["drone"]["frameW"] == 32
+    # his laser: Satan's fire and drop in plasma blue
+    assert (sheets["plasma_beam"]["frameW"], sheets["plasma_beam"]["frameH"]) == (32, 128)
+    assert (sheets["plasma_flare"]["frameW"], sheets["plasma_flare"]["frameH"]) == (256, 256)
     # the universal soldier: 110 health, his launcher's attack 2.3 s
     assert values["mook_dolph"]["health"] == 110 and values["ai_mook_dolph"]["attackTime"] == pytest.approx(2.3)
     assert sheets["mook_dolph"]["frameW"] == 48 and sheets["dolph_gun"]["frameW"] == 64
