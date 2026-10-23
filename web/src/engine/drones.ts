@@ -6,11 +6,12 @@ import type { World } from './world';
 /**
  * Elon Musk's special: Broforce's "Drone Machinegun" (Drone, a TestVanDammeAnim led by its reviveSource). It flies after
  * the bro (xOffset -14 behind him, yOffset 14 up, a quarter of that while he ducks), fires when he fires and dies to a
- * single hit; dead, it falls on RunDeadGravity's 660 and blows up once it has been down 0.8 s (Drone.Gib). Ours: up to
- * three at once, each a little further back and up (Broforce gives a bro one).
+ * single hit; dead, it falls on RunDeadGravity's 660 and blows up once it has been down 0.8 s (Drone.Gib). Ours: two a
+ * special and up to six at once, in a formation round his back (Broforce gives a bro one).
  */
 export const DRONE = {
-  slots: [[-14, 14], [-26, 24], [-4, 28]] as ReadonlyArray<readonly [number, number]>, max: 3, duckM: 0.27,
+  slots: [[-14, 14], [-30, 24], [2, 30], [-44, 12], [-18, 38], [14, 18]] as ReadonlyArray<readonly [number, number]>,
+  max: 6, perSpecial: 2, duckM: 0.27,
   spawnY: 3, // SpawnDrone_Networked at (X, Y + 3)
   muzzleX: 6, muzzleY: 8, bulletSpeed: 400, jitter: 20, // Drone.UseFire: (X + dir*6, Y + 8) at dir*400, Random.Range(-20, 20)
   fall: 660, gibDelay: 0.8, // RunDeadGravity, Update
@@ -29,8 +30,12 @@ function chase(gap: number, speed: number, far: number, mid: number, farM: numbe
 
 export const liveDrones = (w: World): number => w.drones.filter((d) => !d.dead).length;
 
-/** BroBase.SpawnDrone: a new drone at the bro, if he has fewer than three. */
-export function spawnDrone(w: World): boolean {
+/** BroBase.SpawnDrone, twice: a pair of new drones at the bro, as many as fit under six. */
+export function spawnDrones(w: World): void {
+  for (let i = 0; i < DRONE.perSpecial; i++) spawnDrone(w);
+}
+
+function spawnDrone(w: World): boolean {
   if (liveDrones(w) >= DRONE.max) return false;
   const p = w.player;
   const s = w.stats.drone;

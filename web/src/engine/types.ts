@@ -344,7 +344,6 @@ export interface Unit {
   alien?: AlienState; // an alien's mind (aliens.ts)
   hell?: HellState; // what a hell mob keeps on top of its mook's mind (hell.ts)
   rocketpack?: RocketpackState; // The Brocketeer's jetpack on a bro who has one (rocketpack.ts)
-  zapChained?: boolean; // Broden.hasElectrifiedUnit: this press's lightning has arced already
 }
 
 /** MookJetpack: its jetpack, the countdown of a wrecked one, its spiral down and the fuse that blows it up. */

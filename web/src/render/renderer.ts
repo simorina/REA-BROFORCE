@@ -645,38 +645,72 @@ export class Renderer {
   /**
    * ElectricZapLineElement: the bolt's head runs out to its end in ZapDuration and its tail follows MaxLife behind; its
    * path wanders off the straight line (each point a step of up to MaxDeviation sideways from the last, held at the
-   * ends), redrawn every 0.1 s. Cyan round a white core.
+   * ends), redrawn every 0.1 s. Ours glows: a wide cyan halo, a cyan bolt round a white core, two forks crackling off
+   * it, and a glow at the gun while it runs.
    */
   private drawZaps(zaps: readonly Zap[], s: TeslaStats): void {
     const { ctx } = this;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
     for (const z of zaps) {
       const head = Math.min(1, z.age / s.zapTime);
       const tail = Math.max(0, (z.age - s.life) / s.zapTime);
       if (head <= tail) continue;
-      const dx = z.x1 - z.x0;
-      const dy = z.y1 - z.y0;
-      const len = Math.max(1, Math.hypot(dx, dy));
-      const n = Math.max(2, Math.floor(len * 0.25));
-      let seed = (z.seed + Math.floor(z.age / 0.1) * 7919) % 2147483647 || 1;
+      let seed = (z.seed + Math.floor(z.age / 0.06) * 7919) % 2147483647 || 1;
       const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-      const pts: Array<[number, number]> = [];
-      let side = 0;
-      for (let i = 0; i <= n; i++) {
-        const f = i / n;
-        side += (rnd() * 2 - 1) * s.deviation;
-        const bend = side * Math.sin(Math.PI * f);
-        if (f >= tail && f <= head) pts.push([this.sx(z.x0 + dx * f - (dy / len) * bend), this.sy(z.y0 + dy * f + (dx / len) * bend)]);
+      const main = this.boltPath(z.x0, z.y0, z.x1, z.y1, s.deviation * 1.5, tail, head, rnd);
+      this.strokeBolt(main, [['rgba(40, 200, 255, 0.22)', 9], ['rgba(70, 230, 255, 0.9)', 3.5], ['rgba(255, 255, 255, 1)', 1.5]]);
+      // two forks off the bolt where it has got to, each a short jagged spur
+      for (let k = 0; k < 2; k++) {
+        const f = tail + (head - tail) * (0.25 + rnd() * 0.55);
+        const bx = z.x0 + (z.x1 - z.x0) * f;
+        const by = z.y0 + (z.y1 - z.y0) * f;
+        const a = Math.atan2(z.y1 - z.y0, z.x1 - z.x0) + (rnd() < 0.5 ? -1 : 1) * (0.5 + rnd() * 0.7);
+        const len = 8 + rnd() * 12;
+        const fork = this.boltPath(bx, by, bx + Math.cos(a) * len, by + Math.sin(a) * len, s.deviation, 0, 1, rnd);
+        this.strokeBolt(fork, [['rgba(70, 230, 255, 0.6)', 2], ['rgba(255, 255, 255, 0.9)', 0.8]]);
       }
-      if (pts.length < 2) continue;
-      for (const [style, width] of [['rgba(62, 232, 255, 0.85)', 3], ['#ffffff', 1]] as const) {
-        ctx.strokeStyle = style;
-        ctx.lineWidth = width * this.scale;
-        ctx.lineJoin = 'round';
-        ctx.beginPath();
-        ctx.moveTo(pts[0][0], pts[0][1]);
-        for (const [x, y] of pts.slice(1)) ctx.lineTo(x, y);
-        ctx.stroke();
+      if (head < 1 || z.age < s.zapTime + s.life * 0.5) {
+        const r = (6 + rnd() * 3) * this.scale;
+        const g = ctx.createRadialGradient(this.sx(z.x0), this.sy(z.y0), 0, this.sx(z.x0), this.sy(z.y0), r);
+        g.addColorStop(0, 'rgba(220, 255, 255, 0.9)');
+        g.addColorStop(1, 'rgba(40, 200, 255, 0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(this.sx(z.x0) - r, this.sy(z.y0) - r, r * 2, r * 2);
       }
+    }
+    ctx.restore();
+  }
+
+  /** A jagged path from (x0, y0) to (x1, y1) (a point every 4, wandering `dev` a step), the part between from and to (0-1), in screen pixels. */
+  private boltPath(x0: number, y0: number, x1: number, y1: number, dev: number, from: number, to: number, rnd: () => number): Array<[number, number]> {
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const len = Math.max(1, Math.hypot(dx, dy));
+    const n = Math.max(2, Math.floor(len * 0.25));
+    const pts: Array<[number, number]> = [];
+    let side = 0;
+    for (let i = 0; i <= n; i++) {
+      const f = i / n;
+      side += (rnd() * 2 - 1) * dev;
+      const bend = side * Math.sin(Math.PI * f);
+      if (f >= from && f <= to) pts.push([this.sx(x0 + dx * f - (dy / len) * bend), this.sy(y0 + dy * f + (dx / len) * bend)]);
+    }
+    return pts;
+  }
+
+  private strokeBolt(pts: ReadonlyArray<[number, number]>, layers: ReadonlyArray<readonly [string, number]>): void {
+    if (pts.length < 2) return;
+    const { ctx } = this;
+    for (const [style, width] of layers) {
+      ctx.strokeStyle = style;
+      ctx.lineWidth = width * this.scale;
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      for (const [x, y] of pts.slice(1)) ctx.lineTo(x, y);
+      ctx.stroke();
     }
   }
 

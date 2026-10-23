@@ -21,7 +21,7 @@ import { parseLevel, type LevelData } from './level';
 import { makeBlock, type TileMap } from './map';
 import { hearAlien, isAlien, makeAlienState, stepAlien } from './aliens';
 import { makeDolphState, stepDolph } from './dolph';
-import { DRONE, liveDrones, spawnDrone, stepDrones } from './drones';
+import { DRONE, liveDrones, spawnDrones, stepDrones } from './drones';
 import { blastOff, makeRocketpack, stepRocketpack } from './rocketpack';
 import { stepZaps, type Zap } from './tesla';
 import {
@@ -127,7 +127,8 @@ export type GameEvent =
   | { type: 'jetpack'; x: number; y: number; facing: 1 | -1 } // a jetpack's thrust
   | { type: 'alarmWarning'; x: number; y: number } // the alarmist's dead man's switch, counting down
   | { type: 'siren'; x: number; y: number } // an alarm going off
-  | { type: 'mineArmed'; x: number; y: number }; // a mine stepped on: its click
+  | { type: 'mineArmed'; x: number; y: number } // a mine stepped on: its click
+  | { type: 'zapHit'; x: number; y: number; unit: boolean }; // a Tesla bolt strikes (a mook, or a wall or the air)
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
 
 /** AlarmSystem, as "Alarm Megaphones": its siren and its paratroopers. */
@@ -451,7 +452,7 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
     stepJudo(w, p, t, blasts);
     runGun(p, t);
     if (w.django && (w.django.time -= t) <= 0) w.django = null; // Django's time is up
-    const droneBay = w.bro.special !== 'drone' || liveDrones(w) < DRONE.max; // three drones at most
+    const droneBay = w.bro.special !== 'drone' || liveDrones(w) < DRONE.max; // six drones at most
     if (controls.special && !prev.special && w.specialAmmo > 0 && droneBay) {
       w.specialAmmo -= 1;
       const thrown = SPECIAL_KITS[w.bro.special](w.nextId++, p, controls.down);
@@ -466,7 +467,7 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
         w.django = { time: DJANGO.time, shots: 0, reload: 0 };
         w.events.push({ type: 'django', x: p.x, y: p.y });
       }
-      if (w.bro.special === 'drone') spawnDrone(w);
+      if (w.bro.special === 'drone') spawnDrones(w);
     }
   }
   if (p.y < -64 && !w.driving) {

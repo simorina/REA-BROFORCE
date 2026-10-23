@@ -225,6 +225,13 @@ describe("Giorgia Meloni's fire", () => {
     expect(fx.puffs[1].def.file).toContain('flameWallRed');
   });
 
+  it("a Tesla bolt striking a mook bursts in the Noisy Cricket's blue ball; in the air, a smaller beam puff", () => {
+    const fx = new Effects(TEST_EFFECTS, () => 0.5);
+    fx.onEvent({ type: 'zapHit', x: 64, y: 28, unit: true }, () => 'mook');
+    fx.onEvent({ type: 'zapHit', x: 96, y: 28, unit: false }, () => 'mook');
+    expect(fx.puffs.map((p) => p.def.name)).toEqual(['Noisy Cricket Ball Puff', 'Noisy Cricket Beam Puff']);
+  });
+
   it("a hell Bruiser's flame wall puffs hell's own flames", () => {
     const fx = new Effects(TEST_EFFECTS, () => 0.5);
     fx.onEvent({ type: 'flameWallPuff', x: 64, y: 28, variant: 1, delay: 0, dir: -1, xI: -66, hell: true }, () => 'mook');

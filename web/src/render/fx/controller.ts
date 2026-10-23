@@ -538,6 +538,12 @@ export class Effects {
         // (the hell Bruisers' wall puffs its hell flames; Ellen's, Meloni's tricolour)
         this.puff((e.hell ? HELL_WALL_PUFFS : TRICOLOUR_WALL_PUFFS)[e.variant] ?? 'flameWallRed', e.x, e.y, e.dir, e.xI, 0, WHITE, e.delay);
         return;
+      case 'zapHit':
+        // the Tesla bolt striking: the Noisy Cricket's blue ball and a shower of its blue sparks (smaller in the air)
+        if (e.unit) this.puff('cricketBall', e.x, e.y);
+        else this.puff('cricketBeam', e.x, e.y);
+        this.sparkShower(e.x, e.y, e.unit ? 6 : 3, 2, e.unit ? 120 : 60, 0, 40, 0, 0, BLUE_SPARK);
+        return;
       case 'cricketBeam':
         // NoisyCricket.RunBeam and RunCricketEffects: a beam puff, and blue sparks where the shot is
         this.puff('cricketBeam', e.x, e.y);

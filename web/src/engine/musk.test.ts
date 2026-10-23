@@ -48,8 +48,8 @@ describe('Elon Musk, the ultra-tech bro', () => {
     expect(seen.size).toBe(4);
   });
 
-  it('a zap locks onto the nearest mook ahead within 95 and hits him for 3; the first of a press arcs on to two more', () => {
-    const w = world([[3, 'P'], [7, 'm'], [9, 'm'], [10, 'm'], [20, 'm'], [38, 'F']]);
+  it("a bolt locks onto the nearest mook ahead within 155 (twice Broden's reach) and arcs on to two more", () => {
+    const w = world([[3, 'P'], [11, 'm'], [13, 'm'], [14, 'm'], [30, 'm'], [38, 'F']]);
     w.player.invulnerable = 999;
     const [a, b, c, far] = w.enemies;
     play(w, 1, { fire: true });
@@ -58,7 +58,19 @@ describe('Elon Musk, the ultra-tech bro', () => {
     expect(far.dead).toBe(false);
   });
 
-  it('with no mook ahead it strikes the first wall within 72 for 8: a dirt block goes', () => {
+  it('every bolt hits for 4, and every bolt of a press arcs on, not just the first', () => {
+    const w = world([[3, 'P'], [11, 'm'], [13, 'm'], [38, 'F']]);
+    w.player.invulnerable = 999;
+    const [a, b] = w.enemies;
+    a.health = b.health = 100;
+    const arcs = new Set<number>();
+    play(w, 1, { fire: true }, () => w.zaps.forEach((z) => z.target === b.id && arcs.add(z.id)));
+    play(w, steps(0.8), {}, () => w.zaps.forEach((z) => z.target === b.id && arcs.add(z.id)));
+    expect(a.health).toBe(100 - 4 * 4);
+    expect(arcs.size).toBe(4);
+  });
+
+  it('with no mook ahead it strikes the first wall within 132 for 8: a dirt block goes', () => {
     const w = world([[3, 'P'], [7, 'd'], [38, 'F']]);
     expect(w.map.get(7, 2)).not.toBeNull();
     play(w, 1, { fire: true });
@@ -66,11 +78,11 @@ describe('Elon Musk, the ultra-tech bro', () => {
     expect(w.map.get(7, 2)).toBeNull();
   });
 
-  it('the special sends up a drone that follows him 14 behind and 14 up, and fires when he fires (Drone)', () => {
+  it('the special sends up two drones; the first follows him 14 behind and 14 up, and they fire when he fires (Drone)', () => {
     const w = world([[3, 'P'], [38, 'F']]);
     play(w, 1, { special: true });
     play(w, steps(1));
-    expect(w.drones).toHaveLength(1);
+    expect(w.drones).toHaveLength(2);
     const d = w.drones[0];
     expect(Math.abs(d.x - (w.player.x - w.player.facing * 14))).toBeLessThan(4); // the last 5 px it closes at the gap a second
     expect(Math.abs(d.y - (w.player.y + 14))).toBeLessThan(4);
@@ -81,27 +93,32 @@ describe('Elon Musk, the ultra-tech bro', () => {
     expect(shots.size).toBeGreaterThanOrEqual(2);
   });
 
-  it('each special adds a drone, three at once', () => {
+  it('each special sends up two drones: six at once, each in its own place', () => {
     const w = world([[3, 'P'], [38, 'F']]);
     for (let i = 0; i < 3; i++) {
       play(w, 1, { special: true });
       play(w, 2);
     }
-    expect(w.drones).toHaveLength(3);
+    expect(w.drones).toHaveLength(6);
     expect(w.specialAmmo).toBe(0);
+    play(w, steps(1.5));
+    const spots = new Set(w.drones.map((d) => `${Math.round(d.x / 6)},${Math.round(d.y / 6)}`));
+    expect(spots.size).toBe(6);
   });
 
-  it('a drone shot down falls burning and blows up (Drone.Death, Gib)', () => {
+  it('a drone shot down falls burning and blows up (Drone.Death, Gib); its partner flies on', () => {
     const w = world([[3, 'P'], [38, 'F']]);
     play(w, 1, { special: true });
     play(w, steps(0.5));
-    damageUnit(w.drones[0], 1);
+    const [hit, partner] = w.drones;
+    damageUnit(hit, 1);
     let boom = false;
     play(w, steps(2), {}, () => {
       boom = boom || w.events.some((e) => e.type === 'explosion');
     });
     expect(boom).toBe(true);
-    expect(w.drones).toHaveLength(0);
+    expect(w.drones).toEqual([partner]);
+    expect(partner.dead).toBe(false);
   });
 
   it("the bro's death takes his drones with him", () => {

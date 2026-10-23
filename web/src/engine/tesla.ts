@@ -6,20 +6,22 @@ import { damageUnit, knock } from './units';
 import type { World } from './world';
 
 /**
- * Elon Musk's Tesla gun: Broden's lightning. FireWeapon from (X + dir*10, Y + 6.5): the shock at point blank
+ * Elon Musk's Tesla gun: Broden's lightning, souped up. FireWeapon from (X + dir*10, Y + 6.5): the shock at point blank
  * (Map.HitUnits, 3 within 20 x 10), then a bolt (ElectricZap) to the nearest mook ahead, else to the wall ahead, else
- * into the air; the first bolt of a press arcs on to two more mooks (ElectricZapLineElement's chainCount).
+ * into the air. Ours reaches twice as far as Broden's (rangeM), hits for 4 (his 3) and every bolt arcs on to two more
+ * mooks (his: the first of a press), further (60, then 40; his 45 and 30).
  */
 export const TESLA = {
+  rangeM: 2,
   ox: 10, oy: 6.5, // UseFire's FireWeapon(X + dir*10, Y + 6.5)
   shockX: 9, shockY: 4, shockW: 20, shockH: 10, shockDamage: 3, shockKnock: 25,
   boltX: -13, boltY: 0, // the zapper: x + dir*(3 + zapperXOffset -16), y + 12 + zapperYOffset -12
   seekBack: 15, seekExtra: 35, seekY: 10, // GetNearestEnemyUnit(lightningRange + 35, 10) from x - dir*15
   clear: 16, sightY: 8.5, // no wall in the way, but for the last 16
-  unitDamage: 3, knockX: 50, knockY: 25, unitY: 8, unitYRand: 4,
+  unitDamage: 4, knockX: 50, knockY: 25, unitY: 8, unitYRand: 4,
   wallBack: 12, wallExtra: 12, wallRays: [8.5, 3.5, 12.5, 17.5], wallDamage: 8, wallDrop: 4, // the rays at a wall
   airBack: 4, airRand: 8, airY: 5, airYRand: 5,
-  chain: 2, chainRange: 45, chainShrink: 0.66, chainY: 11, chainAhead: 4, chainUnitY: 9, chainUnitYRand: 7,
+  chain: 2, chainRange: 60, chainShrink: 0.66, chainY: 11, chainAhead: 4, chainUnitY: 9, chainUnitYRand: 7,
   quenchX: 32, quenchY: 12, quenchW: 32, quenchH: 12, // Map.HitProjectiles in front of him
 };
 
@@ -92,23 +94,23 @@ export function teslaZap(w: World, p: Unit, s: TeslaStats): void {
   }
   const bx = x + dir * TESLA.boltX;
   const by = y + TESLA.boltY;
-  const target = nearestEnemy(w.enemies, x - dir * TESLA.seekBack, y, s.range + TESLA.seekExtra, TESLA.seekY, dir);
+  const reach = s.range * TESLA.rangeM;
+  const target = nearestEnemy(w.enemies, x - dir * TESLA.seekBack, y, reach + TESLA.seekExtra, TESLA.seekY, dir);
   if (target && (Math.abs(target.x - x) < TESLA.clear || !rayX(w.map, x, y + TESLA.sightY, dir, Math.abs(target.x - x) - TESLA.clear))) {
     w.zaps.push(makeZap(w, bx, by, target.x, target.y + TESLA.unitY + Math.floor(w.rng() * TESLA.unitYRand), {
-      target: target.id, damage: TESLA.unitDamage, chain: p.zapChained ? 0 : TESLA.chain, range: TESLA.chainRange, dir,
+      target: target.id, damage: TESLA.unitDamage, chain: TESLA.chain, range: TESLA.chainRange, dir,
     }));
-    p.zapChained = true; // hasElectrifiedUnit
     return;
   }
   let wall: { x: number; y: number } | null = null;
   for (const dy of TESLA.wallRays) {
-    wall = rayX(w.map, x - dir * TESLA.wallBack, y + dy, dir, s.range + TESLA.wallExtra);
+    wall = rayX(w.map, x - dir * TESLA.wallBack, y + dy, dir, reach + TESLA.wallExtra);
     if (wall) break;
   }
   if (wall) {
     w.zaps.push(makeZap(w, bx, by, wall.x, wall.y - TESLA.wallDrop, { cell: { c: getColumn(wall.x), r: getRow(wall.y) }, damage: TESLA.wallDamage, dir }));
   } else {
-    const ex = x + dir * (s.range - TESLA.airBack + w.rng() * TESLA.airRand);
+    const ex = x + dir * (reach - TESLA.airBack + w.rng() * TESLA.airRand);
     w.zaps.push(makeZap(w, bx, by, ex, y + TESLA.airY + Math.floor(w.rng() * TESLA.airYRand), { dir }));
   }
   // Map.HitProjectiles: the enemy shots in front of him go
@@ -128,7 +130,6 @@ export function stepTeslaGun(w: World, p: Unit, fire: boolean, t: number): void 
   if (fire && !p.wasFire) {
     p.burstLeft = s.shocks;
     p.burstCounter = s.fireRate;
-    p.zapChained = false;
   }
   p.wasFire = fire;
   if (p.burstLeft <= 0) return;
@@ -153,6 +154,7 @@ export function stepZaps(w: World, t: number, blasts: Blast[]): void {
     z.age += t;
     if (z.struck || z.age < s.zapTime) continue;
     z.struck = true;
+    w.events.push({ type: 'zapHit', x: z.x1, y: z.y1, unit: z.target !== null }); // where it strikes: a blue burst
     if (z.target !== null) {
       const m = w.enemies.find((e) => e.id === z.target);
       if (m && !m.dead) {

@@ -7,13 +7,16 @@ Status: the user asked for Elon Musk as "un personaggio ultra tech" and left the
 
 A ninth playable parody bro, **Elon Musk**, built only out of Broforce's own tech:
 - **Look:** Brobocop's armour, repainted into a white spacesuit with black trim and a glowing cyan visor.
-- **Weapon, the Tesla gun:** Broden's lightning. Each press of fire lets off four zaps, one every 0.1 s. A zap locks
-  onto the nearest mook ahead within 95 and hits him for 3; the first zap of a press arcs on to two more mooks further
-  ahead (within 45, then 30). With no mook ahead it strikes the first wall within 72 (8 to the block), or the air 60
-  out. Both put out the enemy shots in front of him. Point blank, the shock hits for 3 as well.
-- **Special, the drone:** Broforce's `Drone Machinegun` follows him (14 behind, 14 up) and fires `Bullet Rambo`
-  whenever he fires, one every 0.25 s at 400. It has 1 health; shot down, it falls burning and blows up. Each special
-  adds a drone, up to three at once (Broforce gives a bro one).
+- **Weapon, the Tesla gun:** Broden's lightning, souped up at the user's request (2026-10-24). Each press of fire lets
+  off four zaps, one every 0.1 s. A zap locks onto the nearest mook ahead within 155, twice Broden's reach, and hits
+  him for 4 (Broden: 3). Every zap arcs on to two more mooks further ahead, within 60 and then 40 (Broden: only the
+  first of a press, within 45 and 30). With no mook ahead it strikes the first wall within 132 (8 to the block), or the
+  air 120 out. Both put out the enemy shots in front of him. Point blank, the shock hits for 3.
+  The look: a wide cyan halo, a cyan bolt round a white core and two forks crackling off it, with a glow at the gun. It
+  bursts in the Noisy Cricket's blue ball and sparks where it strikes a mook (a beam puff in the air or on a wall).
+- **Special, the drones:** Broforce's `Drone Machinegun`, two per special. They fly in a formation round his back, the
+  first 14 behind and 14 up, and fire `Bullet Rambo` whenever he fires, one every 0.25 s at 400. Each has 1 health;
+  shot down, it falls burning and blows up. Up to six fly at once (Broforce gives a bro one).
 - **Movement, the jetpack:** The Brocketeer's. A jump lights it (`BlastOff`; its +100 is lost to the jump that
   follows, as in Broforce), and holding jump pushes him up on its sinusoidal lift for up to 2.2 s, steering left and
   right. With the prefab's forces (0.09 and 0.08 against gravity's 1100) the lift slightly loses: from a jump he stays

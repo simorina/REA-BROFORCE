@@ -10,7 +10,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   rpg: 'Lanciarazzi RPG: razzo balistico diretto a forte impatto',
   m60: 'Mitragliatrice M60 di Rambro: raffica continua tenendo premuto',
   flamethrower: 'Lanciafiamme di B.A. Broracus a fiamme tricolori: a corto raggio, dà fuoco ai nemici',
-  tesla: 'Fucile Tesla: quattro fulmini a ogni pressione, agganciano il nemico più vicino e il primo rimbalza su altri due',
+  tesla: 'Fucile Tesla: quattro fulmini a ogni pressione, a lunga gittata; ognuno aggancia il nemico più vicino e rimbalza su altri due',
 };
 const SPECIAL_HINT: Record<SpecialId, string> = {
   airstrike: 'Attacco aereo (con ↓ lo lanci corto)',
@@ -22,7 +22,7 @@ const SPECIAL_HINT: Record<SpecialId, string> = {
   django: 'Django: per 12 secondi diventi Django, col revolver (sei colpi, poi ricarica) e la sua musica',
   molotov: 'Molotov: esplode dove cade, dà fuoco ai nemici vicini e sparge quattro fiammelle',
   flamewall: 'Muro di fuoco di Ellen Ripbro: un fronte di fiamme tricolori avanza per 14 blocchi, alto 3',
-  drone: 'Drone armato: ti segue e spara quando spari tu (fino a tre in volo)',
+  drone: 'Due droni armati: ti seguono in formazione e sparano quando spari tu (fino a sei in volo)',
 };
 
 interface Props {
