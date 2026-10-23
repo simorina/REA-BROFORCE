@@ -1,0 +1,12 @@
+{
+  "id": "musk",
+  "name": "Elon Musk",
+  "sheet": "musk",
+  "base": "bro_base",
+  "weapon": "tesla",
+  "special": "drone",
+  "jetpack": true,
+  "specialAmmo": 3,
+  "voiceLine": "Occupy Mars!",
+  "voiceLang": "en-US"
+}

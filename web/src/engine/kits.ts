@@ -1,5 +1,6 @@
 import type { SpecialId, WeaponId } from './bro';
 import { startJudo } from './judo';
+import { stepTeslaGun } from './tesla';
 import { CRICKET, REVOLVER, RIFLE } from './constants';
 import { getColumn, getRow } from './map';
 import {
@@ -139,6 +140,11 @@ export const WEAPON_KITS: Record<WeaponId, WeaponKit> = {
       if (runFiring(p, fire, t, w.stats.flamethrower.fireRate)) squirtFlames(w, p); // BaBroracus.RunFiring at B.A.'s fireRate
     },
   },
+  tesla: {
+    repeat: false,
+    fire() {}, // the step does it all
+    step: stepTeslaGun, // Broden.StartFiring / RunFiring: four zaps a press
+  },
   rpg: {
     repeat: true,
     fire(w, p) {
@@ -196,4 +202,5 @@ export const SPECIAL_KITS: Record<SpecialId, (id: number, p: Unit, ducking: bool
   django: () => null,
   molotov: throwMolotov,
   flamewall: (id, p) => makeFlameWall(id, p),
+  drone: () => null, // the world sends up the drone (drones.ts)
 };

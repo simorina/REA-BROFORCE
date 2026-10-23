@@ -9,7 +9,8 @@ import type { Jet } from '../engine/jet';
 import type { Mech } from '../engine/mech';
 import type { Tank } from '../engine/tank';
 import { isBoomer, isHellBigGuy, isSuicide } from '../engine/hell';
-import type { BlockKind, Projectile, Unit, UnitKind } from '../engine/types';
+import type { Zap } from '../engine/tesla';
+import type { BlockKind, Projectile, TeslaStats, Unit, UnitKind } from '../engine/types';
 import { speaker, type Effect, type GameEvent, type World } from '../engine/world';
 import {
   blockFrame, flameLook, helicopterFrame, jetFrameCentreY, loopFrame, mechFrame, prisonerFrame, SATAN_GONE, tankHullFrame, turretFrame, unitFrame,
@@ -36,7 +37,7 @@ const ENEMY_SHEETS: Record<Exclude<UnitKind, 'bro'>, SheetKey> = {
   alien_melter: 'alien_melter', alien_brute: 'alien_brute', alien_mosquito: 'alien_mosquito',
   hell_dog: 'hell_dog', hell_lostsoul: 'hell_lostsoul', hell_boomer: 'hell_boomer', hell_soulcatcher: 'hell_soulcatcher',
   hell_bigguy: 'hell_bigguy', hell_armoured: 'hell_armoured', undead: 'undead', undead_suicide: 'undead_suicide', skinless: 'skinless',
-  warlock: 'warlock', satan: 'satan',
+  warlock: 'warlock', satan: 'satan', drone: 'drone',
 };
 const BLOCK_SHEETS: Record<BlockKind, SheetKey> = {
   dirt: 'block_dirt', sand: 'block_sand', brick: 'block_brick', temple: 'block_temple', steel: 'block_steel', barrel: 'block_barrel',
@@ -121,6 +122,8 @@ export class Renderer {
     for (const e of w.enemies) if (!e.exitDoor) this.drawUnit(e, w.time);
     const boarded = w.state === 'extracting' && w.extractionTime >= EXTRACTION_TIME / 2;
     if (!boarded && !w.driving) this.drawUnit(w.player, w.time);
+    for (const d of w.drones) this.drawDrone(d);
+    this.drawZaps(w.zaps, w.stats.tesla);
     this.drawGibs();
     this.drawParticles();
     this.drawPuffs();
@@ -358,7 +361,7 @@ export class Renderer {
       const beeping = u.dolph.siegeFrame >= 3 && u.fireDelay > 0;
       this.sprite('dolph_gun', beeping ? 6 + (Math.floor(u.dolph.beep / 0.067) % 2) : u.gunFrame, 0, u.x, u.y + this.assets.sheets[key].offsetY, u.facing < 0);
     }
-    if (u.jet?.on && !u.dead) this.drawThrust(u, time);
+    if ((u.jet?.on || u.rocketpack?.on) && !u.dead) this.drawThrust(u, time); // a jetpack mook's, or The Brocketeer's on Musk
     if (u.kind === 'bro' && this.django && !u.dead) this.drawDjangoHat(u);
     // MookRiotShield: the shield is his gun sprite, held until it is knocked away
     if (u.shield > 0 && !u.dead) this.sprite('shield', 0, 0, u.x, u.y + this.assets.sheets[key].offsetY, u.facing < 0);
@@ -628,6 +631,52 @@ export class Renderer {
       ctx.fillRect(Math.round(this.sx(x)), Math.round(this.sy(u.y + 3)), 2 * s, len * s);
       ctx.fillStyle = '#ffe36b';
       ctx.fillRect(Math.round(this.sx(x)), Math.round(this.sy(u.y + 3)), 2 * s, Math.max(1, len - 2) * s);
+    }
+  }
+
+  /** Drone Machinegun: its rotors spinning (row 0, frames 0-3), its gun on top with the muzzle frames; dead, it tumbles. */
+  private drawDrone(d: Unit): void {
+    const off = this.assets.sheets.drone.offsetY;
+    const col = d.dead ? 4 + (Math.floor(d.deadTime / 0.1) % 2) : Math.floor(d.animTime / 0.03) % 4;
+    this.sprite('drone', col, 0, d.x, d.y + off, d.facing < 0);
+    if (!d.dead) this.sprite('drone_gun', d.gunFrame, 0, d.x, d.y + off, d.facing < 0);
+  }
+
+  /**
+   * ElectricZapLineElement: the bolt's head runs out to its end in ZapDuration and its tail follows MaxLife behind; its
+   * path wanders off the straight line (each point a step of up to MaxDeviation sideways from the last, held at the
+   * ends), redrawn every 0.1 s. Cyan round a white core.
+   */
+  private drawZaps(zaps: readonly Zap[], s: TeslaStats): void {
+    const { ctx } = this;
+    for (const z of zaps) {
+      const head = Math.min(1, z.age / s.zapTime);
+      const tail = Math.max(0, (z.age - s.life) / s.zapTime);
+      if (head <= tail) continue;
+      const dx = z.x1 - z.x0;
+      const dy = z.y1 - z.y0;
+      const len = Math.max(1, Math.hypot(dx, dy));
+      const n = Math.max(2, Math.floor(len * 0.25));
+      let seed = (z.seed + Math.floor(z.age / 0.1) * 7919) % 2147483647 || 1;
+      const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      const pts: Array<[number, number]> = [];
+      let side = 0;
+      for (let i = 0; i <= n; i++) {
+        const f = i / n;
+        side += (rnd() * 2 - 1) * s.deviation;
+        const bend = side * Math.sin(Math.PI * f);
+        if (f >= tail && f <= head) pts.push([this.sx(z.x0 + dx * f - (dy / len) * bend), this.sy(z.y0 + dy * f + (dx / len) * bend)]);
+      }
+      if (pts.length < 2) continue;
+      for (const [style, width] of [['rgba(62, 232, 255, 0.85)', 3], ['#ffffff', 1]] as const) {
+        ctx.strokeStyle = style;
+        ctx.lineWidth = width * this.scale;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (const [x, y] of pts.slice(1)) ctx.lineTo(x, y);
+        ctx.stroke();
+      }
     }
   }
 

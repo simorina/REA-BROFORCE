@@ -7,7 +7,7 @@ export type EnemyKind = 'mook' | 'mook_suicide' | 'mook_bazooka' | 'mook_scout' 
   | 'alien_xeno' | 'alien_xeno_brain' | 'alien_hugger' | 'alien_snake' | 'alien_melter' | 'alien_brute' | 'alien_mosquito'
   | 'hell_dog' | 'hell_lostsoul' | 'hell_boomer' | 'hell_soulcatcher' | 'hell_bigguy' | 'hell_armoured'
   | 'undead' | 'undead_suicide' | 'skinless' | 'warlock' | 'satan';
-export type UnitKind = 'bro' | EnemyKind | 'boss';
+export type UnitKind = 'bro' | EnemyKind | 'boss' | 'drone';
 /** The bro prefabs a custom bro takes his unit values from (values.json keys). */
 export const BRO_BASES = ['bro_base', 'bro_lee', 'bro_soldier', 'bro_in_black', 'bro_rambro', 'bro_ellen'] as const;
 export type BroBase = (typeof BRO_BASES)[number];
@@ -113,6 +113,7 @@ export interface FoeStats {
 import type { AlienSpeeds, AlienState } from './aliens';
 import type { DolphState } from './dolph';
 import type { HellState } from './hell';
+import type { RocketpackState } from './rocketpack';
 
 export interface RocketStats {
   damage: number;
@@ -167,6 +168,9 @@ export interface GameStats {
   elite: { runSpeedMultiplier: number; jumpRange: number }; // MookBigGuyElite, BigGuyEliteAI
   alienSpeeds: Record<'alien_xeno' | 'alien_xeno_brain' | 'alien_hugger' | 'alien_snake' | 'alien_melter' | 'alien_brute' | 'alien_mosquito' | 'hell_lostsoul', AlienSpeeds>;
   hell: HellStats;
+  tesla: TeslaStats; // Broden's lightning: Elon Musk's Tesla gun
+  drone: { speed: number; fireRate: number; health: number }; // "Drone Machinegun"
+  rocketpack: RocketpackStats; // The Brocketeer's jetpack
   foes: { truck: FoeStats; apc: FoeStats; bike: FoeStats; nukebike: FoeStats; artillery: FoeStats; kopter: FoeStats };
   hugeBullet: BulletStats; // the Mookopter chaingun's "Bullet Huge"
   bomb: RocketStats;
@@ -339,6 +343,8 @@ export interface Unit {
   dolph?: DolphState; // the universal soldier's mind and his revivals
   alien?: AlienState; // an alien's mind (aliens.ts)
   hell?: HellState; // what a hell mob keeps on top of its mook's mind (hell.ts)
+  rocketpack?: RocketpackState; // The Brocketeer's jetpack on a bro who has one (rocketpack.ts)
+  zapChained?: boolean; // Broden.hasElectrifiedUnit: this press's lightning has arced already
 }
 
 /** MookJetpack: its jetpack, the countdown of a wrecked one, its spiral down and the fuse that blows it up. */
@@ -401,6 +407,27 @@ export interface FlamePoint {
 }
 
 /** FlameWallExplosion's state: its band of cells, the cells burning at its front and those already burnt. */
+/** Broden: lightningRange, maxElectricShocks and his fireRate; the ElectricZap's MaxDeviation, MaxLife and ZapDuration. */
+export interface TeslaStats {
+  range: number;
+  shocks: number;
+  fireRate: number;
+  deviation: number;
+  life: number;
+  zapTime: number;
+}
+
+/** TheBrocketeer: hoverDuration, defaultHoverForce, hoverSinForce, hoverSinSpeed, hoverSinStart, its two thrust directions. */
+export interface RocketpackStats {
+  duration: number;
+  force: number;
+  sinForce: number;
+  sinSpeed: number;
+  sinStart: number;
+  side: { x: number; y: number };
+  down: { x: number; y: number };
+}
+
 /** Hell's mobs: the hell Bruisers' flame wall, the Boomer's vomit, the warlock's portal, the bursts and the lost soul's dive. */
 export interface HellStats {
   flameWall: FlameWallStats; // "flameWallExplosion HellMook"

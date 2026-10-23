@@ -10,6 +10,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   rpg: 'Lanciarazzi RPG: razzo balistico diretto a forte impatto',
   m60: 'Mitragliatrice M60 di Rambro: raffica continua tenendo premuto',
   flamethrower: 'Lanciafiamme di B.A. Broracus a fiamme tricolori: a corto raggio, dà fuoco ai nemici',
+  tesla: 'Fucile Tesla: quattro fulmini a ogni pressione, agganciano il nemico più vicino e il primo rimbalza su altri due',
 };
 const SPECIAL_HINT: Record<SpecialId, string> = {
   airstrike: 'Attacco aereo (con ↓ lo lanci corto)',
@@ -21,6 +22,7 @@ const SPECIAL_HINT: Record<SpecialId, string> = {
   django: 'Django: per 12 secondi diventi Django, col revolver (sei colpi, poi ricarica) e la sua musica',
   molotov: 'Molotov: esplode dove cade, dà fuoco ai nemici vicini e sparge quattro fiammelle',
   flamewall: 'Muro di fuoco di Ellen Ripbro: un fronte di fiamme tricolori avanza per 14 blocchi, alto 3',
+  drone: 'Drone armato: ti segue e spara quando spari tu (fino a tre in volo)',
 };
 
 interface Props {
@@ -78,7 +80,9 @@ export function Menu({ bros, selected, portraits, voice, sound, onSelect, onTogg
       <table className="controls">
         <tbody>
           <tr><td>← → / A D</td><td>Muoviti</td></tr>
-          <tr><td>Z / Spazio</td><td>Salta (tienilo premuto contro un muro per arrampicarti)</td></tr>
+          <tr><td>Z / Spazio</td><td>{bro.jetpack
+            ? 'Salta; tienilo premuto e il jetpack ti tiene in volo per 2 secondi (← → per sterzare)'
+            : 'Salta (tienilo premuto contro un muro per arrampicarti)'}</td></tr>
           <tr><td>X / J</td><td>{WEAPON_HINT[bro.weapon]}</td></tr>
           <tr><td>C / K</td><td>{SPECIAL_HINT[bro.special]}</td></tr>
           <tr><td>Shift</td><td>Scatto</td></tr>

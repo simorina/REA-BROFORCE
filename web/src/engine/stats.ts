@@ -122,6 +122,13 @@ function alienSpeeds(raw: Raw, key: string): AlienSpeeds {
   return { unaware: pick('unawareRunSpeed'), aware: pick('awareRunSpeed'), mega: Math.max(pick('awareMegaRunSpeed'), pick('unawareMegaRunSpeed')) };
 }
 
+/** A Vector3 field, as the extractor writes it ({x, y, z}): its x and y. */
+function vec(raw: Raw, key: string, field: string): { x: number; y: number } {
+  const v = raw[key]?.[field] as { x?: unknown; y?: unknown } | undefined;
+  if (!v || typeof v.x !== 'number' || typeof v.y !== 'number') throw new Error(`values.json: ${key}.${field} is not a vector`);
+  return { x: v.x, y: v.y };
+}
+
 function rocket(raw: Raw, key: string): RocketStats {
   return {
     damage: num(raw, key, 'damage'),
@@ -261,6 +268,17 @@ export function parseValues(raw: Raw): GameStats {
       alien_brute: alienSpeeds(raw, 'alien_brute'),
       alien_mosquito: alienSpeeds(raw, 'alien_mosquito'),
       hell_lostsoul: alienSpeeds(raw, 'hell_lostsoul'),
+    },
+    tesla: {
+      range: num(raw, 'tesla', 'lightningRange'), shocks: num(raw, 'tesla', 'maxElectricShocks'), fireRate: num(raw, 'tesla', 'fireRate'),
+      deviation: num(raw, 'tesla_zap', 'MaxDeviation'), life: num(raw, 'tesla_zap', 'MaxLife'), zapTime: num(raw, 'tesla_zap', 'ZapDuration'),
+    },
+    drone: { speed: num(raw, 'drone', 'speed'), fireRate: num(raw, 'drone', 'fireRate'), health: num(raw, 'drone', 'health') },
+    rocketpack: {
+      duration: num(raw, 'rocketpack', 'hoverDuration'), force: num(raw, 'rocketpack', 'defaultHoverForce'),
+      sinForce: num(raw, 'rocketpack', 'hoverSinForce'), sinSpeed: num(raw, 'rocketpack', 'hoverSinSpeed'),
+      sinStart: num(raw, 'rocketpack', 'hoverSinStart'), side: vec(raw, 'rocketpack', 'jetpackSideDirection'),
+      down: vec(raw, 'rocketpack', 'jetpackDownDirection'),
     },
     hell: {
       flameWall: {

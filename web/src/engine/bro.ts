@@ -1,8 +1,8 @@
 import { BRO_BASES, type BroBase } from './types';
 
 /** A custom bro is data: his sheet shares TestVanDammeAnim's layout, and his physics are his `base` prefab's. */
-export const WEAPONS = ['football', 'judo', 'rifle', 'cricket', 'blade', 'rpg', 'm60', 'flamethrower'] as const;
-export const SPECIALS = ['airstrike', 'tank', 'jet', 'neuralyzer', 'glaive', 'nuke', 'django', 'molotov', 'flamewall'] as const;
+export const WEAPONS = ['football', 'judo', 'rifle', 'cricket', 'blade', 'rpg', 'm60', 'flamethrower', 'tesla'] as const;
+export const SPECIALS = ['airstrike', 'tank', 'jet', 'neuralyzer', 'glaive', 'nuke', 'django', 'molotov', 'flamewall', 'drone'] as const;
 export type WeaponId = (typeof WEAPONS)[number];
 export type SpecialId = (typeof SPECIALS)[number];
 
@@ -16,6 +16,7 @@ export interface BroDef {
   voiceLine: string;
   voiceLang: string; // BCP 47 tag for the speech synthesis
   specialAmmo?: number;
+  jetpack?: true; // The Brocketeer's jetpack: holding jump keeps him up
 }
 
 function text(raw: Record<string, unknown>, field: string): string {
@@ -39,5 +40,6 @@ export function parseBro(raw: unknown): BroDef {
     id, name: text(r, 'name'), sheet: text(r, 'sheet'), base: base as BroBase, weapon: weapon as WeaponId,
     special: special as SpecialId, voiceLine: text(r, 'voiceLine'), voiceLang: text(r, 'voiceLang'),
     ...(specialAmmo !== undefined ? { specialAmmo } : {}),
+    ...(r.jetpack === true ? { jetpack: true as const } : {}),
   };
 }

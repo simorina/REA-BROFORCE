@@ -50,6 +50,8 @@ SPRITES = (
     SpriteRef("bro_in_black", "Brononymous", "Brononymous", True),  # Bro In Black
     SpriteRef("bro_brodock", "ColJamesBrodock", "Col James Brodock", True),  # repainted into Che Guevara
     SpriteRef("bro_ellen", "EllenRipbro", "EllenRipbro", True),  # repainted into Giorgia Meloni
+    SpriteRef("bro_brobocop", "Brobocop", "BroboCop", True),  # repainted into Elon Musk
+    SpriteRef("drone_src", "Drone", "Drone Machinegun", True),  # Elon Musk's drone: repainted into drone
     SpriteRef("tank_hull", "TankBroTank", "TankBrosTank", True),
     SpriteRef("tank_turret", "TankBroTankTurret", "Turret", True),
     SpriteRef("tank_shell", "HeavyShell", "Shell Heavy Tankbro", True),
@@ -140,6 +142,8 @@ TEXTURES = (
     TextureRef("skinless_gun", "SkinnlessMook_gun_anim", frame=(32, 32)),  # the skinless mook's arms
     TextureRef("warlock_portal", "mookUndead_Portal_anim", frame=(32, 32)),  # WarlockPortal: growing 0-5, open 2-9, shrinking to 14
     TextureRef("slime_vomit", "Slime Vomit"),  # the Boomer's SlimeDrop
+    TextureRef("brobocop_gun", "BROBOCOP_gun_anim", frame=(32, 32)),  # Brobocop's pistol and arm, repainted into the tesla_gun
+    TextureRef("drone_gun", "DroneGun_anim", frame=(32, 32)),  # the drone's machine gun: 0 at rest, 1-3 firing
 )
 
 VALUES = (
@@ -261,6 +265,11 @@ VALUES = (
     ValuesRef("path_warlock", "PathAgent", "ZMookWarlock", PATH_FIELDS),
     ValuesRef("warlock_portal", "WarlockPortal", "WarlockPortal Suicide", ("launchDelay", "riseTime", "riseSpeed")),
     ValuesRef("satan", "Satan", "ZSatan", MOOK_FIELDS),
+    ValuesRef("tesla", "Broden", "Broden", ("lightningRange", "maxElectricShocks", "fireRate")),  # Elon Musk's Tesla gun
+    ValuesRef("tesla_zap", "ElectricZap", "ElectricZap", ("MaxDeviation", "MaxLife", "ZapDuration")),
+    ValuesRef("drone", "Drone", "Drone Machinegun", ("speed", "fireRate", "health")),
+    ValuesRef("rocketpack", "TheBrocketeer", "TheBrocketeer", ("hoverDuration", "defaultHoverForce", "hoverSinForce", "hoverSinSpeed",
+              "hoverSinStart", "jetpackSideDirection", "jetpackDownDirection")),
     ValuesRef("ai_satan", "SatanAI", "ZSatan", AI_FIELDS),
     ValuesRef("mook_dolph", "DolphLundrenSoldier", "DolfLundgrenSoldier", MOOK_FIELDS),
     ValuesRef("ai_mook_dolph", "DolfLundgrenAI", "DolfLundgrenSoldier", AI_FIELDS),

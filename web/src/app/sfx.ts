@@ -4,7 +4,8 @@ import type { GameEvent } from '../engine/world';
 /** Our own synthesized sound effects (WebAudio); no Broforce audio is extracted or played. */
 export type SfxName =
   | 'kick' | 'throw' | 'shot' | 'rocket' | 'boom' | 'pop' | 'crumble' | 'splat' | 'grunt' | 'death' | 'alert'
-  | 'rescue' | 'checkpoint' | 'whistle' | 'flex' | 'swish' | 'mortar' | 'cannon' | 'clank' | 'bite' | 'flame' | 'roar' | 'siren' | 'beep';
+  | 'rescue' | 'checkpoint' | 'whistle' | 'flex' | 'swish' | 'mortar' | 'cannon' | 'clank' | 'bite' | 'flame' | 'roar' | 'siren' | 'beep'
+  | 'zap';
 
 export function sfxFor(e: GameEvent): SfxName | null {
   switch (e.type) {
@@ -31,6 +32,8 @@ export function sfxFor(e: GameEvent): SfxName | null {
           return 'flame';
         case 'flameWall':
           return 'roar';
+        case 'tesla':
+          return 'zap';
         default:
           return 'shot';
       }
@@ -252,6 +255,12 @@ const RECIPES: Record<SfxName, (s: Sfx, out: AudioNode, t: number) => void> = {
   flame: (s, o, t) => {
     s.hiss(o, t, 'bandpass', 900, 380, 0.16, 0.3);
     s.hiss(o, t, 'lowpass', 520, 220, 0.16, 0.22);
+  },
+  // the Tesla gun's bolt: a crackle over a falling buzz
+  zap: (s, o, t) => {
+    s.hiss(o, t, 'highpass', 3200, 1800, 0.09, 0.32);
+    s.tone(o, t, 'sawtooth', 1600, 240, 0.08, 0.13);
+    s.tone(o, t + 0.02, 'square', 900, 180, 0.06, 0.06);
   },
   // a mine's click: two quick blips, then it goes up
   beep: (s, o, t) => [0, 0.12].forEach((d) => s.tone(o, t + d, 'square', 1850, 1850, 0.06, 0.12)),

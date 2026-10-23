@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BROLUSCONI, BROS, CHE, KIM, MELONI, PUTIN, SAMUEL, TRUMP, WILL_SMITH, rosterStartingWith } from '../bros';
+import { BROLUSCONI, BROS, CHE, KIM, MELONI, PUTIN, SAMUEL, TRUMP, WILL_SMITH, rosterStartingWith, MUSK } from '../bros';
 import { parseBro } from './bro';
 
 const valid = {
@@ -65,14 +65,14 @@ describe('bro definitions', () => {
   });
 
   it('rosterStartingWith puts the chosen bro first and keeps the cycle order', () => {
-    expect(BROS).toEqual([BROLUSCONI, PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE, MELONI]);
-    expect(rosterStartingWith('putin')).toEqual([PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE, MELONI, BROLUSCONI]);
-    expect(rosterStartingWith('brolusconi')).toEqual([BROLUSCONI, PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE, MELONI]);
-    expect(rosterStartingWith('kim')).toEqual([KIM, WILL_SMITH, SAMUEL, CHE, MELONI, BROLUSCONI, PUTIN, TRUMP]);
+    expect(BROS).toEqual([BROLUSCONI, PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE, MELONI, MUSK]);
+    expect(rosterStartingWith('putin')).toEqual([PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE, MELONI, MUSK, BROLUSCONI]);
+    expect(rosterStartingWith('brolusconi')).toEqual([BROLUSCONI, PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE, MELONI, MUSK]);
+    expect(rosterStartingWith('kim')).toEqual([KIM, WILL_SMITH, SAMUEL, CHE, MELONI, MUSK, BROLUSCONI, PUTIN, TRUMP]);
   });
 
   it('rosterStartingWith falls back to the first bro for an unknown id', () => {
-    expect(rosterStartingWith('ghost')).toEqual([BROLUSCONI, PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE, MELONI]);
+    expect(rosterStartingWith('ghost')).toEqual([BROLUSCONI, PUTIN, TRUMP, KIM, WILL_SMITH, SAMUEL, CHE, MELONI, MUSK]);
   });
 
   it('rejects unknown weapons and specials', () => {

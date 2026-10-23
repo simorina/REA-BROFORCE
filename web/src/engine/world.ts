@@ -21,6 +21,9 @@ import { parseLevel, type LevelData } from './level';
 import { makeBlock, type TileMap } from './map';
 import { hearAlien, isAlien, makeAlienState, stepAlien } from './aliens';
 import { makeDolphState, stepDolph } from './dolph';
+import { DRONE, liveDrones, spawnDrone, stepDrones } from './drones';
+import { blastOff, makeRocketpack, stepRocketpack } from './rocketpack';
+import { stepZaps, type Zap } from './tesla';
 import {
   boomerBlast, findPortalSpot, isBoomer, isDog, isHell, isHellBigGuy, isSuicide, makeHellState, stepBoomerDeath, stepUndeadCorpse,
   type HellState, type Portal,
@@ -89,7 +92,7 @@ export interface Grass {
 /** What happened during a step, for sound, particles and the voice line. Positions are world units. */
 export type GameEvent =
   | { type: 'voice'; text: string; lang: string }
-  | { type: 'shot'; weapon: ProjectileKind | 'judo' | 'blade' | 'cricket' | 'revolver' | 'm60' | 'flamethrower'; x: number; y: number; facing: 1 | -1 }
+  | { type: 'shot'; weapon: ProjectileKind | 'judo' | 'blade' | 'cricket' | 'revolver' | 'm60' | 'flamethrower' | 'tesla'; x: number; y: number; facing: 1 | -1 }
   | { type: 'explosion'; x: number; y: number; big: boolean; source: Blast['source']; range: number }
   | { type: 'airstrike'; x: number; y: number } // GrenadeAirstrike.Death: the marker calls the strike in
   | { type: 'block'; x: number; y: number; kind: BlockKind; damage: number }
@@ -156,6 +159,8 @@ export interface World {
   mines: Mine[];
   foes: Foe[]; // enemy vehicles
   portals: Portal[]; // the warlocks' WarlockPortals
+  zaps: Zap[]; // the Tesla gun's bolts (Broden's ElectricZap)
+  drones: Unit[]; // the bro's Drone Machineguns
   signs: MineSign[]; // the Mine Field Signs over them
   doorPoints: DoorPoint[]; // the doors as ScoutMookInterestPoints
   tanks: Tank[]; // TankBroTank vehicles on the map
@@ -249,7 +254,7 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
     prisoners: parsed.cages.map((c) => ({ x: cellX(c.c), y: feetY(c.r), freed: false })),
     checkpoints: parsed.checkpoints.map((c) => ({ x: cellX(c.c), y: feetY(c.r), activated: false, raisedAt: 0 })),
     grass: parsed.grass.map((c) => ({ x: cellX(c.c), y: c.r * TILE, health: stats.grass.health, destroyed: false })),
-    doors, alarms: [], mortarSpread: { amount: 0, side: 1 }, mines, foes, portals: [], signs: parsed.signs.map((s) => ({ c: s.c, r: s.r, x: cellX(s.c), y: s.r * TILE, fallen: false })), doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, django: null, reboard: null, flexPower: level.flexPower ?? null,
+    doors, alarms: [], mortarSpread: { amount: 0, side: 1 }, mines, foes, portals: [], zaps: [], drones: [], signs: parsed.signs.map((s) => ({ c: s.c, r: s.r, x: cellX(s.c), y: s.r * TILE, fallen: false })), doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, django: null, reboard: null, flexPower: level.flexPower ?? null,
     flag: { x: cellX(parsed.flag.c), y: feetY(parsed.flag.r) },
     lives: LIVES_START, specialAmmo: bro.specialAmmo ?? stats.bros[bro.base].specialAmmo, respawnTimer: 0,
     state: 'playing', extractionTime: 0, time: 0, nextId, camera, events: [], laughIndex: 0,
@@ -419,8 +424,22 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
   } else {
     if (!p.attack) startOrStopFlex(p, controls, prev);
     const fromX = p.x;
+    const jumpWas = p.jumpTime;
     stepUnit(p, p.attack ? NO_INTENT : intentFrom(controls, prev), w.map, t, w.time); // BroLee holds still to strike
     if (w.enemies.some((e) => e.hell?.back)) p.x = fromX + (p.x - fromX) * SKINLESS.slow; // a skinless mook on his back
+    if (w.bro.jetpack) {
+      // The Brocketeer's jetpack: lit by a jump, kept up while jump is held
+      const s = w.stats.rocketpack;
+      const r = (p.rocketpack ??= makeRocketpack(s));
+      if (jumpWas <= 0 && p.jumpTime > 0) blastOff(r, s, controls.left, controls.right);
+      stepRocketpack(p, r, s, { jump: controls.jump, left: controls.left, right: controls.right }, t);
+      if (r.on && (r.flame += t) > 0.05) {
+        r.flame -= 0.05;
+        w.events.push({ type: 'jetpack', x: p.x - p.facing * 4, y: p.y + 4, facing: p.facing });
+      }
+    } else {
+      p.rocketpack = undefined;
+    }
     animateFlex(w, p, controls, t);
     p.fireCooldown -= t;
     const weapon = w.django ? REVOLVER_KIT : WEAPON_KITS[w.bro.weapon];
@@ -432,7 +451,8 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
     stepJudo(w, p, t, blasts);
     runGun(p, t);
     if (w.django && (w.django.time -= t) <= 0) w.django = null; // Django's time is up
-    if (controls.special && !prev.special && w.specialAmmo > 0) {
+    const droneBay = w.bro.special !== 'drone' || liveDrones(w) < DRONE.max; // three drones at most
+    if (controls.special && !prev.special && w.specialAmmo > 0 && droneBay) {
       w.specialAmmo -= 1;
       const thrown = SPECIAL_KITS[w.bro.special](w.nextId++, p, controls.down);
       const line = w.bro.special === 'django' ? DJANGO.line : w.bro.voiceLine;
@@ -446,6 +466,7 @@ function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, bla
         w.django = { time: DJANGO.time, shots: 0, reload: 0 };
         w.events.push({ type: 'django', x: p.x, y: p.y });
       }
+      if (w.bro.special === 'drone') spawnDrone(w);
     }
   }
   if (p.y < -64 && !w.driving) {
@@ -1226,7 +1247,7 @@ function explodeSuicide(w: World, m: Unit, blasts: Blast[]): void {
 }
 
 function stepProjectiles(w: World, t: number, blasts: Blast[]): void {
-  const pw = { map: w.map, units: [w.player, ...w.enemies], stats: w.stats, vehicles: allVehicles(w), mech: w.mech, rng: w.rng, foes: w.foes };
+  const pw = { map: w.map, units: [w.player, ...w.drones, ...w.enemies], stats: w.stats, vehicles: allVehicles(w), mech: w.mech, rng: w.rng, foes: w.foes };
   for (const p of w.projectiles) {
     // Grenade.RunWarnings: in its last half second a grenade sends the mooks around it running
     if (p.kind !== 'marker' || p.dead || p.life >= GRENADE_WARNING_LIFE) continue;
@@ -1434,7 +1455,7 @@ function makeNoise(w: World, x: number, y: number, range: number): void {
 
 /** Applies blasts in order; destroyed barrels append their own blast, and each barrel can only be destroyed once. */
 function resolveBlasts(w: World, blasts: Blast[]): void {
-  const units = [w.player, ...w.enemies];
+  const units = [w.player, ...w.drones, ...w.enemies];
   for (let i = 0; i < blasts.length; i++) {
     const b = blasts[i];
     const res = applyBlast(w.map, units, b);
@@ -1521,12 +1542,14 @@ export function stepWorld(w: World, controls: Controls, prev: Controls, t: numbe
   stepTanks(w, t, blasts);
   stepJets(w, t, blasts);
   carryDriver(w);
+  stepDrones(w, controls.fire && !w.player.attack && !w.driving, t, blasts);
   stepPortals(w, t);
   stepEnemies(w, t, blasts);
   stepFoes(w, t, blasts);
   stepMech(w, t, blasts);
   stepDoors(w, t);
   stepProjectiles(w, t, blasts);
+  stepZaps(w, t, blasts);
   stepMines(w, t, blasts);
   resolveBlasts(w, blasts);
   dropSigns(w);
