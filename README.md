@@ -46,7 +46,16 @@ per l'inferno. I bros sono parodie di personaggi pubblici, ciascuno con arma e s
 La trama e i personaggi sono in [docs/lore.md](docs/lore.md). È satira in stile cartone animato: la lore usa solo fatti
 pubblici e documentati. Il cattivo è un finanziere da fumetto, e non si parla dei suoi crimini né delle vittime.
 
-## Come si avvia
+## Giocare online
+
+Il gioco è su **https://rea-broforce.vercel.app**. Il sito contiene solo il codice. Al primo avvio:
+1. estrai `game-data` dalla tua copia di Broforce, come spiegato qui sotto;
+2. scegli quella cartella con il pulsante del sito.
+
+I file restano nel tuo browser: un service worker li serve al gioco, non vengono caricati da nessuna parte, e alle
+visite successive sono già lì.
+
+## Come si avvia in locale
 
 Serve:
 - Broforce installato (Steam, Windows);

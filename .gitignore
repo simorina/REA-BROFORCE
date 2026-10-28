@@ -8,3 +8,5 @@ extractor/.venv/
 .pytest_cache/
 web/node_modules/
 web/dist/
+# Vercel CLI link
+.vercel/
