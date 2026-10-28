@@ -24,6 +24,7 @@ import { makeDolphState, stepDolph } from './dolph';
 import { DRONE, liveDrones, spawnDrones, stepDrones } from './drones';
 import { blastOff, makeRocketpack, stepRocketpack } from './rocketpack';
 import { burnLaser } from './laser';
+import { killQuip, satanSeesLaser } from './quips';
 import { stepZaps, type Zap } from './tesla';
 import {
   boomerBlast, findPortalSpot, isBoomer, isDog, isHell, isHellBigGuy, isSuicide, makeHellState, stepBoomerDeath, stepUndeadCorpse,
@@ -186,6 +187,7 @@ export interface World {
   camera: Camera; // SortOfFollow: gameplay uses it for visibility and the airstrike height
   events: GameEvent[];
   laughIndex: number; // PolymorphicAI.laughIndex, shared by every mook
+  quipCooldown: number; // ours: until the bro may say his kill line again (quips.ts)
 }
 
 const cellX = (c: number): number => c * TILE;
@@ -261,7 +263,7 @@ export function createWorld(level: LevelData, stats: GameStats, roster: readonly
     doors, alarms: [], mortarSpread: { amount: 0, side: 1 }, mines, foes, portals: [], zaps: [], drones: [], signs: parsed.signs.map((s) => ({ c: s.c, r: s.r, x: cellX(s.c), y: s.r * TILE, fallen: false })), doorPoints: doors.map((d) => ({ c: d.c, r: d.r, x: d.x, y: d.y })), tanks: [], jets: [], boss, mech, driving: null, django: null, reboard: null, flexPower: level.flexPower ?? null,
     flag: { x: cellX(parsed.flag.c), y: feetY(parsed.flag.r) },
     lives: LIVES_START, specialAmmo: bro.specialAmmo ?? stats.bros[bro.base].specialAmmo, respawnTimer: 0,
-    state: 'playing', extractionTime: 0, time: 0, nextId, camera, events: [], laughIndex: 0,
+    state: 'playing', extractionTime: 0, time: 0, nextId, camera, events: [], laughIndex: 0, quipCooldown: 0,
   };
 }
 
@@ -412,6 +414,7 @@ function flexEvent(w: World, p: Unit): void {
 
 function stepPlayer(w: World, controls: Controls, prev: Controls, t: number, blasts: Blast[]): void {
   const p = w.player;
+  w.quipCooldown = Math.max(0, w.quipCooldown - t);
   if (p.dead) {
     p.deadTime += t;
     p.laser = undefined; // his laser goes out with him
@@ -658,6 +661,7 @@ function stepHellBusy(w: World, m: Unit, h: HellState, t: number): boolean {
     h.fade = SATAN.fadeFrames * SATAN.fadeRate;
     m.invulnerable = h.fade;
   }
+  if (m.kind === 'satan') satanSeesLaser(w, m, h);
   let busy = false;
   if (h.rising > 0) {
     busy = true;
@@ -1517,6 +1521,7 @@ function reportUnits(w: World): void {
         for (const m of w.enemies) playerDied(m, w.rng, m.ai?.mental === 'alerted' ? ++w.laughIndex : 0);
       } else {
         w.events.push({ type: 'kill', x: u.x, y: u.y, kind: u.kind as Exclude<UnitKind, 'bro'>, xI: u.xI, yI: u.yI });
+        killQuip(w, u);
         if (u.originDoor >= 0) w.doors[u.originDoor].mookCount--; // Mook.Death: MookDoor.RemoveMook
         u.originDoor = -1;
       }

@@ -38,6 +38,18 @@ describe('the campaign missions', () => {
     }
   });
 
+  it("the briefings follow the lore's trail: the Accountant talks, the Files lead on, the Goliath waits at the end", () => {
+    const b = MISSIONS.map((m) => m.briefing);
+    expect(b[0]).toContain('Contabile');
+    expect(b[0]).toContain('Fascicoli');
+    expect(b[1]).toContain('Libro Nero');
+    expect(b[4]).toContain('jet privato');
+    expect(b[8]).toContain('paradiso fiscale');
+    expect(b[9]).toContain('Goliath');
+    expect(b.join(' ')).not.toMatch(/Lolita|culto|rituali/); // a cartoon villain: nothing of his crimes
+    for (const m of MISSIONS) expect(m.briefing.length).toBeLessThan(460); // it fits under the globe
+  });
+
   it('each level has its assigned background theme', () => {
     expect(built.map((b) => b.level.theme)).toEqual([
       'desert',

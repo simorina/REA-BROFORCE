@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { BroDef, SpecialId, WeaponId } from '../engine/bro';
+import { MISSIONS } from '../levels';
 
 const WEAPON_HINT: Record<WeaponId, string> = {
   football: 'Calcia un pallone esplosivo',
@@ -24,6 +25,11 @@ const SPECIAL_HINT: Record<SpecialId, string> = {
   flamewall: 'Muro di fuoco di Ellen Ripbro: un fronte di fiamme tricolori avanza per 14 blocchi, alto 3',
   drone: 'Due droni armati: ti seguono in formazione e sparano quando spari tu (fino a sei in volo)',
 };
+
+/** The campaign's line in the menu, counting its missions as they are. */
+export function campaignBlurb(missions: number): string {
+  return `Campagna "Operazione Little Saint James": ${missions} missioni per seguire il denaro di J.E., recuperare i Fascicoli e distruggere il suo Goliath!`;
+}
 
 interface Props {
   bros: readonly BroDef[];
@@ -75,7 +81,8 @@ export function Menu({ bros, selected, portraits, voice, sound, onSelect, onTogg
           </button>
         ))}
       </div>
-      <p className="mission">Campagna "Operazione Little Saint James": 7 missioni per smascherare i file e distruggere Epstein e il suo Goliath!</p>
+      {bro.bio && <p className="bio">{bro.bio}</p>}
+      <p className="mission">{campaignBlurb(MISSIONS.length)}</p>
       <p className="hint">← → per scegliere il bro (salvare un prigioniero ti passa all'altro)</p>
       <table className="controls">
         <tbody>

@@ -107,7 +107,7 @@ televisione.
   - La bandana in Sardegna, nel 2004.
   - L'inno "Meno male che Silvio c'è", nel 2008.
 
-**Battuta:** "Siete solo dei poveri comunisti!"
+**Battute:** "Ghe pensi mi!" quando chiama l'attacco aereo; "Siete solo dei poveri comunisti!" sui mook che fa fuori.
 
 ### Vladimir Putin, il Judoka
 
@@ -159,7 +159,7 @@ Tra i due c'è anche una vecchia ruggine immobiliare (vero). Con i mook usa il s
 - **La "bufala".** Nel 2025 chiamava i fascicoli su Epstein "the Epstein hoax", la bufala di Epstein.
 - **Lo slogan.** "Make America Great Again".
 
-**Battuta:** "Make America Great Again!"
+**Battute:** "Make America Great Again!" quando chiama il jet; "You're fired!" sui mook che fa fuori.
 
 ### Kim Jong-un, il Missile
 
@@ -196,7 +196,7 @@ lo rifà dal vivo. Il neuralizzatore è il suo segreto e il finale della storia 
 - **Gli Oscar.** Lo schiaffo agli Oscar del 2022 e i dieci anni di bando dalla cerimonia.
 - **La TV.** *Willy, il principe di Bel-Air*.
 
-**Battuta:** "I make this look good!"
+**Battute:** "I make this look good!" col neuralizzatore; "Welcome to Earth!" sugli alieni che fa fuori.
 
 ### Samuel L. Jackson, il Reclutatore
 
@@ -436,19 +436,25 @@ persona: è l'unica volta in cui combatte da solo.
 
 ## Epilogo
 
-Il Goliath è un rottame, J.E. è sparito per la seconda volta e i Fascicoli sono in mano alla Broforce. Silvio
-prepara la conferenza stampa a reti unificate, Trump il post, Musk lo pubblica su X prima di tutti.
+Il Goliath è un rottame fumante e i Fascicoli sono in mano alla Broforce. Il corpo di J.E., come al solito, non si
+trova. Silvio prepara la conferenza stampa a reti unificate, Trump il post, Musk lo pubblica su X prima di tutti.
 
 Poi Bro In Black alza il neuralizzatore. Un lampo, e nessuno ricorda più niente: è per questo che i Fascicoli, quelli
 veri, non escono mai del tutto (inventato).
 
 Nel silenzio, dall'inferno, arriva una risata: nel lampo il Libro Nero è sparito. Ce l'ha Satana. Sequel?
 
-## Per portarla nel gioco
+## Nel gioco
 
-- **Le schede nel menu.** Una riga per bro, presa dalle schede qui sopra: chi è e perché caccia J.E.
-- **Nuove battute.** Per esempio "You're fired!" per Trump quando un mook muore, "Ghe pensi mi" per l'attacco aereo di
-  Silvio, "Benvenuto sulla Terra!" per Bro In Black nel laboratorio, e la risata di Satana quando vede il laser.
-- **Il menu da correggere.** Il menu parla ancora di "7 missioni", ma la campagna ne ha dieci.
-- **Il jet.** La lore lo chiama "il suo jet privato". Il briefing della pista d'atterraggio usa ancora il soprannome
-  di stampa, che rimanda ai suoi crimini: si può allineare.
+- **Le schede nel menu.** Ogni bro ha la sua riga (`bio` nel suo JSON in `web/src/bros/`): chi è e perché caccia J.E.
+  Sotto c'è la riga della campagna, che conta le missioni come sono.
+- **Le battute sulle uccisioni** (`killLine`, in `web/src/engine/quips.ts`). Il bro dice la sua battuta sopra la testa
+  e a voce, al massimo ogni 8 secondi e mai sopra un'altra sua battuta:
+  - Trump dice "You're fired!" sui mook;
+  - Silvio dice "Siete solo dei poveri comunisti!" sui mook (il suo speciale ora dice "Ghe pensi mi!");
+  - Bro In Black dice "Welcome to Earth!" sugli alieni.
+- **Satana e il laser.** La prima volta che vede il laser di Musk acceso, Satana ride e dice "That beam is mine! HA HA
+  HA!".
+- **I briefing.** I dieci briefing seguono la pista di questa lore: il Contabile, i Fascicoli, il Libro Nero, il jet
+  privato, il paradiso fiscale all'inferno, il Goliath. Un test controlla che non citino i crimini di J.E.
+- **L'epilogo.** Il testo dell'epilogo compare sulla schermata di fine campagna.

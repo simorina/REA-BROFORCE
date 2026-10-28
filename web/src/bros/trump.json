@@ -6,5 +6,10 @@
   "weapon": "rifle",
   "special": "jet",
   "voiceLine": "Make America Great Again!",
-  "voiceLang": "en-US"
+  "voiceLang": "en-US",
+  "bio": "Il Costruttore: diceva che i Fascicoli erano una bufala, poi ha scoperto che J.E. ha costruito a Manhattan un grattacielo più alto della Trump Tower. Inaccettabile.",
+  "killLine": {
+    "text": "You're fired!",
+    "on": "mook"
+  }
 }

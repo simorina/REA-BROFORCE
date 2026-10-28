@@ -21,59 +21,59 @@ export interface Mission {
 }
 
 /**
- * The campaign "Operation: Little Saint James" — missions tracing the Epstein files from
+ * The campaign "Operation: Little Saint James" (its story: docs/lore.md) — missions tracing the Epstein files from
  * desert intelligence intercepts through harbor raids, burning evidence, a Manhattan skyscraper,
  * a private airstrip, an underground temple, an armoured convoy, an alien lab and hell itself, to the final assault on Epstein's island.
  */
 export const MISSIONS: readonly Mission[] = [
   {
     id: 'desert', name: 'Il deserto',
-    briefing: 'Un informatore ha parlato. In una base segreta nel deserto, ledgers finanziari rivelano un flusso di denaro sporco verso un misterioso beneficiario: J.E. Segui il denaro.',
+    briefing: "Il Contabile di J.E. ha parlato: vuole uscirne e si fida solo di Silvio. In una base segreta nel deserto ci sono i Fascicoli, la contabilità di trent'anni di denaro sporco verso un beneficiario che firma con due iniziali: J.E. Prendili e segui il denaro.",
     build: buildDesert, map: { x: 0.10, y: 0.38 }, territory: 'afghanistan',
   },
   {
     id: 'harbor', name: 'Il porto dei segreti',
-    briefing: 'I registri portano a un porto fantasma. Container sigillati arrivano ogni notte — dentro: documenti, hard disk, prove. Intercetta il carico prima che salpi.',
+    briefing: 'I Fascicoli portano a uno dei porti più trafficati del mondo. Ogni notte arrivano container sigillati: dentro documenti, hard disk e le pagine del Libro Nero, la rubrica di chi deve un favore a J.E. Intercetta il carico prima che salpi.',
     build: buildHarbor, map: { x: 0.22, y: 0.55 }, territory: 'hongkong',
   },
   {
     id: 'burning', name: 'La giungla in fiamme',
-    briefing: "Gli uomini di Epstein stanno bruciando le prove in un compound nella giungla. Attraversa l'inferno e salva i file prima che sia troppo tardi.",
+    briefing: "Il carico rivela un compound nella giungla dove gli uomini di J.E. stanno bruciando le prove. Che la giungla la conosce, Giorgia dice che il fuoco ormai lo porta lei: attraversa l'incendio e salva i file prima che sia troppo tardi.",
     build: buildBurning, map: { x: 0.36, y: 0.62 }, territory: 'vietnam',
   },
   {
     id: 'tower', name: 'Il grattacielo',
-    briefing: "I file rivelano l'indirizzo segreto: un grattacielo a Manhattan. Dentro una cassaforte al piano attico c'è la lista dei clienti. Sali piano per piano, elimina le guardie.",
+    briefing: "Tra i file salvati c'è un indirizzo a Manhattan: un grattacielo di J.E., più alto della Trump Tower (e Trump non l'ha presa bene). Nella cassaforte dell'attico c'è la lista dei clienti della sua finanziaria. Sali piano per piano ed elimina le guardie.",
     build: buildTower, map: { x: 0.48, y: 0.40 }, territory: 'usa',
   },
   {
     id: 'airstrip', name: "La pista d'atterraggio",
-    briefing: "La lista dei clienti cita voli privati da una pista segreta — il 'Lolita Express'. Raid alla base aerea: ferma l'ultimo volo prima che decolli con le prove.",
+    briefing: "La lista porta a una pista privata a Panama, il paese dei Panama Papers. Da qui decolla il jet privato di J.E., carico di prove. Raid alla base aerea: ferma l'ultimo volo prima che decolli.",
     build: buildAirstrip, map: { x: 0.60, y: 0.52 }, territory: 'panama',
   },
   {
     id: 'temple', name: 'Il tempio sotterraneo',
-    briefing: "Sotto la pista c'è un tempio sotterraneo, sede del culto di Epstein. Scendi nelle sue viscere: corridoi segreti, stanze rituali, trappole esplosive. La verità è sepolta qui.",
+    briefing: "Sotto la pista c'è un tempio sotterraneo, la copia di quello a strisce bianche e blu che J.E. ha sull'isola. Scendi nelle sue viscere: corridoi segreti, trappole esplosive, burroni senza fondo. In fondo c'è la prossima pista.",
     build: buildTemple, map: { x: 0.72, y: 0.60 }, territory: 'amazon',
   },
   {
     id: 'convoy', name: 'Il convoglio',
-    briefing: "Dal tempio parte un convoglio blindato carico di prove: camion, blindati, motociclisti suicidi, artiglieria e un elicottero d'assalto. In testa marcia il Soldato Universale, che a terra non ci resta mai. Fermali tutti.",
+    briefing: "Dal tempio parte un convoglio blindato carico di prove: camion, blindati, motociclisti suicidi, artiglieria e un elicottero d'assalto. In testa marcia il Soldato Universale, il pezzo più caro del catalogo di J.E., che a terra non ci resta mai. Fermali tutti e scopri dove sono diretti.",
     build: buildConvoy, map: { x: 0.79, y: 0.30 }, territory: 'ukraine',
   },
   {
     id: 'lab', name: 'Il laboratorio',
-    briefing: "Nel cuore della foresta del Congo l'isola finanzia un laboratorio segreto che alleva creature aliene, e qualcuno ha aperto le gabbie: xenomorfi, facehugger, melter acidi, zanzare giganti e due bruti corazzati girano tra le guardie in preda al panico. Attraversalo e libera i prigionieri. Se un facehugger ti salta in faccia, fletti i muscoli (F) prima che sia tardi!",
+    briefing: "Il convoglio era diretto nel Congo: con le sue \"donazioni alla scienza\" J.E. finanzia un laboratorio che alleva creature aliene, e qualcuno ha aperto le gabbie: xenomorfi, facehugger, melter acidi, zanzare giganti e due bruti corazzati girano tra le guardie in preda al panico. Attraversalo e libera i prigionieri. Se un facehugger ti salta in faccia, fletti i muscoli (F) prima che sia tardi!",
     build: buildLab, map: { x: 0.83, y: 0.48 }, territory: 'congo',
   },
   {
     id: 'inferno', name: "L'inferno",
-    briefing: "Gli esperimenti del laboratorio hanno aperto un varco verso l'inferno, e l'inferno si sta riversando fuori: non-morti che si rialzano, mook scuoiati che ti saltano sulla schiena (fletti con F per scrollarteli di dosso), stregoni che evocano portali, anime perdute, Boomer che vomitano ed esplodono, Bruiser infernali con le loro ondate di fuoco. E Satana che ride. Attraversalo e chiudi il varco prima che raggiunga l'isola.",
+    briefing: "Gli esperimenti del laboratorio hanno aperto un varco verso l'inferno: J.E. cercava il paradiso fiscale definitivo. Ora l'inferno si riversa fuori: non-morti che si rialzano, mook scuoiati che ti saltano sulla schiena (fletti con F per scrollarteli di dosso), stregoni che evocano portali, anime perdute, Boomer che esplodono, Bruiser infernali. E Satana che ride. Chiudi il varco prima che raggiunga l'isola.",
     build: buildInferno, map: { x: 0.92, y: 0.60 }, territory: 'hell',
   },
   {
     id: 'island', name: "L'isola di Epstein",
-    briefing: "La destinazione finale: Little Saint James. Attraversa la spiaggia, la giungla, il tempio dove Epstein ti attende. Battilo — poi inseguilo oltre la sua ultima guarnigione, fino al bunker dove comanda il Goliath.",
+    briefing: "La destinazione finale: Little Saint James, l'isola del Finanziere. Attraversa la spiaggia, la giungla e il burrone fino al tempio dove J.E. ti attende. Battilo, poi inseguilo oltre la sua ultima guarnigione fino al bunker del Goliath, il suo ultimo investimento.",
     build: buildLevel1, map: { x: 0.86, y: 0.74 }, territory: 'hawaii',
   },
 ];

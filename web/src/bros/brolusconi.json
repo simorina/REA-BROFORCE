@@ -5,6 +5,11 @@
   "base": "bro_base",
   "weapon": "football",
   "special": "airstrike",
-  "voiceLine": "Siete solo dei poveri comunisti!",
-  "voiceLang": "it-IT"
+  "voiceLine": "Ghe pensi mi!",
+  "voiceLang": "it-IT",
+  "bio": "Il Fondatore: ex cantante da crociera, re della TV e presidente del Milan per trent'anni. Ha messo insieme la Broforce e trasmette la caccia a J.E. in prima serata.",
+  "killLine": {
+    "text": "Siete solo dei poveri comunisti!",
+    "on": "mook"
+  }
 }

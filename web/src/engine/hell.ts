@@ -23,6 +23,7 @@ export interface HellState {
   laugh: number; // laughing time left
   fade: number; // FadeInMysteriously: time left
   seen: boolean; // he has faded in
+  mocked: boolean; // ours: he has laughed at his own beam in Musk's hands
   // MookHellBigGuy, MookHellArmouredBigGuy
   stun: number; // stunned time left
   fire: number; // fireAmount
@@ -41,7 +42,7 @@ export interface HellState {
 export function makeHellState(rng: () => number): HellState {
   return {
     rise: undeadDelay(rng), waking: false, rising: 0, hurt: false, leap: false, flung: false, summoned: null, summonAge: 0, summon: -1, cast: false,
-    portal: null, laugh: 0, fade: 0, seen: false, stun: 0, fire: 0, shield: 0, back: false, dying: -1, burst: false, frame: -1, frameTime: 0,
+    portal: null, laugh: 0, fade: 0, seen: false, mocked: false, stun: 0, fire: 0, shield: 0, back: false, dying: -1, burst: false, frame: -1, frameTime: 0,
     fireCounter: 0, count: 0,
   };
 }

@@ -258,6 +258,7 @@ export const SKINLESS = { speed: 90, alertSpeed: 140, reachX: 8, reachY: 16, bac
 // Satan.AnimateSpecial: frames 17-20 at 0.0333, 15 a laugh, ForgetPlayer after 8; FadeInMysteriously: 18 frames (row 1,
 // 17-34), invulnerable; AnimateRunning: frames 1-3 at 0.044455; AnimateDeath: 6 frames on the ground, then 25-46
 export const SATAN = { laughRate: 0.0333, laughFrames: 15, laughs: 8, fadeFrames: 18, fadeRate: 0.0333, runRate: 0.044455, lieFrames: 6, dissolveFrames: 22 };
+export const SATAN_LASER_LINE = 'That beam is mine! HA HA HA!'; // ours: Musk's laser is his LaserBeam (docs/lore.md)
 // MookHellBigGuy.StartFiringRPC: the FlameWallExplosion from (X + dir*17 - dir*12, Y + 9), then fireDelay 2; Damage: a hit
 // over 7 stuns him 3 s. MookHellArmouredBigGuy.Damage: his front stops hits until 35 fire or 60 other damage wears it through
 export const HELL_BIGGUY = { waveX: 5, waveY: 9, fireDelay: 2, stunDamage: 7, stun: 3, armourFire: 35, armourShield: 60 };
@@ -378,6 +379,7 @@ export const FLAG_RAISE_TIME = 0.6; // a checkpoint flag climbing its pole
 export const EXTRACTION_TIME = 3;
 export const EXPLOSION_DURATION = 0.5;
 export const SPEECH_DURATION = 2.2;
+export const QUIP = { cooldown: 8 }; // ours: a bro's kill line at most this often
 export const CAMERA_LERP = 6;
 export const CAMERA_Y_OFFSET = 40;
 export const SHAKE_TIME = 0.2;

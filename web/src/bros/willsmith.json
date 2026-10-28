@@ -6,5 +6,10 @@
   "weapon": "cricket",
   "special": "neuralyzer",
   "voiceLine": "I make this look good!",
-  "voiceLang": "en-US"
+  "voiceLang": "en-US",
+  "bio": "L'Agente: Uomo in Nero ed esperto di alieni. J.E. finanzia un laboratorio che alleva creature aliene, e agli Oscar tanto non lo invitano più.",
+  "killLine": {
+    "text": "Welcome to Earth!",
+    "on": "alien"
+  }
 }

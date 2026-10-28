@@ -5,7 +5,7 @@ const ROWS = 18;
 
 /**
  * Mission 5: "La pista d'atterraggio" (The Airstrip).
- * Raid Epstein's private airfield where the "Lolita Express" operated.
+ * Raid Epstein's private airfield, where his private jet waits with the evidence.
  * Fight across hangars, the runway, control tower, and terminal to ground the flights permanently.
  */
 export function buildAirstrip(): LevelData {

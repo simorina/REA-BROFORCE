@@ -41,6 +41,8 @@ pre { text-align: left; background: #221d19; padding: 12px; white-space: pre-wra
 .bro-card.selected { border-color: var(--accent); box-shadow: 4px 4px 0 var(--danger); }
 .bro-card .portrait { display: block; }
 .mission { color: var(--accent); margin: 0 0 8px; }
+.bio { max-width: 640px; margin: 0 auto 10px; font-style: italic; opacity: 0.85; }
+.epilogue { max-width: 640px; margin: 0 auto 18px; line-height: 1.5; opacity: 0.9; }
 .hint { opacity: 0.6; font-size: 12px; margin: 0 0 14px; }
 
 .worldmap { max-width: none; padding: 12px 16px; }
