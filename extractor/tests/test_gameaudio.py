@@ -1,5 +1,5 @@
 from extractor.catalog import VALUES
-from extractor.gameaudio import BOSS_MUSIC, MUSIC, VOICE_ALIASES, VOICE_KINDS, clip_file, encode_command, voice_lines
+from extractor.gameaudio import BOSS_MUSIC, MUSIC, VOICE_KINDS, clip_file, encode_command, voice_lines
 
 
 def test_a_holders_arrays_become_our_voice_lines_and_satan_laughs_with_his_special_sounds():
@@ -13,14 +13,15 @@ def test_every_voiced_enemy_has_its_prefab_in_the_catalog():
     keys = {v.key for v in VALUES}
     assert set(VOICE_KINDS) <= keys
     assert {"mook", "mook_suicide", "mook_bruiser", "dog", "alien_xeno", "undead", "warlock", "satan"} <= set(VOICE_KINDS)
-    assert VOICE_ALIASES["alien_xeno_brain"] == "alien_xeno"  # the brain-box xenomorph has no prefab of its own
+    assert "alien_xeno_brain" in VOICE_KINDS  # ZAlienXenomorphBrainBox, a prefab of its own
 
 
 def test_the_music_by_type_and_the_bosses_as_the_gameplay_sound_controller_assigns_them():
     assert MUSIC["Desert"] == ("lowDesertClip", "highDesertClip")
     assert set(MUSIC) == {"BroforceDrums", "JungleBlueSky", "JungleRedSky", "Factory", "Alien", "Hell", "Desert"}
-    assert BOSS_MUSIC == {"epstein": "bossFightClipJungle", "goliath": "bossFightClipFinal", "dolph": "bossPulseDolf",
-                          "sting": "bossVictoryClipJungle"}
+    # Sound.PlayBossPulse: BossPulseType.Mech plays bossPulseGoliath, Soldier bossPulseDolf, VictorySting victorySting
+    assert BOSS_MUSIC == {"epstein": "bossFightClipJungle", "goliath": "bossPulseGoliath", "dolph": "bossPulseDolf",
+                          "sting": "victorySting"}
 
 
 def test_clips_named_alike_get_files_of_their_own():

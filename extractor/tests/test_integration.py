@@ -27,6 +27,8 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     assert set(sound["music"]) == {"BroforceDrums", "JungleBlueSky", "JungleRedSky", "Factory", "Alien", "Hell", "Desert"}
     assert "Desert_Low_Intensity" in sound["music"]["Desert"]["low"] and "Hell_Level_Music" in sound["music"]["Hell"]["high"]
     assert set(sound["boss"]) == {"epstein", "goliath", "dolph", "sting"}
+    assert sound["boss"]["goliath"].endswith("/Goliath.ogg") and sound["boss"]["dolph"].endswith("/Dolph.ogg")
+    assert "Original_Sting_Master" in sound["boss"]["sting"] and "Boss_Fight_BETA" in sound["boss"]["epstein"]
     first = (tmp_path / sound["music"]["Desert"]["low"]).read_bytes()[:4]
     assert first in (b"OggS", b"RIFF")  # Ogg Vorbis with ffmpeg, else WAV
     assert all(f in manifest["files"] for f in [mook["greet"][0], sound["music"]["Desert"]["low"], "audio.json"])

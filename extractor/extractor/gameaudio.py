@@ -27,15 +27,14 @@ VOICE_FIELDS = {
     "rise": "resurrectSounds",  # UndeadTrooper: PlayResurrectionSound
 }
 VOICE_OVERRIDES = {"satan": {"laugh": "specialSounds"}}  # Satan laughs with his special sounds (laugh1, 4, 6)
-# the enemies whose prefab (catalog VALUES) carries a SoundHolder; the brain-box xenomorph speaks as the xenomorph
+# the enemies whose prefab (catalog VALUES) carries a SoundHolder
 VOICE_KINDS = (
     "mook", "mook_suicide", "mook_bazooka", "mook_scout", "mook_shield", "mook_grenadier", "dog", "mook_bruiser",
     "mook_jetpack", "mook_jetpack_bazooka", "mook_ninja", "mook_alarmist", "mook_mortar", "mook_bruiser_elite", "mook_dolph",
-    "alien_xeno", "alien_hugger", "alien_snake", "alien_melter", "alien_brute", "alien_mosquito",
+    "alien_xeno", "alien_xeno_brain", "alien_hugger", "alien_snake", "alien_melter", "alien_brute", "alien_mosquito",
     "hell_dog", "hell_lostsoul", "hell_boomer", "hell_soulcatcher", "hell_bigguy", "hell_armoured",
     "undead", "undead_suicide", "skinless", "warlock", "satan",
 )
-VOICE_ALIASES = {"alien_xeno_brain": "alien_xeno"}
 
 # Sound.PlayMusic: the low and high intensity clips of each MusicType on the gameplay Sound Controller
 MUSIC = {
@@ -47,9 +46,9 @@ MUSIC = {
     "Hell": ("lowHellClip", "highHellClip"),
     "Desert": ("lowDesertClip", "highDesertClip"),
 }
-# ours: the jungle's boss fight for Epstein, the final one for his Goliath, Dolph's own pulse for the universal soldier,
-# and the jungle's victory sting
-BOSS_MUSIC = {"epstein": "bossFightClipJungle", "goliath": "bossFightClipFinal", "dolph": "bossPulseDolf", "sting": "bossVictoryClipJungle"}
+# Sound.PlayBossPulse: the Goliath's own pulse (BossPulseType.Mech), Dolph's for the universal soldier (Soldier) and the
+# victory sting (VictorySting); Epstein, a boss of ours, gets the jungle's boss fight (PlayBossFightMusic, Jungle)
+BOSS_MUSIC = {"epstein": "bossFightClipJungle", "goliath": "bossPulseGoliath", "dolph": "bossPulseDolf", "sting": "victorySting"}
 SOUND_BUNDLES = ("scenesmain.assetbundle", "sharedsounds.assetbundle")  # the controller's scene, and the clips it points into
 SOUND_CONTROLLER = "Sound Controller Gameplay"
 
@@ -128,9 +127,6 @@ def _voices(prefabs, out) -> dict:
         lines = voice_lines(kind, holder)
         if lines:
             voices[kind] = lines
-    for alias, kind in VOICE_ALIASES.items():
-        if kind in voices:
-            voices[alias] = voices[kind]
     return voices
 
 
