@@ -18,6 +18,8 @@ export interface ParallaxDoodad {
 /** tiles[0] is the TOP row. */
 /** The ThemeHolder a level's background comes from. */
 export type LevelTheme = 'jungle' | 'desert' | 'burning' | 'city' | 'forest' | 'hell';
+/** Broforce's MusicType: the level music's low and high intensity pair (the gameplay Sound Controller's clips). */
+export type MusicType = 'BroforceDrums' | 'JungleBlueSky' | 'JungleRedSky' | 'Factory' | 'Alien' | 'Hell' | 'Desert';
 
 export interface LevelData {
   cols: number;
@@ -27,6 +29,7 @@ export interface LevelData {
   grass?: Cell[]; // long grass that can share a cell with a unit ('g' tiles add more)
   flexPower?: 'allure'; // Map.MapData.flexPowerType: SpawnWithAllure gives the bro the Alluring flex
   theme?: LevelTheme; // the background (jungle when unset)
+  music?: MusicType; // Map.MapData.musicType: its music, when not its theme's
 }
 
 export interface ParsedLevel {

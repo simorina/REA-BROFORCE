@@ -147,6 +147,7 @@ export function buildTower(): LevelData {
     grass,
     flexPower: 'allure',
     theme: 'jungle',
+    music: 'Factory', // ExpendaBros' city music in Manhattan
   };
 }
 

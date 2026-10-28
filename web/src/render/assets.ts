@@ -1,3 +1,4 @@
+import type { GameAudio } from '../app/gameAudio';
 import { parseValues } from '../engine/stats';
 import type { GameStats } from '../engine/types';
 import { unpackTexture, type ShaderTexture } from './fx/pixelShader';
@@ -32,6 +33,7 @@ export interface Assets {
   files: Record<string, HTMLImageElement>; // effect and background textures by game-data path
   shuriken: ShurikenData;
   shaderTextures: Record<string, ShaderTexture>; // the PixelExplosion textures by name, as raw RGBA
+  audio: GameAudio | null; // Broforce's voices and music, when the extractor has read them
 }
 
 export class MissingGameDataError extends Error {}
@@ -86,6 +88,7 @@ export interface GameData {
   effects: EffectsData;
   backgrounds: Record<LevelTheme, BackgroundData>;
   shuriken: ShurikenData;
+  audio: GameAudio | null;
 }
 
 /** Each level theme's ThemeHolder background, as the extractor writes it. */
@@ -103,11 +106,13 @@ export async function loadData(fetcher: typeof fetch = fetch): Promise<GameData>
   const rawBackgrounds = await Promise.all(
     (Object.entries(BACKGROUND_FILES) as Array<[LevelTheme, string]>).map(async ([t, f]) => [t, await fetchJson(f, fetcher)] as const));
   const shuriken = await fetchJson('/shuriken.json', fetcher);
+  // Broforce's own sounds are optional: an older game-data, or one extracted with --no-game-audio, plays without them
+  const audio = (await fetchJson('/audio.json', fetcher).catch(() => null)) as GameAudio | null;
   try {
     return {
       sheets: sheets as Record<SheetKey, SheetInfo>, stats: parseValues(raw), effects: parseEffects(effects),
       backgrounds: Object.fromEntries(rawBackgrounds.map(([t, b]) => [t, parseBackground(b)])) as Record<LevelTheme, BackgroundData>,
-      shuriken: parseShuriken(shuriken),
+      shuriken: parseShuriken(shuriken), audio,
     };
   } catch (e) {
     throw new MissingGameDataError(e instanceof Error ? e.message : String(e));
@@ -136,13 +141,13 @@ async function loadShaderTexture(file: string): Promise<ShaderTexture> {
 }
 
 export async function loadAssets(): Promise<Assets> {
-  const { sheets, stats, effects, backgrounds, shuriken } = await loadData();
+  const { sheets, stats, effects, backgrounds, shuriken, audio } = await loadData();
   const entries = await Promise.all(SHEET_KEYS.map(async (k) => [k, await loadImage(`/${sheets[k].file}`)] as const));
   const files = await Promise.all(effectFiles(effects, ...Object.values(backgrounds)).map(async (f) => [f, await loadImage(`/${f}`)] as const));
   const textures = await Promise.all(Object.entries(shuriken.textures)
     .map(async ([name, t]) => [name, await loadShaderTexture(t.file)] as const));
   return {
     sheets, stats, effects, backgrounds, images: Object.fromEntries(entries) as Record<SheetKey, HTMLImageElement>,
-    files: Object.fromEntries(files), shuriken, shaderTextures: Object.fromEntries(textures),
+    files: Object.fromEntries(files), shuriken, shaderTextures: Object.fromEntries(textures), audio,
   };
 }

@@ -58,6 +58,7 @@ describe('sfx', () => {
   it('is silent without WebAudio (tests, old browsers)', () => {
     const sfx = new Sfx(true);
     expect(() => sfx.play('boom', 0, 0)).not.toThrow();
+    expect(() => sfx.playFile('/audio/voices/hah.wav', 0, 0, 0.4)).not.toThrow(); // a mob's voice
     sfx.dispose();
   });
 });

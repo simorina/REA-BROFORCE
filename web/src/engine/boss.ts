@@ -31,11 +31,19 @@ const dolphOf = (w: World): Unit | undefined => w.enemies.find((e) => e.dolph &&
 
 export const levelBossAlive = (w: World): boolean => (w.mech ? !w.mech.destroyed : bossAlive(w) || dolphOf(w) !== undefined);
 
+/** The boss fight on, for the HUD and its music (Sound.PlayBossFightMusic): Epstein's Goliath, the universal soldier, Epstein. */
+export function bossFight(w: World): 'goliath' | 'dolph' | 'epstein' | null {
+  if (w.mech && w.mech.awake && !w.mech.destroyed) return 'goliath';
+  if (dolphOf(w)?.dolph?.alerted) return 'dolph';
+  return bossBar(w) === null ? null : 'epstein';
+}
+
+const BOSS_NAMES = { goliath: 'JEFFREY EPSTEIN · GOLIATH', dolph: 'SOLDATO UNIVERSALE', epstein: 'JEFFREY EPSTEIN' } as const;
+
 /** The HUD's name for the fighting boss. */
 export function bossName(w: World): string | null {
-  if (w.mech && w.mech.awake && !w.mech.destroyed) return 'JEFFREY EPSTEIN · GOLIATH';
-  if (dolphOf(w)?.dolph?.alerted) return 'SOLDATO UNIVERSALE';
-  return bossBar(w) === null ? null : 'JEFFREY EPSTEIN';
+  const fight = bossFight(w);
+  return fight && BOSS_NAMES[fight];
 }
 
 /** The HUD's bar: the fighting boss's health (in 40ths), nothing while he sleeps or once he is down. */

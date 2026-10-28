@@ -120,6 +120,7 @@ export function buildHarbor(): LevelData {
     grass,
     flexPower: 'allure',
     theme: 'jungle',
+    music: 'JungleBlueSky', // the blue sky over the docks
   };
 }
 

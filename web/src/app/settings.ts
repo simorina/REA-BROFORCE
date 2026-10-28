@@ -1,5 +1,6 @@
 const VOICE_KEY = 'brolusconi.voice';
 const SOUND_KEY = 'brolusconi.sound';
+const MUSIC_KEY = 'brolusconi.music';
 
 function load(key: string): boolean {
   try {
@@ -21,6 +22,8 @@ export const loadVoiceSetting = (): boolean => load(VOICE_KEY);
 export const saveVoiceSetting = (on: boolean): void => save(VOICE_KEY, on);
 export const loadSoundSetting = (): boolean => load(SOUND_KEY);
 export const saveSoundSetting = (on: boolean): void => save(SOUND_KEY, on);
+export const loadMusicSetting = (): boolean => load(MUSIC_KEY);
+export const saveMusicSetting = (on: boolean): void => save(MUSIC_KEY, on);
 
 const BRO_KEY = 'brolusconi.bro';
 

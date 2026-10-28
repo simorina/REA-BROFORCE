@@ -85,7 +85,8 @@ Jet (the Harrier, which Broforce never lets a player fly): it appears 32 px abov
 Lives 3, extraction 3 s; a checkpoint flag takes 0.6 s to climb. Freeing a prisoner gives the bro the freed
 prisoner's 0.75 s of invulnerability and swaps to the next bro (HeroController.SwapBro respawns a new bro; ours takes over in place). The suicide mook's warning flash speeds up as its fuse
 runs down. The pathfinder's budget is 60 expanded points per millisecond of the C#'s time limit. Our own art and sound:
-the football, the speech bubble and WebAudio-synthesized effects; no Broforce audio is used. The level layout, hill
+the football, the speech bubble and WebAudio-synthesized effects. Broforce's own audio is limited to the enemies' voices
+and the level music, read from the install like the sprites (see "Broforce's own sounds" below). The level layout, hill
 and grass placement, scout and door placement are ours.
 
 ## Simplified or left out
@@ -407,3 +408,23 @@ mook's leaps over gaps; Satan's evil sparks; the Boomer's maggots; skinless mook
 large portal; the universal soldier's bombardment (after four revivals) and slow motion; the APC's and Mookopter's
 turning frames; the MammothKopter, the Mammoth tank, the boss tank, Satan's miniboss forms and the sandworms. A
 skinless mook is shaken off by flexing (F), as a facehugger is: we have no melee to grab it with.
+
+## Broforce's own sounds: the enemies' voices and the level music (tenth pass)
+
+The extractor reads them from the local install like the sprites (`extractor/gameaudio.py`, into `game-data/`, never
+committed); `--no-game-audio` skips them. AudioClips decode through UnityPy's FMOD (`fmod_toolkit`); the music, Vorbis in
+the install, is encoded back to Ogg Vorbis with ffmpeg when it is on the PATH (about 2 MB a track; WAV, ten times that,
+without it). The clips the prefabs and the Sound Controller point into live in `sharedsounds.assetbundle`, now among
+the extractor's bundles; the gameplay `Sound Controller Gameplay` (script `Sound`) is in `scenesmain.assetbundle`.
+
+| Ours | From | Notes |
+| --- | --- | --- |
+| Voices | each enemy prefab's `soundHolder` (`SoundHolder`) | `greeting` "!" (PolymorphicAI.GreetPlayer, volume 0.4), `confused` "?" (ShowQuestionBubble, 0.31), `attractSounds` drawn in by the flex (70% of the "?"s, 0.86 at pitch 0.9), `laughSounds` at the dead bro (0.6, at most every 2 s a mook), `panic` set on fire (0.65, pitch 1-1.175), `hitSounds` his death (PlayDeathSound; none when he comes apart), `hurtSounds` hit and still standing (PlayHitSound, 0.4 × 0.37, at most every 0.1 s), `specialSounds` the suicide mook's scream (SuicideAI.FullyAlert queues PlaySpecialSound(0.6) after its greeting and its look; Satan's laugh too), `resurrectSounds` an undead mook getting up (0.3) |
+| Level music | `Sound.PlayMusic` | the MusicType's low and high intensity clips; a level without one takes its theme's: jungle `BroforceDrums` (Original Level Music), burning `JungleRedSky` (VRS), forest and city `Factory` (ExpendaBros), hell `Hell`, desert `Desert`. Ours: the harbour `JungleBlueSky`, the skyscraper `Factory`, the lab `Alien` |
+| Intensity | `StatisticsController.musicIntensity` | +1 a mook's death, +4 a vehicle's, held for the brotality grace (1.5 s, 5 s), then -1 a second and × (1 - 0.66 dt); high above 0 |
+| Crossfade | `Sound.Update` | the two tracks play in step (each started at the other's time); going high the high one jumps to 0.4 of the volume and they cross at 2 a second to 0.6 and 0; going low the low one comes back from 0.2 and they cross at 1 a second to 0.5; under 0.01 a track stops |
+| Boss music | the Sound Controller | ours: `bossFightClipJungle` (Boss Fight BETA) for Epstein, `bossFightClipFinal` (Boss Fight GOLF) for his Goliath, `bossPulseDolf` ("Dolph") for the universal soldier, `bossVictoryClipJungle` (the BETA sting) once the Goliath is down |
+
+Left out: the bros' own voices (`SoundHolderVoice`), the announcer (`SoundHolderAnnouncer`, the bros' names and
+"Broforce!"), the menu, world map and shop music, the mooks' falling screams, and the guns' and explosions' clips (our
+synthesized effects stay).

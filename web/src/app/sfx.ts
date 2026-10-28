@@ -1,7 +1,10 @@
 import { VIEW_W } from '../engine/camera';
 import type { GameEvent } from '../engine/world';
 
-/** Our own synthesized sound effects (WebAudio); no Broforce audio is extracted or played. */
+/**
+ * Our own synthesized sound effects (WebAudio). The enemies' voices are Broforce's own clips, played through playFile
+ * (gameAudio.ts).
+ */
 export type SfxName =
   | 'kick' | 'throw' | 'shot' | 'rocket' | 'boom' | 'pop' | 'crumble' | 'splat' | 'grunt' | 'death' | 'alert'
   | 'rescue' | 'checkpoint' | 'whistle' | 'flex' | 'swish' | 'mortar' | 'cannon' | 'clank' | 'bite' | 'flame' | 'roar' | 'siren' | 'beep'
@@ -102,6 +105,8 @@ export function placement(x: number, camX: number): { pan: number; gain: number 
 
 const MIN_GAP = 0.03; // the same sound at most this often, so a chain of blasts doesn't clip
 const MASTER = 0.45;
+const CLIP_GAIN = 1.5; // Broforce's clips (the mobs' voices) at their own volumes, brought up to our synthesized ones
+const MAX_CLIPS = 10; // at most this many at once, so a crowd of mooks doesn't drown everything
 
 type Ctx = AudioContext;
 
@@ -110,6 +115,8 @@ export class Sfx {
   private master: GainNode | null = null;
   private noise: AudioBuffer | null = null;
   private readonly last = new Map<SfxName, number>();
+  private readonly buffers = new Map<string, Promise<AudioBuffer | null>>(); // Broforce's clips, fetched and decoded once
+  private clips = 0; // playing (or loading) now
 
   constructor(enabled: boolean) {
     if (!enabled || typeof window === 'undefined' || typeof window.AudioContext === 'undefined') return;
@@ -152,6 +159,39 @@ export class Sfx {
     panner.pan.value = pan;
     out.connect(panner).connect(this.master);
     RECIPES[name](this, out, now);
+  }
+
+  /** One of Broforce's clips (a mob's voice) at world x, at its volume and playback rate; a missing file stays silent. */
+  playFile(url: string, x: number, camX: number, volume: number, rate = 1): void {
+    const ctx = this.ctx;
+    if (!ctx || !this.master || this.clips >= MAX_CLIPS) return;
+    let buffer = this.buffers.get(url);
+    if (!buffer) {
+      buffer = fetch(url)
+        .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(url))))
+        .then((b) => ctx.decodeAudioData(b))
+        .catch(() => null);
+      this.buffers.set(url, buffer);
+    }
+    this.clips++;
+    void buffer.then((b) => {
+      const master = this.master;
+      if (!b || !this.ctx || !master) {
+        this.clips--;
+        return;
+      }
+      const { pan, gain } = placement(x, camX);
+      const src = this.ctx.createBufferSource();
+      src.buffer = b;
+      src.playbackRate.value = rate;
+      const out = this.ctx.createGain();
+      out.gain.value = volume * gain * CLIP_GAIN;
+      const panner = this.ctx.createStereoPanner();
+      panner.pan.value = pan;
+      src.connect(out).connect(panner).connect(master);
+      src.onended = () => this.clips--;
+      src.start();
+    });
   }
 
   /** A pitched tone sweeping from f0 to f1 with an exponential fade. */

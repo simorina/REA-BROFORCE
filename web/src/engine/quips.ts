@@ -26,5 +26,6 @@ export function satanSeesLaser(w: World, m: Unit, h: HellState): void {
   h.mocked = true;
   h.laugh = Math.max(h.laugh, SATAN.laughs * SATAN.laughFrames * SATAN.laughRate);
   w.events.push({ type: 'alert', x: m.x, y: m.y });
+  m.voice = 'laugh';
   w.effects.push({ kind: 'speech', x: m.x, y: m.y + 40, age: 0, duration: SPEECH_DURATION, text: SATAN_LASER_LINE, unit: m.id });
 }

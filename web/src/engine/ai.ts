@@ -192,6 +192,7 @@ export function fullyAlert(m: Unit, stats: AiStats, x: number, y: number, rng: (
   ai.walkDir = sign(x - m.x);
   ai.queue.push(act('face', 0, getColumn(x), getRow(y)));
   setMental(ai, 'alerted');
+  if (isSuicide(m.kind) || m.kind === 'skinless') ai.queue.push(act('scream')); // SuicideAI, SkinlessMookAI.FullyAlert
   if (m.kind === 'mook_bruiser_elite') ai.target = { x, y }; // BigGuyEliteAI.FullyAlert
   if (m.kind === 'mook_bruiser' || m.kind === 'mook_bruiser_elite' || isHellBigGuy(m.kind) || isBoomer(m.kind)) { // BigGuyAI.FullyAlert: he keeps shooting the way the alert came from
     if (x < m.x - 8) ai.attackingDir = -1;
@@ -340,6 +341,7 @@ export function panicAi(m: Unit, direction: -1 | 1, forgetPlayer: boolean): bool
   ai.queue = [];
   ai.walkDir = direction;
   setMental(ai, 'panicking');
+  m.voice = 'panic'; // PlayPanicSound
   if (forgetPlayer) ai.seenPlayer = false;
   return true;
 }
@@ -729,8 +731,13 @@ function runQueue(m: Unit, ai: AiState, ctx: AiContext, t: number): void {
       remove(ai, a);
       return;
     case 'greet':
-    case 'laugh': // GreetPlayer and LaughAtPlayer both restart the exclamation bubble
+    case 'laugh': // GreetPlayer and LaughAtPlayer both restart the exclamation bubble, with their sounds
       exclaim(m, ai);
+      m.voice = a.type;
+      remove(ai, a);
+      return;
+    case 'scream': // PlaySpecialSound: a suicide mook's scream as he charges
+      m.voice = 'charge';
       remove(ai, a);
       return;
     case 'followPath': {
@@ -747,8 +754,9 @@ function runQueue(m: Unit, ai: AiState, ctx: AiContext, t: number): void {
       }
       return;
     }
-    case 'question':
+    case 'question': // ShowQuestionBubble: PlayAttractedSound when drawn in (70% of the time, left to the sound), else PlayConfusedSound
       showBubble(ai, '?');
+      m.voice = ai.mental === 'attracted' ? 'attract' : 'confused';
       remove(ai, a);
       return;
     case 'face':

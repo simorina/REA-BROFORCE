@@ -71,6 +71,8 @@ export function damageUnit(u: Unit, amount: number, ignoreInvulnerable = false, 
     j.on = false;
     j.crash = u.onGround ? j.crashDelay : j.crashDelay * JETPACK.airCrashM;
   }
+  // PlayHitSound: an enemy hit and still standing grunts (fire makes him panic instead)
+  if (u.team === 'enemy' && u.health > 0 && !hit.fire && !u.voice) u.voice = 'hurt';
   if (u.dead || u.health > 0) return false;
   u.dead = true;
   u.deadTime = 0;

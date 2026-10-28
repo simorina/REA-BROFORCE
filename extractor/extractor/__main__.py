@@ -4,7 +4,7 @@ import datetime
 import os
 import sys
 
-from . import audio, effects, western, worldmap
+from . import audio, effects, gameaudio, western, worldmap
 from .catalog import SPRITES, TEXTURES, VALUES
 from .manifest import OutputWriter
 from .repaint import RECIPES, repaint
@@ -20,7 +20,7 @@ def sheet_entry(file: str, width: int, height: int, frame: dict) -> dict:
             "cols": width // frame["w"], "rows": height // frame["h"]}
 
 
-def run(data_dir: str, out_dir: str, fetch_audio: bool = True) -> None:
+def run(data_dir: str, out_dir: str, fetch_audio: bool = True, game_audio: bool = True) -> None:
     stale = os.path.join(out_dir, "manifest.json")
     if os.path.exists(stale):
         os.remove(stale)
@@ -71,6 +71,8 @@ def run(data_dir: str, out_dir: str, fetch_audio: bool = True) -> None:
     effects.extract(os.path.join(data_dir, "StreamingAssets"), out)
     worldmap.extract(os.path.join(data_dir, "StreamingAssets"), out)  # Broforce's 3D globe for the campaign map
     out.write_bytes("audio/django_western.wav", western.wav_bytes(), "our own spaghetti-western loop, synthesized (extractor/western.py)")
+    if game_audio:  # the enemies' voices and the level music, from the install
+        gameaudio.extract(prefabs, os.path.join(data_dir, "StreamingAssets"), out)
     if fetch_audio:
         for ref in (audio.ANTHEM, audio.ANTHEM_US):
             audio.fetch(ref, out)
@@ -82,9 +84,10 @@ def main(argv=None) -> int:
     parser.add_argument("data_dir", help="path to Broforce_beta_Data")
     parser.add_argument("out_dir", help="output folder, e.g. ../game-data")
     parser.add_argument("--no-audio", action="store_true", help="skip downloading the anthem")
+    parser.add_argument("--no-game-audio", action="store_true", help="skip the enemies' voices and the level music")
     args = parser.parse_args(argv)
     try:
-        run(args.data_dir, args.out_dir, fetch_audio=not args.no_audio)
+        run(args.data_dir, args.out_dir, fetch_audio=not args.no_audio, game_audio=not args.no_game_audio)
     except AssetNotFound as exc:
         print(f"extractor: {exc}", file=sys.stderr)
         return 1

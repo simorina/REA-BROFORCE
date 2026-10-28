@@ -161,7 +161,7 @@ export function buildLab(): LevelData {
   // Long grass at the forest's edge and in the yards: the snakes lie in it, and mooks wait hidden there
   const grass: Cell[] = [21, 22, 23, 57, 58, 59, 96, 97, 182, 183, 352, 353, 382, 383, 384].map((c) => ({ c, r: 4 }));
 
-  return { cols: COLS, rows: ROWS, tiles: grid.map((row) => row.join('')), parallax: forest(), grass, flexPower: 'allure', theme: 'forest' };
+  return { cols: COLS, rows: ROWS, tiles: grid.map((row) => row.join('')), parallax: forest(), grass, flexPower: 'allure', theme: 'forest', music: 'Alien' };
 }
 
 /**

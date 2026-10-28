@@ -48,7 +48,7 @@ import { damageMech, makeMech, mechInBlast, stepMech, type Mech } from './mech';
 import type { Jet } from './jet';
 import type { Tank } from './tank';
 import { vehicleInBlast, type Vehicle } from './vehicle';
-import type { BlockKind, Controls, EnemyKind, GameStats, Projectile, ProjectileKind, Team, Unit, UnitKind } from './types';
+import type { BlockKind, Controls, EnemyKind, GameStats, Projectile, ProjectileKind, Team, Unit, UnitKind, VoiceLine } from './types';
 
 /** Something the renderer times: a screen shake (SortOfFollow.Shake) or the bro's speech bubble. */
 export interface Effect {
@@ -132,6 +132,7 @@ export type GameEvent =
   | { type: 'mineArmed'; x: number; y: number } // a mine stepped on: its click
   | { type: 'zapHit'; x: number; y: number; unit: boolean } // a Tesla arc strikes (a mook, or a wall or the air)
   | { type: 'laser'; phase: 'charge' | 'on' | 'hum' | 'stop' | 'overheat'; x: number; y: number } // the Tesla laser's sounds
+  | { type: 'mookVoice'; x: number; y: number; kind: Exclude<UnitKind, 'bro'>; line: VoiceLine; unit: number } // an enemy says his line
   | { type: 'laserHit'; x: number; y: number; dir: -1 | 1 }; // where the Tesla laser eats into a block (dir: the way it runs)
 export type WorldState = 'playing' | 'extracting' | 'won' | 'lost';
 
@@ -707,6 +708,7 @@ function hellIntent(w: World, m: Unit, h: HellState, out: { intent: MoveIntent; 
     if (out.fire && h.laugh <= 0) {
       h.laugh = SATAN.laughs * SATAN.laughFrames * SATAN.laughRate;
       w.events.push({ type: 'alert', x: m.x, y: m.y });
+      m.voice = 'laugh'; // Satan.UseSpecial: his laugh
     }
     out.fire = false;
     if (h.laugh > 0) {
@@ -1509,8 +1511,15 @@ function damageGrass(w: World, b: Blast): void {
   }
 }
 
-/** Announces deaths and gibs once each; a dead player starts the respawn timer and amuses the mooks. */
+/**
+ * Announces deaths and gibs once each; a dead player starts the respawn timer and amuses the mooks. An enemy's line of
+ * this step goes out as a mookVoice event: his death line when he dies (TestVanDammeAnim.Damage: PlayDeathSound, unless
+ * he comes apart), else whatever he said.
+ */
 function reportUnits(w: World): void {
+  const say = (u: Unit, line: VoiceLine) => {
+    w.events.push({ type: 'mookVoice', x: u.x, y: u.y, kind: u.kind as Exclude<UnitKind, 'bro'>, line, unit: u.id });
+  };
   for (const u of [w.player, ...w.enemies]) {
     if (u.dead && !u.reported.death) {
       u.reported.death = true;
@@ -1521,6 +1530,8 @@ function reportUnits(w: World): void {
         for (const m of w.enemies) playerDied(m, w.rng, m.ai?.mental === 'alerted' ? ++w.laughIndex : 0);
       } else {
         w.events.push({ type: 'kill', x: u.x, y: u.y, kind: u.kind as Exclude<UnitKind, 'bro'>, xI: u.xI, yI: u.yI });
+        if (!u.gibbed) say(u, 'death');
+        u.voice = undefined;
         killQuip(w, u);
         if (u.originDoor >= 0) w.doors[u.originDoor].mookCount--; // Mook.Death: MookDoor.RemoveMook
         u.originDoor = -1;
@@ -1529,6 +1540,10 @@ function reportUnits(w: World): void {
     if (u.gibbed && !u.reported.gib) {
       u.reported.gib = true;
       w.events.push({ type: 'gib', x: u.x, y: u.y, team: u.team, kind: u.kind, xI: u.xI, yI: u.yI });
+    }
+    if (u.voice) {
+      if (u !== w.player && !u.dead) say(u, u.voice);
+      u.voice = undefined;
     }
   }
 }

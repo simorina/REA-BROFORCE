@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BROLUSCONI } from '../bros';
-import { bossName, levelBossAlive } from './boss';
+import { bossFight, bossName, levelBossAlive } from './boss';
 import { FIXED_DT } from './constants';
 import { parseLevel, type LevelData } from './level';
 import { TEST_STATS } from './testStats';
@@ -41,6 +41,7 @@ describe('the universal soldier (DolphLundrenSoldier, DolfLundgrenAI)', () => {
     expect(levelBossAlive(w)).toBe(true);
     play(w, steps(3));
     expect(bossName(w)).toBe('SOLDATO UNIVERSALE');
+    expect(bossFight(w)).toBe('dolph');
   });
 
   it('on screen he fires barrages of drunk rockets from his launcher (siege mode, then one every 0.33 s)', () => {

@@ -37,13 +37,15 @@ interface Props {
   portraits: Record<string, string>; // bro id -> URL of his sheet
   voice: boolean;
   sound: boolean;
+  music: boolean;
   onSelect: (id: string) => void;
   onToggleVoice: () => void;
   onToggleSound: () => void;
+  onToggleMusic: () => void;
   onStart: () => void;
 }
 
-export function Menu({ bros, selected, portraits, voice, sound, onSelect, onToggleVoice, onToggleSound, onStart }: Props) {
+export function Menu({ bros, selected, portraits, voice, sound, music, onSelect, onToggleVoice, onToggleSound, onToggleMusic, onStart }: Props) {
   const index = Math.max(0, bros.findIndex((b) => b.id === selected));
   const bro = bros[index];
 
@@ -99,7 +101,10 @@ export function Menu({ bros, selected, portraits, voice, sound, onSelect, onTogg
       </table>
       <div className="toggles">
         <label className="toggle">
-          <input type="checkbox" checked={sound} onChange={onToggleSound} /> Effetti sonori
+          <input type="checkbox" checked={sound} onChange={onToggleSound} /> Effetti sonori (e le voci dei nemici)
+        </label>
+        <label className="toggle">
+          <input type="checkbox" checked={music} onChange={onToggleMusic} /> Musica
         </label>
         <label className="toggle">
           <input type="checkbox" checked={voice} onChange={onToggleVoice} /> Voce (sintesi vocale)

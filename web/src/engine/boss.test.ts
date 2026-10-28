@@ -3,7 +3,7 @@ import { BROLUSCONI } from '../bros';
 import type { BroDef } from './bro';
 import { screenMaxY } from './camera';
 import { BOSS, FIXED_DT } from './constants';
-import { bossBar } from './boss';
+import { bossBar, bossFight } from './boss';
 import { judoTarget } from './judo';
 import { parseLevel, type LevelData } from './level';
 import { TEST_STATS } from './testStats';
@@ -117,10 +117,12 @@ describe('Jeffrey Epstein, the boss', () => {
   it("the HUD's bar shows his health only while he fights", () => {
     const w = createWorld(arena(), TEST_STATS, [PILOT], () => 0.5);
     expect(bossBar(w)).toBeNull(); // asleep
+    expect(bossFight(w)).toBeNull();
     w.player.invulnerable = 1e9;
     w.player.x = w.boss!.x - 100;
     play(w, {}, 1);
     expect(bossBar(w)).toBe(1);
+    expect(bossFight(w)).toBe('epstein'); // his boss music plays
     damageUnit(w.boss!, BOSS.health / 4);
     expect(bossBar(w)).toBe(0.75);
     damageUnit(w.boss!, BOSS.health);

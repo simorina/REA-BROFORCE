@@ -82,6 +82,7 @@ export function stepUndeadCorpse(m: Unit, player: Unit | null, rng: () => number
   h.waking = false;
   h.rise = undeadDelay(rng);
   h.rising = UNDEAD.riseFrames * UNDEAD.riseRate;
+  m.voice = 'rise'; // PlayResurrectionSound
   return true;
 }
 

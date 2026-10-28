@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  loadBroSetting, loadSoundSetting, loadVoiceSetting, saveBroSetting, saveSoundSetting, saveVoiceSetting,
+  loadBroSetting, loadMusicSetting, loadSoundSetting, loadVoiceSetting, saveBroSetting, saveMusicSetting, saveSoundSetting,
+  saveVoiceSetting,
 } from '../app/settings';
 import { BROS } from '../bros';
 import { afterMission, campaignComplete, loadProgress, saveProgress } from '../app/campaign';
@@ -25,6 +26,7 @@ export function App() {
   const [screen, setScreen] = useState<Screen>({ name: 'loading' });
   const [voice, setVoice] = useState(loadVoiceSetting);
   const [sound, setSound] = useState(loadSoundSetting);
+  const [music, setMusic] = useState(loadMusicSetting);
   const [run, setRun] = useState(0);
   const [broId, setBroId] = useState(() => loadBroSetting(BROS[0].id));
   const [done, setDone] = useState(loadProgress); // missions done in the campaign
@@ -84,6 +86,12 @@ export function App() {
       return !v;
     });
   }, []);
+  const toggleMusic = useCallback(() => {
+    setMusic((v) => {
+      saveMusicSetting(!v);
+      return !v;
+    });
+  }, []);
   const selectBro = useCallback((id: string) => {
     saveBroSetting(id);
     setBroId(id);
@@ -98,8 +106,8 @@ export function App() {
   if (!assets) return null;
   if (screen.name === 'menu') {
     return (
-      <Menu bros={BROS} selected={broId} portraits={portraits} voice={voice} sound={sound} onSelect={selectBro}
-        onToggleVoice={toggleVoice} onToggleSound={toggleSound} onStart={openMap} />
+      <Menu bros={BROS} selected={broId} portraits={portraits} voice={voice} sound={sound} music={music} onSelect={selectBro}
+        onToggleVoice={toggleVoice} onToggleSound={toggleSound} onToggleMusic={toggleMusic} onStart={openMap} />
     );
   }
   if (screen.name === 'map') {
@@ -108,7 +116,7 @@ export function App() {
   if (screen.name === 'playing') {
     return (
       <GameView key={run} assets={assets} broId={broId} buildLevel={MISSIONS[screen.mission].build} voice={voice} sound={sound}
-        onEnd={onEnd} onMenu={() => setScreen({ name: 'menu' })} />
+        music={music} onEnd={onEnd} onMenu={() => setScreen({ name: 'menu' })} />
     );
   }
   const mission = screen.mission;

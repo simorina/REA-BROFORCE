@@ -196,7 +196,7 @@ export interface GameStats {
 
 export type MentalState = 'idle' | 'suspicious' | 'alerted' | 'hiding' | 'panicking' | 'attracted';
 export type AiActionType =
-  | 'wait' | 'move' | 'fire' | 'look' | 'greet' | 'question' | 'face' | 'becomeIdle' | 'laugh' | 'jump' | 'special2'
+  | 'wait' | 'move' | 'fire' | 'look' | 'greet' | 'question' | 'face' | 'becomeIdle' | 'laugh' | 'jump' | 'special2' | 'scream'
   | 'followPath';
 
 /** PolymorphicAI's ActionObject: a queued step with a duration and, for move/face/followPath, a grid point. */
@@ -346,7 +346,16 @@ export interface Unit {
   hell?: HellState; // what a hell mob keeps on top of its mook's mind (hell.ts)
   rocketpack?: RocketpackState; // The Brocketeer's jetpack on a bro who has one (rocketpack.ts)
   laser?: LaserState; // Elon Musk's Tesla laser (laser.ts)
+  voice?: VoiceLine; // a line he says this step, reported as a mookVoice event (TestVanDammeAnim's Play*Sound)
 }
+
+/**
+ * What an enemy says, and when (the SoundHolder arrays TestVanDammeAnim plays): greet, his "!" (greeting); confused,
+ * his "?" (confused); attract, his "?" drawn in by the flex (attractSounds); laugh, at the dead bro (laughSounds); panic,
+ * burning (panic); death (hitSounds); hurt, hit and still standing (hurtSounds); charge, a suicide mook's scream
+ * (specialSounds); rise, an undead mook getting up (resurrectSounds).
+ */
+export type VoiceLine = 'greet' | 'confused' | 'attract' | 'laugh' | 'panic' | 'death' | 'hurt' | 'charge' | 'rise';
 
 /** MookJetpack: its jetpack, the countdown of a wrecked one, its spiral down and the fuse that blows it up. */
 export interface JetpackState {

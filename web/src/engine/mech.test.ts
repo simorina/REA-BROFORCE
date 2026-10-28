@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BROLUSCONI } from '../bros';
 import type { BroDef } from './bro';
-import { bossBar, bossName } from './boss';
+import { bossBar, bossFight, bossName } from './boss';
 import { FIXED_DT, MECH } from './constants';
 import type { LevelData } from './level';
 import { beginPattern } from './mech';
@@ -169,8 +169,10 @@ describe("Epstein's Goliath", () => {
   it("the HUD names whichever Epstein is fighting", () => {
     const w = awake();
     expect(bossName(w)).toBe('JEFFREY EPSTEIN · GOLIATH');
+    expect(bossFight(w)).toBe('goliath');
     w.mech!.destroyed = true;
     expect(bossName(w)).toBeNull();
+    expect(bossFight(w)).toBeNull();
   });
 
   it("the HUD's bar follows its health once it's awake", () => {

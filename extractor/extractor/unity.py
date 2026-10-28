@@ -56,6 +56,11 @@ class Prefabs:
         except KeyError:
             raise AssetNotFound(f"prefab {gameobject!r} with script {script!r}") from None
 
+    def behaviour(self, script: str, gameobject: str):
+        """A prefab's MonoBehaviour (its object reader), to follow its PPtr fields."""
+        obj, _ = self._find(script, gameobject)
+        return obj
+
     def values(self, script: str, gameobject: str, fields) -> dict:
         obj, _ = self._find(script, gameobject)
         tree = obj.read_typetree()

@@ -175,6 +175,22 @@ describe('loadData', () => {
     }))).rejects.toBeInstanceOf(MissingGameDataError);
   });
 
+  it("reads Broforce's voices and music when the extractor wrote them, and goes on without them", async () => {
+    const base = {
+      '/sheets.json': { status: 200, body: JSON.stringify(sheets) },
+      '/values.json': { status: 200, body: JSON.stringify(RAW_VALUES) },
+      '/effects.json': { status: 200, body: JSON.stringify(TEST_EFFECTS) },
+      ...BACKGROUNDS,
+      '/shuriken.json': { status: 200, body: JSON.stringify(SHURIKEN) },
+    };
+    const sound = { voices: { mook: { greet: ['audio/voices/hah.wav'] } }, music: {}, boss: {} };
+    const data = await loadData(fakeFetch({ ...base, '/audio.json': { status: 200, body: JSON.stringify(sound) } }));
+    expect(data.audio?.voices.mook?.greet).toEqual(['audio/voices/hah.wav']);
+    expect((await loadData(fakeFetch(base))).audio).toBeNull();
+    const html = { status: 200, body: '<!doctype html><html></html>' }; // the dev server's fallback
+    expect((await loadData(fakeFetch({ ...base, '/audio.json': html }))).audio).toBeNull();
+  });
+
   it('rejects HTML served for JSON (the dev server fallback when game-data is missing)', async () => {
     const html = { status: 200, body: '<!doctype html><html></html>' };
     await expect(loadData(fakeFetch({ '/sheets.json': html, '/values.json': html }))).rejects.toBeInstanceOf(MissingGameDataError);

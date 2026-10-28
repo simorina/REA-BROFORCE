@@ -16,6 +16,20 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
     run(DATA, str(tmp_path), fetch_audio=False)
     manifest = json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))
     assert "sprites/brolusconi.png" in manifest["files"]
+    # Broforce's own sounds: the mooks' voices from their SoundHolders, the level and boss music from the Sound Controller
+    sound = json.loads((tmp_path / "audio.json").read_text(encoding="utf-8"))
+    mook = sound["voices"]["mook"]
+    assert {"greet", "confused", "laugh", "panic", "death", "hurt"} <= set(mook)
+    assert any("Normal_Mook_Hah" in f for f in mook["greet"])
+    assert sound["voices"]["mook_suicide"]["charge"] and sound["voices"]["satan"]["laugh"]
+    assert sound["voices"]["alien_xeno_brain"] == sound["voices"]["alien_xeno"]
+    assert (tmp_path / mook["greet"][0]).read_bytes()[:4] == b"RIFF"
+    assert set(sound["music"]) == {"BroforceDrums", "JungleBlueSky", "JungleRedSky", "Factory", "Alien", "Hell", "Desert"}
+    assert "Desert_Low_Intensity" in sound["music"]["Desert"]["low"] and "Hell_Level_Music" in sound["music"]["Hell"]["high"]
+    assert set(sound["boss"]) == {"epstein", "goliath", "dolph", "sting"}
+    first = (tmp_path / sound["music"]["Desert"]["low"]).read_bytes()[:4]
+    assert first in (b"OggS", b"RIFF")  # Ogg Vorbis with ffmpeg, else WAV
+    assert all(f in manifest["files"] for f in [mook["greet"][0], sound["music"]["Desert"]["low"], "audio.json"])
     values = json.loads((tmp_path / "values.json").read_text(encoding="utf-8"))
     assert values["bro_base"]["_jumpForce"] == 260.0
     assert values["bro_base"]["speed"] == 110.0
@@ -151,7 +165,7 @@ def test_extracts_sprites_values_and_the_repaint(tmp_path):
 
 
 def test_extracts_the_jungle_background_and_the_effects(tmp_path):
-    run(DATA, str(tmp_path), fetch_audio=False)
+    run(DATA, str(tmp_path), fetch_audio=False, game_audio=False)  # the sounds are checked above
     bg = json.loads((tmp_path / "background.json").read_text(encoding="utf-8"))
     assert bg["cloudScatter"] == "BlueSky"
     assert bg["sky"]["parallax"] == [1.0, 1.0]

@@ -27,7 +27,7 @@ class ValuesRef:
     fields: tuple[str, ...]
 
 
-BUNDLES = ("networkobjects.assetbundle", "sharedtextures.assetbundle", "sharedassets.assetbundle")
+BUNDLES = ("networkobjects.assetbundle", "sharedtextures.assetbundle", "sharedassets.assetbundle", "sharedsounds.assetbundle")  # the last: the clips the prefabs point into
 
 UNIT_FIELDS = ("speed", "_jumpForce", "health", "fireRate", "maxFallSpeed", "canWallClimb", "canDash",
                "originalSpecialAmmo", "hearingRangeX", "hearingRangeY")
